@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# requires: make, g++, autoconf, libtool, libreadline-dev, svn(subversion),git,unzip,tar,cmake, libsnappy-dev
+mkdir ext
+cd ext
+
+# protobuf
+git clone https://github.com/google/protobuf.git
+cd protobuf
+./autogen.sh
+./configure --prefix=$PWD
+make -j
+cd ..
+
+
+# glog
+wget https://github.com/google/glog/archive/v0.3.4.tar.gz
+tar -xzf v0.3.4.tar.gz
+mv glog-0.3.4/ glog
+rm -fr v0.3.4.tar.gz
+cd glog
+./configure --prefix=$PWD
+make -j
+make install
+cd ..
+
+
+# zeromq
+wget http://download.zeromq.org/zeromq-3.2.2.tar.gz
+tar xzf zeromq-3.2.2.tar.gz
+rm zeromq-3.2.2.tar.gz
+mv zeromq-3.2.2 zeromq
+cd zeromq
+./autogen.sh
+./configure --prefix=$PWD
+make -j
+make install
+cd ..
+
+
+#gflags
+wget https://github.com/gflags/gflags/archive/v2.0.tar.gz
+tar -xzf v2.0.tar.gz
+rm v2.0.tar.gz
+mv gflags-2.0/ gflags
+cd gflags
+./configure --prefix=$PWD
+make -j
+make install
+cd ..
+
+

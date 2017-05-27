@@ -1,0 +1,43 @@
+// Author: Kun Ren <renkun.nwpu@gmail.com>
+//
+
+syntax = "proto2";
+message TxnProto {
+  // Globally unique transaction id, specifying global order.
+  required uint64 txn_id = 1;
+
+  // Specifies which stored procedure to invoke at execution time.
+  optional uint32 txn_type = 10;
+
+  // True if transaction is known to span multiple database nodes.
+  optional bool multipartition = 12;
+
+  // Keys of objects read (but not modified) by this transaction.
+  repeated bytes read_set = 20;
+
+  // Keys of objects modified (but not read) by this transaction.
+  repeated bytes write_set = 21;
+
+  // Keys of objects read AND modified by this transaction.
+  repeated bytes read_write_set = 22;
+
+  // Arguments to be passed when invoking the stored procedure to execute this
+  // transaction. 'arg' is a serialized protocol message. The client and backend
+  // application code is assumed to know how to interpret this protocol message
+  // based on 'txn_type'.
+  optional bytes arg = 23;
+
+  // Transaction status.
+  enum Status {
+    NEW = 0;
+    ACTIVE = 1;
+    COMMITTED = 2;
+    ABORTED = 3;
+  };
+  optional Status status = 30;
+
+  // Node ids of nodes that participate as readers and writers in this txn.
+  repeated uint64 readers = 40;
+  repeated uint64 writers = 41;
+}
+

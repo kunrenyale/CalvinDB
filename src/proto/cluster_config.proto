@@ -1,0 +1,20 @@
+// Author: Kun Ren <renkun.nwpu@gmail.com>
+//
+
+// ClusterConfig is essentially a collection of MachineInfo entries, each
+// of which stores the MachineID, host (ip address), and listen port for a
+// machine in the cluster.
+syntax = "proto2";
+message MachineInfo {
+  optional uint64 id = 1;
+  optional uint32 replica = 2;
+  optional string host = 3;
+  optional int32 port = 4;
+};
+
+// A ClusterConfig represents a description of a collection of Machines.
+// ClusterConfigProto is a protobuf version of that.
+message ClusterConfigProto {
+  repeated MachineInfo machines = 1;
+};
+

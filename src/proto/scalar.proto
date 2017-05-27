@@ -1,0 +1,45 @@
+// Author: Kun Ren <renkun.nwpu@gmail.com>
+//
+// Encoding of some kind of numeric or string value.
+syntax = "proto2";
+message Scalar {
+  // Specifies actual type of scalar value.
+  enum ScalarType {
+    UNIT   = 1;
+    BOOL   = 2;
+    INT32  = 3;
+    INT64  = 4;
+    UINT32 = 5;
+    UINT64 = 6;
+    FLOAT  = 7;
+    DOUBLE = 8;
+    STRING = 9;
+  };
+  required ScalarType type = 1 [default = UNIT];
+
+  // Actual scalar value. Exactly one of these must exist, and it must
+  // correspond to the ScalarType specified by 'type' (unless type == UNIT,
+  // in which case no value is set).
+  optional bool   bool_value   = 2;
+  optional int32  int32_value  = 3;
+  optional int64  int64_value  = 4;
+  optional uint32 uint32_value = 5;
+  optional uint64 uint64_value = 6;
+  optional float  float_value  = 7;
+  optional double double_value = 8;
+  optional string string_value = 9;
+};
+
+// Possibly useful for when a protobuf is needed but you don't actually have
+// anything you need to say.
+message EmptyProto {}
+
+message UInt64Pair {
+  optional uint64 first = 1;
+  optional uint64 second = 2;
+}
+
+message Sequence {
+  repeated uint64 batch_ids = 1;
+}
+
