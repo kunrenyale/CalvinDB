@@ -1,4 +1,4 @@
-----------------------This is the Geo-replicated CalvinDB codebase (are currently working on)---------------------------
+------------This is the Geo-replicated CalvinDB codebase (under development)------------
 
 Installation(This is for Ubuntu 14.04, it should be similar with other Linux distribution):
 1. You should install the following softwares:
@@ -22,8 +22,9 @@ Installation(This is for Ubuntu 14.04, it should be similar with other Linux dis
 3. After that, you should add the LD_LIBRARY_PATH to the ~/.bashrc, below is my cofig:
 export LD_LIBRARY_PATH=~/CalvinDB/ext/zeromq/src/.libs:~/CalvinDB/ext/protobuf/src/.libs:~/CalvinDB/ext/glog/.libs:~/CalvinDB/ext/gflags/.libs
 
-
 Then run source ~/.bashrc.
+
+Will be continued.
 
 
 
