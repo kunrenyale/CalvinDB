@@ -8,7 +8,7 @@ using zmq::socket_t;
 ConnectionMultiplexer::ConnectionMultiplexer(ClusterConfig* config)
     : configuration_(config), context_(1), new_connection_channel_(NULL),
       delete_connection_channel_(NULL), deconstructor_invoked_(false) {
-  
+test1 = false;
   local_node_id_ = config->local_node_id();
   port_ = config->machines_.find(local_node_id_)->second.port();
 
@@ -55,9 +55,6 @@ pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset);
   // Start Multiplexer main loop running in background thread.
   pthread_create(&thread_, &attr, RunMultiplexer, reinterpret_cast<void*>(this));
 
-  // Initialize mutex for future calls to NewConnection.
-  new_connection_channel_ = NULL;
-
   // Just to be safe, wait a bit longer for all other nodes to finish
   // multiplexer initialization before returning to the caller, who may start
   // sending messages immediately.
@@ -101,11 +98,13 @@ LOG(ERROR) << "main thread: will create new connection---- ";
 
   // Register the new connection request.
   new_connection_channel_ = &channel;
+test1 = true;
+
 
   // Wait for the Run() loop to create the Connection object. (It will reset
   // new_connection_channel_ to NULL when the new connection has been created.
   while (true) {
-    if (new_connection_channel_ == NULL) {
+    if (test1 == false) {
       break;
     }
   }
@@ -180,8 +179,8 @@ LOG(ERROR) << "connection thread: will create new connection---- ";
       }
       // Reset request variable.
       new_connection_channel_ = NULL;
-LOG(ERROR) << "connection thread: finish create new connection---- ";      
-      usleep(1000*1000*30);
+test1 = false;
+LOG(ERROR) << "connection thread: finish create new connection---- ";
     }
 
     // Serve any pending (valid) connection deletion request.

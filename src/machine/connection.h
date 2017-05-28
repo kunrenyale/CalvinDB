@@ -110,7 +110,7 @@ class ConnectionMultiplexer {
   // Specifies a requested channel. Null if there is no outstanding new
   // connection request.
   const string* new_connection_channel_;
-
+bool test1;
   // Specifies channel requested to be deleted. Null if there is no outstanding
   // connection deletion request.
   const string* delete_connection_channel_;
