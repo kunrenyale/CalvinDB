@@ -104,7 +104,11 @@ LOG(ERROR) << "main thread: will create new connection---- ";
 
   // Wait for the Run() loop to create the Connection object. (It will reset
   // new_connection_channel_ to NULL when the new connection has been created.
-  while (new_connection_channel_ != NULL) {}
+  while (true) {
+    if (new_connection_channel_ == NULL) {
+      break;
+    }
+  }
 
   Connection* connection = new_connection_;
   new_connection_ = NULL;
@@ -176,8 +180,8 @@ LOG(ERROR) << "connection thread: will create new connection---- ";
       }
       // Reset request variable.
       new_connection_channel_ = NULL;
-      usleep(1000*1000);
 LOG(ERROR) << "connection thread: finish create new connection---- ";      
+      usleep(1000*1000*30);
     }
 
     // Serve any pending (valid) connection deletion request.
