@@ -1,40 +1,63 @@
+OBJDIRS += $(LC_DIR)
+
+$(UC_DIR)_PROTO_DEFS := $(PROTOS)
+$(UC_DIR)_SRCS       := $(SRCS)
+$(UC_DIR)_EXES       := $(EXES)
+$(UC_DIR)_TEST_SRCS  := $(TEST)
+
+# proto stuff
+$(UC_DIR)_PROTO_SRCS := $(patsubst %.proto, $(OBJDIR)/%.pb.cc, $($(UC_DIR)_PROTO_DEFS))
+$(UC_DIR)_PROTO_OBJS := $(patsubst %.c, %.o,\
+                        $(patsubst %.cpp, %.o,\
+                        $(patsubst %.cc, %.o, $($(UC_DIR)_PROTO_SRCS))))
+
+$(OBJDIR)/$(LC_DIR)/%.pb.cc $(OBJDIR)/$(LC_DIR)/%.pb.h: $(LC_DIR)/%.proto
+	@echo + protoc $@
+	@mkdir -p $(@D)
+	$(V)$(LDLIBRARYPATH) $(PROTOCEXE) --proto_path=$(patsubst %/,%,$(dir $<)) \
+	                                  --cpp_out=$(OBJDIR)/$(patsubst %/,%,$(dir $<)) $<
+
 # Build files only if they exist.
-$(UPPERC_DIR)_SRCS := $(wildcard $($(UPPERC_DIR)_SRCS))
-$(UPPERC_DIR)_OBJS := $(patsubst %.cc, $(OBJDIR)/%.o, $($(UPPERC_DIR)_SRCS))
+$(UC_DIR)_OBJS := $(patsubst %.c, $(OBJDIR)/%.o,\
+                  $(patsubst %.cpp, $(OBJDIR)/%.o,\
+                  $(patsubst %.cc, $(OBJDIR)/%.o, $($(UC_DIR)_SRCS))))
+$(UC_DIR)_OBJS += $($(UC_DIR)_PROTO_OBJS)
 
-# Protobuf specific instructions
-ifeq ($(LOWERC_DIR),proto)
-  $(UPPERC_DIR)_OBJS := $(patsubst %.proto, $(OBJDIR)/%.pb.o, $($(UPPERC_DIR)_OBJS))
+ifneq ($($(UC_DIR)_EXES),)
+$(UC_DIR)_PROG := $(patsubst $(LC_DIR)/%.cc, $(BINDIR)/$(LC_DIR)/%, $($(UC_DIR)_EXES))
 endif
 
-$(UPPERC_DIR)_TEST_SRCS := $(wildcard $(LOWERC_DIR)/*_test.cc)
-$(UPPERC_DIR)_TEST_OBJS := $(patsubst %.cc, $(OBJDIR)/%.o, $($(UPPERC_DIR)_TEST_SRCS))
-$(UPPERC_DIR)_TESTS     := $(patsubst %.cc, $(BINDIR)/%, $($(UPPERC_DIR)_TEST_SRCS))
+$(UC_DIR)_TEST_OBJS := $(patsubst %.cc, $(OBJDIR)/%.o, $($(UC_DIR)_TEST_SRCS))
+$(UC_DIR)_TESTS     := $(patsubst %.cc, $(BINDIR)/%, $($(UC_DIR)_TEST_SRCS))
 
-TESTS += test-$(LOWERC_DIR)
+TESTS += test-$(LC_DIR)
 
-all: $(LOWERC_DIR)-all
+all: $(LC_DIR)
+$(LC_DIR): $($(UC_DIR)_PROG) $($(UC_DIR)_OBJS) $($(UC_DIR)_TESTS)
 
-$(LOWERC_DIR)-all: $(LOWERC_DIR) $(LOWERC_DIR)-tests
-$(LOWERC_DIR): $(patsubst %, $(BINDIR)/%, $($(UPPERC_DIR)_PROG))\
-               $($(UPPERC_DIR)_OBJS)
-$(LOWERC_DIR)-tests: $($(UPPERC_DIR)_TESTS)
-
-ifeq ($(LOWERC_DIR),proto)
-  SRC_CC_FILES :=
-else
-  SRC_CC_FILES := $(LOWERC_DIR)/%.cc
-endif
-  
-$(OBJDIR)/$(LOWERC_DIR)/%.o: $(SRC_CC_FILES) $(SRC_LINKED_OBJECTS)
-	@echo + cxx $<
+$(OBJDIR)/$(LC_DIR)/%.pb.o: $(OBJDIR)/$(LC_DIR)/%.pb.cc $(DEPS)
+	@echo + cxx $@
 	@mkdir -p $(@D)
 	$(V)$(CXX) $(CXXFLAGS) -o $@ -c $<
 
-$(BINDIR)/$(LOWERC_DIR)/%_test: $(OBJDIR)/$(LOWERC_DIR)/%_test.o $($(UPPERC_DIR)_OBJS) \
-                                $(TEST_LINKED_OBJECTS)
+$(OBJDIR)/$(LC_DIR)/%.o: $(LC_DIR)/%.cc $($(UC_DIR)_PROTO_SRCS) $(DEPS)
+	@echo + cxx $@
+	@mkdir -p $(@D)
+	$(V)$(CXX) $(CXXFLAGS) -o $@ -c $<
+
+$(BINDIR)/$(LC_DIR)/%_test: $(OBJDIR)/$(LC_DIR)/%_test.o $($(UC_DIR)_OBJS) $(DEPS)
 	@echo + ld $@
 	@mkdir -p $(@D)
 	$(V)$(CXX) -o $@ $^ $(LDFLAGS) $(ZMQLDFLAGS)
 
-.PHONY: $(LOWERC_DIR)-all $(LOWERC_DIR) $(LOWERC_DIR)-tests test-$(LOWERC_DIR)
+# Compiled CPP executables
+ifneq ($($(UC_DIR)_EXES),)
+$(BINDIR)/$(LC_DIR)/%: $(LC_DIR)/%.cc $(DEPS) $($(UC_DIR)_OBJS)
+	@echo + ld $@
+	@mkdir -p $(@D)
+	$(V)$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(ZMQLDFLAGS)
+endif
+
+.PHONY: $(LC_DIR) test-$(LC_DIR)
+
+

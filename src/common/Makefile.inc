@@ -1,12 +1,12 @@
-OBJDIRS += common
-
 # Create template specific variables
-UPPERC_DIR := COMMON
-LOWERC_DIR := common
+UC_DIR := COMMON
+LC_DIR := common
 
-COMMON_SRCS := common/utils.cc
+SRCS := common/utils.cc
 
-SRC_LINKED_OBJECTS := $(PROTO_OBJS)
+EXES := 
+
+DEPS := $(PROTO_OBJS)
 
 # Link the template to avoid redundancy
 include $(MAKEFILE_TEMPLATE)

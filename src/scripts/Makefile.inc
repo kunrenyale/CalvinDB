@@ -1,14 +1,13 @@
-OBJDIRS += scripts
-
 # Create template specific variables
-UPPERC_DIR := SCRIPTS
-LOWERC_DIR := scripts
+UC_DIR := SCRIPTS
+LC_DIR := scripts
 
-SCRIPTS_PROG :=
-SCRIPTS_SRCS := scripts/cluster.cc \
-                scripts/calvindb_server.cc \
+SRCS := scripts/script_utils.cc
 
-SRC_LINKED_OBJECTS := $(PROTO_OBJS) $(COMMON_OBJS) $(BACKEND_OBJS) $(APPLICATION_OBJS) $(MACHINE_OBJS)
+EXES := scripts/cluster.cc \
+        scripts/calvindb_server.cc
+
+DEPS := $(PROTO_OBJS) $(COMMON_OBJS) $(BACKEND_OBJS) $(APPLICATIONS_OBJS) $(MACHINE_OBJS) $(LOG_OBJS) $(SCHEDULER_OBJS)
 
 # Link the template to avoid redundancy
 include $(MAKEFILE_TEMPLATE)
