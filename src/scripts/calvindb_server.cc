@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
     if (is_process_exist((char *)FLAGS_binary.c_str()) == true) {
       return -2;
     } else {
-      printf("Machine %d: (Geo-replicated Calvin) 0.1 (c) Yale University 2017.\n",
+      printf("Machine %d: (Geo-replicated CalvinDB) 0.1 (c) Yale University 2017.\n",
              (int)FLAGS_machine_id);
       return 0;
     }
@@ -48,11 +48,20 @@ int main(int argc, char** argv) {
   ClusterConfig config;
   config.FromFile(FLAGS_config);
 
+LOG(ERROR) << "Created config "
+             << FLAGS_machine_id << "...";
+
   // Build connection context and start multiplexer thread running.
   ConnectionMultiplexer multiplexer(&config);
-  
+
+LOG(ERROR) << "Created connection "
+             << FLAGS_machine_id << "..."; 
+
   // Create Paxos
   Paxos* paxos = new Paxos(new LocalMemLog(), &config, multiplexer.NewConnection("paxos_log_"));
+
+LOG(ERROR) << "Created paxos log "
+             << FLAGS_machine_id << "..."; 
 
   Client* client = NULL;
   // Artificial loadgen clients. Right now only microbenchmark
@@ -62,18 +71,26 @@ int main(int argc, char** argv) {
 
   Storage* storage;
   storage = new SimpleStorage();
+
+LOG(ERROR) << "Created storage "
+             << FLAGS_machine_id << "..."; 
   
   Application* application = NULL; 
   if (FLAGS_experiment == 0) {
     application = new Microbenchmark(config.nodes_per_replica(), FLAGS_hot_records);
     application->InitializeStorage(storage, &config);
   } else {
-    // TPCC()
+    // Other benchmark
   }
+
+LOG(ERROR) << "Created application "
+             << FLAGS_machine_id << "..."; 
 
   // Initialize sequencer component and start sequencer thread running.
   Sequencer sequencer(&config, multiplexer.NewConnection("sequencer"), client, paxos, FLAGS_max_batch_size);
 
+LOG(ERROR) << "Created sequencer "
+             << FLAGS_machine_id << "..."; 
 
    // Run scheduler in main thread.
   if (FLAGS_experiment == 0) {
@@ -82,10 +99,15 @@ int main(int argc, char** argv) {
                                      storage,
                                      application);
   } else {
-    // TPCC
+    // Other benchmark
   }
 
-  Spin(1800);
+LOG(ERROR) << "Created scheduler "
+             << FLAGS_machine_id << "..."; 
+
+  while (!config.Stopped()) {
+    usleep(10000);
+  }
 
   printf("Machine %d : Calvin server exit!\n", (int)FLAGS_machine_id);
   usleep(1000*1000);

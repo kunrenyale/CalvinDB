@@ -26,9 +26,11 @@ class ClusterConfig {
   // Note that this is completely useless until 'FromFile()' or 'FromString()'
   // is called to populate it with information about the actual cluster
   // configuration.
-  ClusterConfig(uint64 local_node_id): local_node_id_(local_node_id), next_guid_(1000) {}
+  ClusterConfig(uint64 local_node_id): local_node_id_(local_node_id), next_guid_(1000), stop_(false) {}
 
-  ClusterConfig(): local_node_id_(0), next_guid_(1000) {}
+  ClusterConfig(): local_node_id_(0), next_guid_(1000), stop_(false) {}
+
+  ~ClusterConfig() {Stop();}
 
   // Populates a ClusterConfig using a specification consisting of zero or
   // more (newline delimited) lines of the format:
@@ -80,6 +82,14 @@ class ClusterConfig {
     return local_replica_;
   }
 
+  bool Stopped() {
+    return stop_;
+  }
+
+  void Stop() {
+    stop_ = true;
+  }
+
   // Returns a globally unique ID (no ordering guarantees though).
   uint64 GetGUID() {
     return 1 + local_node_id_ + (all_nodes_size() * (next_guid_++));
@@ -118,6 +128,9 @@ class ClusterConfig {
   // Globally unique ID source.
   std::atomic<uint64> next_guid_;
 
+  // True iff machine has received an external 'stop' request and the server
+  // needs to exit gracefully.
+  bool stop_;
   // Intentionally copyable.
 };
 
