@@ -14,7 +14,7 @@ DEFINE_string(ssh_key1, "-i ~/Virginia.pem", "ssh_key for the first data center(
 DEFINE_string(ssh_key2, "-i ~/Oregon.pem", "ssh_key for the second data center(Oregon)");
 DEFINE_string(ssh_key3, "-i ~/Ireland.pem", "ssh_key for the third data center(Ireland)");
 DEFINE_int32(experiment, 0, "the experiment that you want to run");
-DEFINE_int32(percent_mp, 20, "percent of distributed txns");
+DEFINE_int32(percent_mp, 0, "percent of distributed txns");
 DEFINE_int32(hot_records, 10000, "number of hot records--to control contention");
 DEFINE_int32(max_batch_size, 200, "max batch size of txns per epoch");
 

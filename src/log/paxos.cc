@@ -24,8 +24,12 @@ Paxos::Paxos(Log* log, ClusterConfig* config, Connection* paxos_connection)
   CPU_SET(6, &cpuset);
   pthread_attr_setaffinity_np(&attr_writer, sizeof(cpu_set_t), &cpuset);
 
+LOG(ERROR) << "In paxos log before create paxos thread...";
+
+
   if (IsLeader()) {
     pthread_create(&leader_thread_, &attr_writer, RunLeaderThread, reinterpret_cast<void*>(this));
+LOG(ERROR) << "In paxos log after create paxos thread...";
   } else {
     pthread_create(&follower_thread_, &attr_writer, RunFollowerThread, reinterpret_cast<void*>(this));  
   }
@@ -60,6 +64,7 @@ void Paxos::Stop() {
 
 
 void Paxos::RunLeader() {
+LOG(ERROR) << "In paxos log:  in paxos thread...";
   uint64 next_version = 0;
   uint64 quorum = static_cast<int>(participants_.size()) / 2 + 1;
 
