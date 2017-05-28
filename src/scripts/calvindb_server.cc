@@ -54,16 +54,9 @@ LOG(ERROR) << "Created config "
   // Build connection context and start multiplexer thread running.
   ConnectionMultiplexer multiplexer(&config);
 
+  Spin(1);
+
 LOG(ERROR) << "Created connection "
-             << FLAGS_machine_id << "..."; 
-
-  // Create Paxos
-  Paxos* paxos = NULL;
-  if (FLAGS_machine_id / config.nodes_per_replica() == 0) {
-    paxos = new Paxos(new LocalMemLog(), &config, multiplexer.NewConnection("paxos_log_"));
-  }
-
-LOG(ERROR) << "Created paxos log "
              << FLAGS_machine_id << "..."; 
 
   Client* client = NULL;
@@ -88,6 +81,19 @@ LOG(ERROR) << "Created storage "
 
 LOG(ERROR) << "Created application "
              << FLAGS_machine_id << "..."; 
+
+  // Create Paxos
+  Paxos* paxos = NULL;
+  if (FLAGS_machine_id / config.nodes_per_replica() == 0) {
+LOG(ERROR) << "Creating paxos "
+             << FLAGS_machine_id << "..."; 
+    paxos = new Paxos(new LocalMemLog(), &config, multiplexer.NewConnection("paxos_log_"));
+  }
+
+LOG(ERROR) << "Created paxos log "
+             << FLAGS_machine_id << "..."; 
+
+    Spin(1);
 
   // Initialize sequencer component and start sequencer thread running.
   Sequencer sequencer(&config, multiplexer.NewConnection("sequencer"), client, paxos, FLAGS_max_batch_size);
