@@ -100,14 +100,9 @@ LOG(ERROR) << "main thread: will create new connection---- ";
   new_connection_channel_ = &channel;
 test1 = true;
 
-
+    Spin(2);
   // Wait for the Run() loop to create the Connection object. (It will reset
   // new_connection_channel_ to NULL when the new connection has been created.
-  while (true) {
-    if (test1 == false) {
-      break;
-    }
-  }
 
   Connection* connection = new_connection_;
   new_connection_ = NULL;
