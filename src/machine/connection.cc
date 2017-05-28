@@ -97,7 +97,7 @@ ConnectionMultiplexer::~ConnectionMultiplexer() {
 Connection* ConnectionMultiplexer::NewConnection(const string& channel) {
 LOG(ERROR) << "main thread: will create new connection---- ";
   // Disallow concurrent calls to NewConnection/~Connection.
-  Lock l(&new_connection_mutex_);
+  //Lock l(&new_connection_mutex_);
 
   // Register the new connection request.
   new_connection_channel_ = &channel;
