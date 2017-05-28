@@ -95,6 +95,7 @@ ConnectionMultiplexer::~ConnectionMultiplexer() {
 }
 
 Connection* ConnectionMultiplexer::NewConnection(const string& channel) {
+LOG(ERROR) << "main thread: will create new connection---- ";
   // Disallow concurrent calls to NewConnection/~Connection.
   Lock l(&new_connection_mutex_);
 
@@ -107,7 +108,7 @@ Connection* ConnectionMultiplexer::NewConnection(const string& channel) {
 
   Connection* connection = new_connection_;
   new_connection_ = NULL;
-
+LOG(ERROR) << "main thread: finish create new connection---- ";
   return connection;
 }
 
@@ -144,6 +145,7 @@ void ConnectionMultiplexer::Run() {
       } else {
         // Channel name is not already in use. Create a new Connection object
         // and connect it to this multiplexer.
+LOG(ERROR) << "connection thread: will create new connection---- ";
         new_connection_ = new Connection();
         new_connection_->channel_ = *new_connection_channel_;
         new_connection_->multiplexer_ = this;
@@ -166,6 +168,7 @@ void ConnectionMultiplexer::Run() {
           Send(*i);
         }
         undelivered_messages_.erase(*new_connection_channel_);
+LOG(ERROR) << "connection thread: finish create new connection---- ";
       }
 
 
