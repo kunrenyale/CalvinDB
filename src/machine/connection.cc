@@ -8,7 +8,6 @@ using zmq::socket_t;
 ConnectionMultiplexer::ConnectionMultiplexer(ClusterConfig* config)
     : configuration_(config), context_(1), new_connection_channel_(NULL),
       delete_connection_channel_(NULL), deconstructor_invoked_(false) {
-test1 = false;
   local_node_id_ = config->local_node_id();
   port_ = config->machines_.find(local_node_id_)->second.port();
 
@@ -98,9 +97,8 @@ LOG(ERROR) << "main thread: will create new connection---- ";
 
   // Register the new connection request.
   new_connection_channel_ = &channel;
-test1 = true;
 
-    Spin(2);
+    Spin(10);
   // Wait for the Run() loop to create the Connection object. (It will reset
   // new_connection_channel_ to NULL when the new connection has been created.
 
@@ -174,7 +172,6 @@ LOG(ERROR) << "connection thread: will create new connection---- ";
       }
       // Reset request variable.
       new_connection_channel_ = NULL;
-test1 = false;
 LOG(ERROR) << "connection thread: finish create new connection---- ";
     }
 
