@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
 
 
   // Build this node's configuration object.
-  ClusterConfig config;
+  ClusterConfig config(FLAGS_machine_id);
   config.FromFile(FLAGS_config);
 
 LOG(ERROR) << "Created config "
@@ -59,7 +59,7 @@ LOG(ERROR) << "Created connection "
 
   // Create Paxos
   Paxos* paxos = NULL;
-  if (FLAGS_machine_id % config.nodes_per_replica() == 0) {
+  if (FLAGS_machine_id / config.nodes_per_replica() == 0) {
     paxos = new Paxos(new LocalMemLog(), &config, multiplexer.NewConnection("paxos_log_"));
   }
 

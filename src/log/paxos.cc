@@ -10,6 +10,8 @@ Paxos::Paxos(Log* log, ClusterConfig* config, Connection* paxos_connection)
   participants_[0] = 0;
   go_ = true;
   count_ = 0;
+LOG(ERROR) << "In paxos log: ..., replica size is:"<<configuration_->replicas_size()<<"   local node id is:"<<configuration_->local_node_id();
+
   for (uint32 i = 1; i < configuration_->replicas_size(); i++) {
     participants_[i] = i * configuration_->nodes_per_replica();
   }
