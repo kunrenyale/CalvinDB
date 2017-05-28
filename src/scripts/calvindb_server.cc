@@ -58,8 +58,9 @@ LOG(ERROR) << "Created connection "
              << FLAGS_machine_id << "..."; 
 
   // Create Paxos
+  Paxos* paxos = NULL;
   if (FLAGS_machine_id % config.nodes_per_replica() == 0) {
-    Paxos* paxos = new Paxos(new LocalMemLog(), &config, multiplexer.NewConnection("paxos_log_"));
+    paxos = new Paxos(new LocalMemLog(), &config, multiplexer.NewConnection("paxos_log_"));
   }
 
 LOG(ERROR) << "Created paxos log "
