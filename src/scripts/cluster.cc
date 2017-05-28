@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
     cm.GetTempFiles("report.");
 
   } else if (FLAGS_command == "start") {
-    cm.DeployCluster(GetTime() + 10, FLAGS_experiment, FLAGS_percent_mp, FLAGS_hot_records, FLAGS_max_batch_size);
+    cm.DeployCluster(FLAGS_experiment, FLAGS_percent_mp, FLAGS_hot_records, FLAGS_max_batch_size);
 
   } else if (FLAGS_command == "kill") {
     cm.KillCluster();

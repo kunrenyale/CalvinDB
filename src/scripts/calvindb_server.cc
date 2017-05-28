@@ -18,7 +18,6 @@ DEFINE_bool(calvin_version, false, "Print Calvin version information");
 DEFINE_string(binary, "calvindb_server", "Calvin binary executable program");
 DEFINE_string(config, "calvin.conf", "conf file of Calvin cluster");
 DEFINE_int32(machine_id, 0, "machine id");
-DEFINE_double(time, 0, "start time");
 DEFINE_int32(experiment, 0, "experiment that you want to run");
 DEFINE_int32(percent_mp, 20, "percent of distributed txns");
 DEFINE_int32(hot_records, 10000, "number of hot records--to control contention");

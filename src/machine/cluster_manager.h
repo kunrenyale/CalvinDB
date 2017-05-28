@@ -49,7 +49,7 @@ class ClusterManager {
   // TODO(kun): FUTURE WORK - don't implement now:
   //  Also start a monitoring thread going that occasionally polls machines
   //  in the cluster to generate cluster status reports, repair problems, etc.
-  void DeployCluster(double time = 0, int experiment = 0, int clients = 20, int max_active = 1000, int max_running = 100);
+  void DeployCluster(int experiment = 0, int clients = 20, int max_active = 1000, int max_running = 100);
 
   // Kills all participating machine processes (using 'ssh killall', so they do
   // not need to exit gracefully).
