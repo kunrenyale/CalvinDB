@@ -168,7 +168,6 @@ LOG(ERROR) << "connection thread: will create new connection---- ";
           Send(*i);
         }
         undelivered_messages_.erase(*new_connection_channel_);
-LOG(ERROR) << "connection thread: finish create new connection---- ";
       }
 
 
@@ -177,7 +176,7 @@ LOG(ERROR) << "connection thread: finish create new connection---- ";
       }
       // Reset request variable.
       new_connection_channel_ = NULL;
-      
+LOG(ERROR) << "connection thread: finish create new connection---- ";      
     }
 
     // Serve any pending (valid) connection deletion request.

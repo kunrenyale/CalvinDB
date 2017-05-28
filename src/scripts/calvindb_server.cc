@@ -93,7 +93,7 @@ LOG(ERROR) << "Creating paxos "
 LOG(ERROR) << "Created paxos log "
              << FLAGS_machine_id << "..."; 
 
-    Spin(1);
+    Spin(5);
 
   // Initialize sequencer component and start sequencer thread running.
   Sequencer sequencer(&config, multiplexer.NewConnection("sequencer"), client, paxos, FLAGS_max_batch_size);
