@@ -34,7 +34,6 @@ LOG(ERROR) << "In  scheduler: 1 ";
     message_queues[i] = new AtomicQueue<MessageProto>();
   }
 LOG(ERROR) << "In  scheduler: 1.1 ";  
-  Spin(1);
 LOG(ERROR) << "In  scheduler: 1.05 ";  
   // start lock manager thread
   cpu_set_t cpuset;
