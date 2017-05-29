@@ -126,16 +126,11 @@ class Sequencer {
   // main loop sees it and stops.
   bool deconstructor_invoked_;
 
-  // Queue for sending batches from writer to reader.
-  queue<string> batch_queue_;
-  Mutex batch_mutex_;
-
   Paxos* paxos_log_;
 
   uint32 max_batch_size_;
 
   // Number of votes for each batch (used only by machine 0).
   map<uint64, uint32> batch_votes_;
-  Mutex batch_votes_mutex_;
 };
 #endif  // _DB_MACHINE_SEQUENCER_H_

@@ -112,7 +112,7 @@ LOG(ERROR) << "Created scheduler "
              << FLAGS_machine_id << "..."; 
 
   while (!config.Stopped()) {
-    usleep(10000);
+    usleep(1000000);
   }
 
   printf("Machine %d : Calvin server exit!\n", (int)FLAGS_machine_id);
