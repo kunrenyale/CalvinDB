@@ -40,7 +40,6 @@ ConnectionMultiplexer::ConnectionMultiplexer(ClusterConfig* config)
 cpu_set_t cpuset;
 pthread_attr_t attr;
 pthread_attr_init(&attr);
-//pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
 CPU_ZERO(&cpuset);
 CPU_SET(3, &cpuset);
@@ -91,20 +90,20 @@ ConnectionMultiplexer::~ConnectionMultiplexer() {
 }
 
 Connection* ConnectionMultiplexer::NewConnection(const string& channel) {
-LOG(ERROR) << "main thread: will create new connection---- ";
+//LOG(ERROR) << "main thread: will create new connection---- ";
   // Disallow concurrent calls to NewConnection/~Connection.
   Lock l(&new_connection_mutex_);
 
   // Register the new connection request.
   new_connection_channel_ = &channel;
 
-    Spin(10);
   // Wait for the Run() loop to create the Connection object. (It will reset
   // new_connection_channel_ to NULL when the new connection has been created.
+  while (new_connection_channel_ != NULL) {}
 
   Connection* connection = new_connection_;
   new_connection_ = NULL;
-LOG(ERROR) << "main thread: finish create new connection---- ";
+//LOG(ERROR) << "main thread: finish create new connection---- ";
   return connection;
 }
 
@@ -141,7 +140,7 @@ void ConnectionMultiplexer::Run() {
       } else {
         // Channel name is not already in use. Create a new Connection object
         // and connect it to this multiplexer.
-LOG(ERROR) << "connection thread: will create new connection---- ";
+//LOG(ERROR) << "connection thread: will create new connection---- ";
         new_connection_ = new Connection();
         new_connection_->channel_ = *new_connection_channel_;
         new_connection_->multiplexer_ = this;
@@ -172,7 +171,7 @@ LOG(ERROR) << "connection thread: will create new connection---- ";
       }
       // Reset request variable.
       new_connection_channel_ = NULL;
-LOG(ERROR) << "connection thread: finish create new connection---- ";
+//LOG(ERROR) << "connection thread: finish create new connection---- ";
     }
 
     // Serve any pending (valid) connection deletion request.
@@ -310,10 +309,12 @@ void Connection::Send(const MessageProto& message) {
                      message_string);
 
   if (message.destination_node() == multiplexer()->Local_node_id()) {
+//LOG(ERROR) << "---In Connection::Send:  send message to local  :"<<multiplexer()->Local_node_id();
     // Message is addressed to a local channel. If channel is valid, send the
     // message on, else store it to be delivered if the channel is ever created.
     if (multiplexer()->inproc_out_.count(message.destination_channel()) > 0) {
       multiplexer()->inproc_out_[message.destination_channel()]->send(msg);
+//LOG(ERROR) << "---In Connection::Send:  found the channel.";
     } else {
       multiplexer()->undelivered_messages_[message.destination_channel()].push_back(message);
     }

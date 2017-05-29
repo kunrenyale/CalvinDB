@@ -44,12 +44,12 @@ OPT_MODE := $(PROD)
 
 # Set the flags for C++ to compile with (namely where to look for external
 # libraries) and the linker libraries (again to look in the ext/ library)
-CXXFLAGS := $(OPT_MODE) -MD -I$(SRCDIR) -I$(OBJDIR) \
+CXXFLAGS := -g -MD -I$(SRCDIR) -I$(OBJDIR) \
             -I$(ZEROMQ)/include \
             -I$(PROTOB)/src \
             -I$(GLOG)/include \
             -I$(GFLAGS)/include \
-            -Wall -Wno-strict-aliasing -std=c++0x -fno-omit-frame-pointer
+            -Wall -Werror
 
 LDFLAGS := -lglog -L$(GLOG)/.libs \
            -lgflags -L$(GFLAGS)/.libs \

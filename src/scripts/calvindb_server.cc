@@ -19,9 +19,9 @@ DEFINE_string(binary, "calvindb_server", "Calvin binary executable program");
 DEFINE_string(config, "calvin.conf", "conf file of Calvin cluster");
 DEFINE_int32(machine_id, 0, "machine id");
 DEFINE_int32(experiment, 0, "experiment that you want to run");
-DEFINE_int32(percent_mp, 20, "percent of distributed txns");
+DEFINE_int32(percent_mp, 0, "percent of distributed txns");
 DEFINE_int32(hot_records, 10000, "number of hot records--to control contention");
-DEFINE_int32(max_batch_size, 200, "max batch size of txns per epoch");
+DEFINE_int32(max_batch_size, 400, "max batch size of txns per epoch");
 
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
@@ -84,15 +84,13 @@ LOG(ERROR) << "Created application "
   // Create Paxos
   Paxos* paxos = NULL;
   if (FLAGS_machine_id / config.nodes_per_replica() == 0) {
-LOG(ERROR) << "Creating paxos "
-             << FLAGS_machine_id << "..."; 
     paxos = new Paxos(new LocalMemLog(), &config, multiplexer.NewConnection("paxos_log_"));
   }
 
 LOG(ERROR) << "Created paxos log "
              << FLAGS_machine_id << "..."; 
 
-    Spin(5);
+    Spin(1);
 
   // Initialize sequencer component and start sequencer thread running.
   Sequencer sequencer(&config, multiplexer.NewConnection("sequencer"), client, paxos, FLAGS_max_batch_size);

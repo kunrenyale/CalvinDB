@@ -7,13 +7,12 @@
 Paxos::Paxos(Log* log, ClusterConfig* config, Connection* paxos_connection)
     : log_(log), configuration_(config), paxos_connection_(paxos_connection) {
   // Init participants_
-  participants_[0] = 0;
+  participants_.push_back(0);
   go_ = true;
   count_ = 0;
-LOG(ERROR) << "In paxos log: ..., replica size is:"<<configuration_->replicas_size()<<"   local node id is:"<<configuration_->local_node_id();
 
   for (uint32 i = 1; i < configuration_->replicas_size(); i++) {
-    participants_[i] = i * configuration_->nodes_per_replica();
+    participants_.push_back(i * configuration_->nodes_per_replica());
   }
 
   this_machine_id_ = configuration_->local_node_id();
@@ -26,12 +25,8 @@ LOG(ERROR) << "In paxos log: ..., replica size is:"<<configuration_->replicas_si
   CPU_SET(6, &cpuset);
   pthread_attr_setaffinity_np(&attr_writer, sizeof(cpu_set_t), &cpuset);
 
-LOG(ERROR) << "In paxos log before create paxos thread...";
-
-
   if (IsLeader()) {
     pthread_create(&leader_thread_, &attr_writer, RunLeaderThread, reinterpret_cast<void*>(this));
-LOG(ERROR) << "In paxos log after create paxos thread...";
   } else {
     pthread_create(&follower_thread_, &attr_writer, RunFollowerThread, reinterpret_cast<void*>(this));  
   }
@@ -56,8 +51,10 @@ bool Paxos::IsLeader() {
 }
 
 void Paxos::Append(uint64 blockid) {
+//LOG(ERROR) << "In paxos log:  append a batch: "<<blockid;
     Lock l(&mutex_);
     sequence_.add_batch_ids(blockid);
+    count_ += 1;
 }
 
 void Paxos::Stop() {
@@ -66,7 +63,6 @@ void Paxos::Stop() {
 
 
 void Paxos::RunLeader() {
-LOG(ERROR) << "In paxos log:  in paxos thread...";
   uint64 next_version = 0;
   uint64 quorum = static_cast<int>(participants_.size()) / 2 + 1;
 
@@ -93,6 +89,7 @@ LOG(ERROR) << "In paxos log:  in paxos thread...";
       next_version ++;
       sequence_.SerializeToString(&encoded);
       sequence_.Clear();
+      count_ = 0;
     }
 
     sequence_message.add_data(encoded);
@@ -117,7 +114,7 @@ LOG(ERROR) << "In paxos log:  in paxos thread...";
         }
       }
 
-      assert(message->type() == MessageProto::PAXOS_DATA_ACK);
+      assert(message.type() == MessageProto::PAXOS_DATA_ACK);
       acks++;
       message.Clear();
     }
@@ -126,6 +123,7 @@ LOG(ERROR) << "In paxos log:  in paxos thread...";
     sequence_message.set_type(MessageProto::PAXOS_BATCH_ORDER);
     sequence_message.set_destination_channel("scheduler_");
     for (uint64 i = local_replica * machines_per_replica; i < (local_replica + 1)*machines_per_replica ;i++) {
+//LOG(ERROR) << "In paxos log:  send PAXOS_BATCH_ORDER: "<<version<<"  to node:"<<i;
       sequence_message.set_destination_node(i);
       paxos_connection_->Send(sequence_message);
     }
@@ -141,7 +139,7 @@ LOG(ERROR) << "In paxos log:  in paxos thread...";
     }
    
     sequence_message.Clear();
-
+//LOG(ERROR) << "In paxos log:  append a sequence: "<<version;
     log_->Append(version, encoded);
 
   }

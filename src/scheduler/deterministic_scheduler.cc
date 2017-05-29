@@ -142,62 +142,74 @@ Sequence* current_sequence_ = NULL;
 uint32 current_sequence_id_ = 0;
 uint32 current_sequence_batch_index_ = 0;;
 uint64 current_batch_id_ = 0;
-bool found_previous_batch_ = true;
 
 MessageProto* GetBatch(Connection* connection) {
    if (current_sequence_ == NULL) {
-     // Receive the batch data or global batch order
-     MessageProto* message = new MessageProto();
-     while (connection->GetMessage(message)) {
-       if (message->type() == MessageProto::TXN_SUBBATCH) {
-         batches_data[message->batch_number()] = message;
-         message = new MessageProto();
-       } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
-         if (message->misc_int(0) == current_sequence_id_) {
-           current_sequence_ = new Sequence();
-           current_sequence_->ParseFromString(message->data(0));
-           current_sequence_batch_index_ = 0;
-           break;
-         } else {
-           global_batches_order[message->misc_int(0)] = message;
+     if (global_batches_order.count(current_sequence_id_) > 0) {
+       MessageProto* sequence_message = global_batches_order[current_sequence_id_];
+       current_sequence_ = new Sequence();
+       current_sequence_->ParseFromString(sequence_message->data(0));
+       current_sequence_batch_index_ = 0;
+     } else {
+       // Receive the batch data or global batch order
+       MessageProto* message = new MessageProto();
+       while (connection->GetMessage(message)) {
+         if (message->type() == MessageProto::TXN_SUBBATCH) {
+//LOG(ERROR) << "In scheduler:  receive a subbatch: "<<message->batch_number();
+           batches_data[message->batch_number()] = message;
            message = new MessageProto();
-         }       
+         } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
+//LOG(ERROR) << "In scheduler:  receive a sequence: "<<message->misc_int(0);
+           if (message->misc_int(0) == current_sequence_id_) {
+             current_sequence_ = new Sequence();
+             current_sequence_->ParseFromString(message->data(0));
+             current_sequence_batch_index_ = 0;
+             break;
+           } else {
+             global_batches_order[message->misc_int(0)] = message;
+             message = new MessageProto();
+           }       
+         }
        }
+       delete message;
      }
-     delete message;
    }
 
    if (current_sequence_ == NULL) {
      return NULL;
    }
 
-   if (found_previous_batch_ == true) {
-     current_batch_id_ = current_sequence_->batch_ids(current_sequence_batch_index_);
-     if (++current_sequence_batch_index_ >= (uint32)(current_sequence_->batch_ids_size())) {
-       delete current_sequence_;
-       current_sequence_ = NULL;
-     }
-     found_previous_batch_ = false;
+   current_batch_id_ = current_sequence_->batch_ids(current_sequence_batch_index_);
+   if (++current_sequence_batch_index_ >= (uint32)(current_sequence_->batch_ids_size())) {
+     delete current_sequence_;
+     current_sequence_ = NULL;
+     global_batches_order.erase(current_sequence_id_);
+     current_sequence_id_++;
+//LOG(ERROR) << "^^^^^In scheduler:  will work on next sequence: "<<current_sequence_id_;
    }
+
 
    if (batches_data.count(current_batch_id_) > 0) {
      // Requested batch has already been received.
      MessageProto* batch = batches_data[current_batch_id_];
      batches_data.erase(current_batch_id_);
+//LOG(ERROR) << "^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
      return batch; 
    } else {
      // Receive the batch data or global batch order
      MessageProto* message = new MessageProto();
      while (connection->GetMessage(message)) {
        if (message->type() == MessageProto::TXN_SUBBATCH) {
+//LOG(ERROR) << "In scheduler:  receive a subbatch: "<<message->batch_number();
          if ((uint64)(message->batch_number()) == current_batch_id_) {
-           found_previous_batch_ = true;
+//LOG(ERROR) << "^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
            return message;
          } else {
            batches_data[message->batch_number()] = message;
            message = new MessageProto();
          }
        } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
+//LOG(ERROR) << "In scheduler:  receive a sequence: "<<message->misc_int(0);
          global_batches_order[message->misc_int(0)] = message;
          message = new MessageProto();
        }
@@ -222,6 +234,7 @@ void* DeterministicScheduler::LockManagerThread(void* arg) {
   while (true) {
     TxnProto* done_txn;
     while (scheduler->done_queue->Pop(&done_txn) == true) {
+//LOG(ERROR) << "In LockManagerThread:  receive a finished txn: "<< done_txn->txn_id();
       // We have received a finished transaction back, release the lock
       scheduler->lock_manager_->Release(done_txn);
       executing_txns--;
@@ -235,7 +248,6 @@ void* DeterministicScheduler::LockManagerThread(void* arg) {
     // Have we run out of txns in our batch? Let's get some new ones.
     if (batch_message == NULL) {
       batch_message = GetBatch(scheduler->batch_connection_);
-
     // Done with current batch, get next.
     } else if (batch_offset >= batch_message->data_size()) {
         batch_offset = 0;
@@ -244,7 +256,6 @@ void* DeterministicScheduler::LockManagerThread(void* arg) {
 
     // Current batch has remaining txns, grab up to 10.
     } else if (executing_txns + pending_txns < 2000) {
-
       for (int i = 0; i < 100; i++) {
         if (batch_offset >= batch_message->data_size()) {
           // Oops we ran out of txns in this batch. Stop adding txns for now.
@@ -256,6 +267,7 @@ void* DeterministicScheduler::LockManagerThread(void* arg) {
 
         scheduler->lock_manager_->Lock(txn);
         pending_txns++;
+//LOG(ERROR) << "In LockManagerThread:  begin to acquire locks for txn: "<<txn->txn_id();
       }
     }
 
@@ -267,6 +279,7 @@ void* DeterministicScheduler::LockManagerThread(void* arg) {
       executing_txns++;
 
       scheduler->txns_queue->Push(txn);
+//LOG(ERROR) << "In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id();
     }
 
     // Report throughput.

@@ -69,11 +69,12 @@ void Sequencer::RunWriter() {
       synchronization_counter++;
     }
   }
-  std::cout << "Starting sequencer.\n" << std::flush;
+
+//LOG(ERROR) << "In sequencer:  Starting sequencer writer.";
 
   // Set up batch messages for each system node.
   MessageProto batch;
-  batch.set_destination_channel("SequencerReader");
+  batch.set_destination_channel("sequencer");
   batch.set_destination_node(-1);
   string batch_string;
   batch.set_type(MessageProto::TXN_BATCH);
@@ -112,6 +113,7 @@ void Sequencer::RunWriter() {
     {
       Lock l(&batch_mutex_);
       batch_queue_.push(batch_string);
+//LOG(ERROR) << "In sequencer writer:  push a batch:"<<batch_number;
     }
   }
 
@@ -121,7 +123,7 @@ void Sequencer::RunWriter() {
 void Sequencer::RunReader() {
   Spin(1);
 
-
+//LOG(ERROR) << "In sequencer:  Starting sequencer reader.";
   // Set up batch messages for each system node.
   map<uint64, MessageProto> batches;
   for (map<uint64, MachineInfo>::iterator it = configuration_->machines_.begin();
@@ -147,15 +149,17 @@ void Sequencer::RunReader() {
         batch_queue_.pop();
         batch_message.ParseFromString(batch_string);
         found_new_batch = true;
+//LOG(ERROR) << "In sequencer reader:  find a batch:"<<batch_message.batch_number();
       }
     }
 
     if (found_new_batch == true) {
       for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
         uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_message.batch_number()), i);
+//LOG(ERROR) << "In sequencer reader:  will send TXN_BATCH to :"<<machine_id;
         batch_message.set_destination_node(machine_id);
         batch_message.set_type(MessageProto::TXN_BATCH);
-        batch_message.set_destination_channel("SequencerReader");
+        batch_message.set_destination_channel("sequencer");
         connection_->Send(batch_message);
       }
       found_new_batch = false;  
@@ -164,7 +168,7 @@ void Sequencer::RunReader() {
     bool got_message = connection_->GetMessage(&message);
     if (got_message == true) {
       if (message.type() == MessageProto::TXN_BATCH) {
-
+//LOG(ERROR) << "In sequencer reader:  recevie TXN_BATCH message:";
         batch_number = message.batch_number();
         // If received TXN_BATCH: Parse batch and forward sub-batches to relevant readers (same replica only).
         for (int i = 0; i < message.data_size(); i++) {
@@ -213,13 +217,14 @@ void Sequencer::RunReader() {
 
         // Send “vote” to the head machines;
         MessageProto vote_message;
-        vote_message.set_destination_channel("SequencerReader");
+        vote_message.set_destination_channel("sequencer");
         vote_message.set_destination_node(0);
         vote_message.set_type(MessageProto::BATCH_VOTE);
         vote_message.add_misc_int(message.batch_number());
         connection_->Send(vote_message);
 
       } else if (message.type() == MessageProto::BATCH_VOTE) {
+//LOG(ERROR) << "In sequencer reader:  recevie BATCH_VOTE message:";
         uint64 batch_id = message.misc_int(0);
         uint32 votes;
         {
