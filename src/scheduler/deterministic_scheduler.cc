@@ -26,7 +26,7 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
   
   ready_txns_ = new std::deque<TxnProto*>();
   lock_manager_ = new DeterministicLockManager(ready_txns_, configuration_);
-  
+LOG(ERROR) << "In  scheduler: 1 ";  
   txns_queue = new AtomicQueue<TxnProto*>();
   done_queue = new AtomicQueue<TxnProto*>();
 
@@ -47,7 +47,7 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
   pthread_attr_setaffinity_np(&attr1, sizeof(cpu_set_t), &cpuset);
   pthread_create(&lock_manager_thread_, &attr1, LockManagerThread,
                  reinterpret_cast<void*>(this));
-
+LOG(ERROR) << "In  scheduler: 2 ";  
 
   // Start all worker threads.
   for (int i = 0; i < NUM_THREADS; i++) {
@@ -70,6 +70,7 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
                    reinterpret_cast<void*>(
                    new pair<int, DeterministicScheduler*>(i, this)));
   }
+LOG(ERROR) << "In  scheduler: 3 ";  
 }
 
 
@@ -233,7 +234,7 @@ void* DeterministicScheduler::LockManagerThread(void* arg) {
   int pending_txns = 0;
   int batch_offset = 0;
   uint64 machine_id = scheduler->configuration_->local_node_id();
-
+LOG(ERROR) << "In  LockManagerThread: 4";  
   while (true) {
     TxnProto* done_txn;
     while (scheduler->done_queue->Pop(&done_txn) == true) {
