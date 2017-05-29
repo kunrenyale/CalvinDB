@@ -30,10 +30,8 @@ LOG(ERROR) << "In  scheduler: 1 ";
   txns_queue = new AtomicQueue<TxnProto*>();
   done_queue = new AtomicQueue<TxnProto*>();
 
-  for (int i = 0; i < NUM_THREADS; i++) {
-LOG(ERROR) << "In  scheduler: 1.2 ";  
+  for (int i = 0; i < NUM_THREADS; i++) { 
     message_queues[i] = new AtomicQueue<MessageProto>();
-LOG(ERROR) << "In  scheduler: 1.5 ";  
   }
 
   Spin(1);
@@ -42,14 +40,13 @@ LOG(ERROR) << "In  scheduler: 1.5 ";
   cpu_set_t cpuset;
   pthread_attr_t attr1;
   pthread_attr_init(&attr1);
-  //pthread_attr_setdetachstate(&attr1, PTHREAD_CREATE_DETACHED);
-  
+LOG(ERROR) << "In  scheduler: 1.2 ";    
   CPU_ZERO(&cpuset);
   CPU_SET(7, &cpuset);
   pthread_attr_setaffinity_np(&attr1, sizeof(cpu_set_t), &cpuset);
-  pthread_create(&lock_manager_thread_, &attr1, LockManagerThread,
-                 reinterpret_cast<void*>(this));
-LOG(ERROR) << "In  scheduler: 2 ";  
+LOG(ERROR) << "In  scheduler: 1.4 ";   
+  pthread_create(&lock_manager_thread_, &attr1, LockManagerThread, reinterpret_cast<void*>(this));
+LOG(ERROR) << "In  scheduler: 2 ";
 
   // Start all worker threads.
   for (int i = 0; i < NUM_THREADS; i++) {
