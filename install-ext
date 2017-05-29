@@ -26,10 +26,8 @@ cd ..
 
 
 # zeromq
-wget http://download.zeromq.org/zeromq-3.2.2.tar.gz
-tar xzf zeromq-3.2.2.tar.gz
-rm zeromq-3.2.2.tar.gz
-mv zeromq-3.2.2 zeromq
+wget https://github.com/zeromq/libzmq.git
+mv libzmp zeromq
 cd zeromq
 ./autogen.sh
 ./configure --prefix=$PWD

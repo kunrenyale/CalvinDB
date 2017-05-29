@@ -150,6 +150,8 @@ MessageProto* GetBatch(Connection* connection) {
        current_sequence_ = new Sequence();
        current_sequence_->ParseFromString(sequence_message->data(0));
        current_sequence_batch_index_ = 0;
+       delete sequence_message;
+       global_batches_order.erase(current_sequence_id_);
      } else {
        // Receive the batch data or global batch order
        MessageProto* message = new MessageProto();
@@ -178,12 +180,12 @@ MessageProto* GetBatch(Connection* connection) {
    if (current_sequence_ == NULL) {
      return NULL;
    }
-
+   
+   CHECK(current_sequence_batch_index_ < (uint32)(current_sequence_->batch_ids_size()));
    current_batch_id_ = current_sequence_->batch_ids(current_sequence_batch_index_);
    if (++current_sequence_batch_index_ >= (uint32)(current_sequence_->batch_ids_size())) {
      delete current_sequence_;
      current_sequence_ = NULL;
-     global_batches_order.erase(current_sequence_id_);
      current_sequence_id_++;
 //LOG(ERROR) << "^^^^^In scheduler:  will work on next sequence: "<<current_sequence_id_;
    }
@@ -230,6 +232,7 @@ void* DeterministicScheduler::LockManagerThread(void* arg) {
   int executing_txns = 0;
   int pending_txns = 0;
   int batch_offset = 0;
+  uint64 machine_id = scheduler->configuration_->local_node_id();
 
   while (true) {
     TxnProto* done_txn;
@@ -285,11 +288,9 @@ void* DeterministicScheduler::LockManagerThread(void* arg) {
     // Report throughput.
     if (GetTime() > time + 1) {
       double total_time = GetTime() - time;
-      std::cout << "Completed " << (static_cast<double>(txns) / total_time)
-                << " txns/sec, "
-                //<< test<< " for drop speed , " 
-                << executing_txns << " executing, "
-                << pending_txns << " pending\n" << std::flush;
+      LOG(ERROR) << "Machine: "<<machine_id<<" Completed "<< (static_cast<double>(txns) / total_time)
+                 << " txns/sec, "<< executing_txns << " executing, "<< pending_txns << " pending\n" << std::flush;
+
       // Reset txn count.
       time = GetTime();
       txns = 0;

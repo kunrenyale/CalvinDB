@@ -173,7 +173,7 @@ void Sequencer::RunReader() {
         // If received TXN_BATCH: Parse batch and forward sub-batches to relevant readers (same replica only).
         for (int i = 0; i < message.data_size(); i++) {
           TxnProto txn;
-          txn.ParseFromString(batch_message.data(i));
+          txn.ParseFromString(message.data(i));
 
           // Compute readers & writers; store in txn proto.
           set<uint64> readers;
