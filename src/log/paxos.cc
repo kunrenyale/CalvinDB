@@ -149,6 +149,7 @@ void Paxos::RunFollower() {
  
   MessageProto message;
   MessageProto ack_message;
+  MessageProto append_message;
   queue<MessageProto> uncommitted;
 
   uint64 machines_per_replica = configuration_->nodes_per_replica();
@@ -174,20 +175,20 @@ void Paxos::RunFollower() {
     } else if (message.type() == MessageProto::PAXOS_COMMIT){
       // Commit message.
       CHECK(!uncommitted.empty());
-      message = uncommitted.front();
+      append_message = uncommitted.front();
       uncommitted.pop();
       
-      uint64 version = message.misc_int(0);
-      string data = message.data(0);
+      uint64 version = append_message.misc_int(0);
+      string data = append_message.data(0);
 
       log_->Append(version, data);
 
       // Send the order to the locking thread
-      message.set_type(MessageProto::PAXOS_BATCH_ORDER);
-      message.set_destination_channel("scheduler_");
+      append_message.set_type(MessageProto::PAXOS_BATCH_ORDER);
+      append_message.set_destination_channel("scheduler_");
       for (uint64 i = local_replica * machines_per_replica; i < (local_replica + 1)*machines_per_replica ;i++) {
-        message.set_destination_node(i);
-        paxos_connection_->Send(message);
+        append_message.set_destination_node(i);
+        paxos_connection_->Send(append_message);
       }
     }
   }
