@@ -31,7 +31,9 @@ LOG(ERROR) << "In  scheduler: 1 ";
   done_queue = new AtomicQueue<TxnProto*>();
 
   for (int i = 0; i < NUM_THREADS; i++) {
+LOG(ERROR) << "In  scheduler: 1.2 ";  
     message_queues[i] = new AtomicQueue<MessageProto>();
+LOG(ERROR) << "In  scheduler: 1.5 ";  
   }
 
   Spin(1);
