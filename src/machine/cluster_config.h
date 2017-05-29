@@ -92,7 +92,6 @@ class ClusterConfig {
 
   // Returns a globally unique ID (no ordering guarantees though).
   uint64 GetGUID() {
-    Lock l(&next_guid_mutex_);
     return 1 + local_node_id_ + (all_nodes_size() * (next_guid_++));
   }
 
@@ -127,8 +126,7 @@ class ClusterConfig {
   uint64 relative_node_id_;
 
   // Globally unique ID source.
-  uint64 next_guid_;
-  Mutex next_guid_mutex_;
+  std::atomic<uint64> next_guid_;
 
   // True iff machine has received an external 'stop' request and the server
   // needs to exit gracefully.
