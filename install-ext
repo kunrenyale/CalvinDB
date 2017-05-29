@@ -26,8 +26,8 @@ cd ..
 
 
 # zeromq
-wget https://github.com/zeromq/libzmq.git
-mv libzmp zeromq
+git clone https://github.com/zeromq/libzmq.git
+mv libzmq zeromq
 cd zeromq
 ./autogen.sh
 ./configure --prefix=$PWD

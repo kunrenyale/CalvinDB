@@ -4,7 +4,7 @@ Installation(This is for Ubuntu 14.04, it should be similar with other Linux dis
 1. You should install the following softwares:
    Git
    make,g++
-   autoconf, libtool,libreadline-dev,libsnappy-dev
+   autoconf, libtool,libreadline-dev,libsnappy-dev, pkg-config
    subversion
    unzip, tar
    cmake
