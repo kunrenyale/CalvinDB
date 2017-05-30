@@ -162,7 +162,6 @@ void ClusterConfig::FromString(const string& config) {
   }
 
   replicas_size_ = replicas.size();
-LOG(ERROR) << "In cluster_config:  replica size is:"<<replicas_size_;
   relative_node_id_ = local_node_id_ % (machines_.size() / replicas_size_);
 }
 

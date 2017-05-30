@@ -7,7 +7,6 @@ Installation(This is for Ubuntu 14.04, it should be similar with other Linux dis
    autoconf, libtool,libreadline-dev,libsnappy-dev, pkg-config
    subversion
    unzip, tar
-   cmake
 
 
 2. You should install the following external libraries:
