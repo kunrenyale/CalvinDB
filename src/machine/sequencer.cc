@@ -52,26 +52,6 @@ Sequencer::~Sequencer() {
 void Sequencer::RunWriter() {
   Spin(1);
 
-  // Synchronization loadgen start with other sequencers.
-  MessageProto synchronization_message;
-  synchronization_message.set_type(MessageProto::EMPTY);
-  synchronization_message.set_destination_channel("sequencer");
-  for (uint32 i = 0; i < (uint32)(configuration_->all_nodes_size()); i++) {
-    synchronization_message.set_destination_node(i);
-    if (i != static_cast<uint32>(configuration_->local_node_id())) {
-      connection_->Send(synchronization_message);
-    }
-  }
-  uint32 synchronization_counter = 1;
-  while (synchronization_counter < (uint32)(configuration_->all_nodes_size())) {
-    synchronization_message.Clear();
-    if (connection_->GetMessage(&synchronization_message)) {
-  LOG(ERROR)<<"sequencer received message:"<<synchronization_message.type();
-      assert(synchronization_message.type() == MessageProto::EMPTY);
-      synchronization_counter++;
-    }
-  }
-
 //LOG(ERROR) << "In sequencer:  Starting sequencer writer.";
 
   // Set up batch messages for each system node.
