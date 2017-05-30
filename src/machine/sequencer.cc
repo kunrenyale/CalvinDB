@@ -176,7 +176,7 @@ LOG(ERROR) << "In sequencer reader:  recevie TXN_BATCH message:"<<message.batch_
         connection_->Send(vote_message);
 
       } else if (message.type() == MessageProto::BATCH_VOTE) {
-//LOG(ERROR) << "In sequencer reader:  recevie BATCH_VOTE message:"<<message.misc_int(0);
+LOG(ERROR) << "In sequencer reader:  recevie BATCH_VOTE message:"<<message.misc_int(0);
         uint64 batch_id = message.misc_int(0);
         uint32 votes;
 
