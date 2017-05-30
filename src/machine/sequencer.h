@@ -75,7 +75,7 @@ class Sequencer {
  public:
   // The constructor creates background threads and starts the Sequencer's main
   // loops running.
-  Sequencer(ClusterConfig* conf, Connection* connection, Client* client, Paxos* paxos, uint32 max_batch_size);
+  Sequencer(ClusterConfig* conf, Connection* send_connection, Connection* receive_connection, Client* client, Paxos* paxos, uint32 max_batch_size);
 
   // Halts the main loops.
   ~Sequencer();
@@ -113,7 +113,8 @@ class Sequencer {
   ClusterConfig* configuration_;
 
   // Connection for sending and receiving protocol messages.
-  Connection* connection_;
+  Connection* sending_connection_;
+  Connection* receiving_connection_;
 
   // Client from which to get incoming txns.
   Client* client_;
