@@ -154,7 +154,7 @@ void ClusterConfig::FromString(const string& config) {
 
       machines_replica_[id] = replica;
       replicas.insert(replica);
-LOG(ERROR) << "In cluster_config:  replica is:"<<replica<<"  id:"<<id;
+
       if (id == local_node_id_) {
         local_replica_ = replica;
       }
