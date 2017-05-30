@@ -39,24 +39,21 @@ int main(int argc, char** argv) {
     }
   }
 
-  LOG(ERROR) << "Preparing to start Calvin node "
-             << FLAGS_machine_id << "...";
+  LOG(ERROR) <<FLAGS_machine_id<<":Preparing to start Calvin node ";
 
 
   // Build this node's configuration object.
   ClusterConfig config(FLAGS_machine_id);
   config.FromFile(FLAGS_config);
 
-LOG(ERROR) << "Created config "
-             << FLAGS_machine_id << "...";
+  LOG(ERROR)<<FLAGS_machine_id <<":Created config ";
 
   // Build connection context and start multiplexer thread running.
   ConnectionMultiplexer multiplexer(&config);
 
   Spin(1);
 
-LOG(ERROR) << "Created connection "
-             << FLAGS_machine_id << "..."; 
+  LOG(ERROR) << FLAGS_machine_id <<":Created connection "; 
 
   Client* client = NULL;
   // Artificial loadgen clients. Right now only microbenchmark
@@ -67,8 +64,7 @@ LOG(ERROR) << "Created connection "
   Storage* storage;
   storage = new SimpleStorage();
 
-LOG(ERROR) << "Created storage "
-             << FLAGS_machine_id << "..."; 
+  LOG(ERROR) << FLAGS_machine_id<< ":Created storage "; 
   
   Application* application = NULL; 
   if (FLAGS_experiment == 0) {
@@ -78,8 +74,7 @@ LOG(ERROR) << "Created storage "
     // Other benchmark
   }
 
-LOG(ERROR) << "Created application "
-             << FLAGS_machine_id << "..."; 
+  LOG(ERROR) << FLAGS_machine_id << ":Created application "; 
 
   // Create Paxos
   Paxos* paxos = NULL;
@@ -87,16 +82,16 @@ LOG(ERROR) << "Created application "
     paxos = new Paxos(new LocalMemLog(), &config, multiplexer.NewConnection("paxos_log_"));
   }
 
-LOG(ERROR) << "Created paxos log "
-             << FLAGS_machine_id << "..."; 
+  LOG(ERROR) << FLAGS_machine_id << ":Created paxos log "; 
 
-    Spin(1);
+  Spin(1);
 
   // Initialize sequencer component and start sequencer thread running.
   Sequencer sequencer(&config, multiplexer.NewConnection("sequencer"), client, paxos, FLAGS_max_batch_size);
 
-LOG(ERROR) << "Created sequencer "
-             << FLAGS_machine_id << "..."; 
+  LOG(ERROR) << FLAGS_machine_id << ":Created sequencer ";
+ 
+  Spin(1);
 
    // Run scheduler in main thread.
   if (FLAGS_experiment == 0) {
@@ -108,8 +103,7 @@ LOG(ERROR) << "Created sequencer "
     // Other benchmark
   }
 
-LOG(ERROR) << "Created scheduler "
-             << FLAGS_machine_id << "..."; 
+  LOG(ERROR) << FLAGS_machine_id << ":Created scheduler "; 
 
   while (!config.Stopped()) {
     usleep(1000000);
