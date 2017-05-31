@@ -90,7 +90,7 @@ void Sequencer::RunWriter() {
     // Send this epoch's transactions to the central machine of each replica
     for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
       uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_message.batch_number()), i);
-LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  will send TXN_BATCH to :"<<machine_id<<"  batch_id:"<<batch_number;
+//LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  will send TXN_BATCH to :"<<machine_id<<"  batch_id:"<<batch_number;
       batch_message.set_destination_node(machine_id);
       sending_connection_->Send(batch_message);
     }
@@ -120,7 +120,7 @@ void Sequencer::RunReader() {
     bool got_message = receiving_connection_->GetMessage(&message);
     if (got_message == true) {
       if (message.type() == MessageProto::TXN_BATCH) {
-LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie TXN_BATCH message:"<<message.batch_number();
+//LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie TXN_BATCH message:"<<message.batch_number();
         batch_number = message.batch_number();
         // If received TXN_BATCH: Parse batch and forward sub-batches to relevant readers (same replica only).
         for (int i = 0; i < message.data_size(); i++) {
@@ -176,7 +176,7 @@ LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie 
         sending_connection_->Send(vote_message);
 
       } else if (message.type() == MessageProto::BATCH_VOTE) {
-LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie BATCH_VOTE message:"<<message.misc_int(0);
+//LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie BATCH_VOTE message:"<<message.misc_int(0);
         uint64 batch_id = message.misc_int(0);
         uint32 votes;
 
