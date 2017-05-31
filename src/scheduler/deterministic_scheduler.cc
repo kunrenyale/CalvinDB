@@ -69,6 +69,7 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
 
 
 void* DeterministicScheduler::RunWorkerThread(void* arg) {
+LOG(ERROR) << "In worker thread:";
   int thread =
       reinterpret_cast<pair<int, DeterministicScheduler*>*>(arg)->first;
   DeterministicScheduler* scheduler =
