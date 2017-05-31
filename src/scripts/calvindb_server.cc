@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
 
   // Create Paxos
   Paxos* paxos = NULL;
-  if (FLAGS_machine_id / config.nodes_per_replica() == 0) {
+  if (FLAGS_machine_id % config.nodes_per_replica() == 0) {
     paxos = new Paxos(new LocalMemLog(), &config, multiplexer.NewConnection("paxos_log_"));
   }
 
