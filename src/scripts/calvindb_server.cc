@@ -21,7 +21,7 @@ DEFINE_int32(machine_id, 0, "machine id");
 DEFINE_int32(experiment, 0, "experiment that you want to run");
 DEFINE_int32(percent_mp, 0, "percent of distributed txns");
 DEFINE_int32(hot_records, 10000, "number of hot records--to control contention");
-DEFINE_int32(max_batch_size, 10, "max batch size of txns per epoch");
+DEFINE_int32(max_batch_size, 200, "max batch size of txns per epoch");
 
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
