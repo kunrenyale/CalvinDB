@@ -79,7 +79,9 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
   // Begin main loop.
   MessageProto message;
   while (true) {
+LOG(ERROR) << "In worker:  before get message";
     bool got_message = scheduler->message_queues[thread]->Pop(&message);
+LOG(ERROR) << "In worker:  after get message";
     if (got_message == true) {
       // Remote read result.
       assert(message.type() == MessageProto::READ_RESULT);
@@ -98,10 +100,12 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
         scheduler->done_queue->Push(txn);
       }
     } else {
+LOG(ERROR) << "In worker:  receive a  txn : 1";
       // No remote read result found, start on next txn if one is waiting.
       TxnProto* txn;
       bool got_it = scheduler->txns_queue->Pop(&txn);
       if (got_it == true) {
+LOG(ERROR) << "In worker:  receive a  txn : 2"<<txn->txn_id();
         // Create manager.
         StorageManager* manager = new StorageManager(scheduler->configuration_,
                                       scheduler->thread_connections_[thread],
@@ -276,7 +280,7 @@ LOG(ERROR) << "In LockManagerThread:  receive a finished txn: "<< done_txn->txn_
       executing_txns++;
 
       scheduler->txns_queue->Push(txn);
-LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id();
+//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id();
     }
 
     // Report throughput.
