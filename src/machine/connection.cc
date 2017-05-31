@@ -248,7 +248,6 @@ void ConnectionMultiplexer::Send(const MessageProto& message) {
 
     // Send message.
     if (message.destination_node() == local_node_id_) {
-      Lock l(&send_mutex_[message.destination_node()]); 
       // Message is addressed to a local channel. If channel is valid, send the
       // message on, else store it to be delivered if the channel is ever created.
       if (inproc_out_.count(message.destination_channel()) > 0)
@@ -310,16 +309,8 @@ void Connection::Send(const MessageProto& message) {
                      message_string);
 
   if (message.destination_node() == multiplexer()->Local_node_id()) {
-    Lock l(&(multiplexer_->send_mutex_[message.destination_node()]));    
-//LOG(ERROR) << "---In Connection::Send:  send message to local  :"<<multiplexer()->Local_node_id();
-    // Message is addressed to a local channel. If channel is valid, send the
-    // message on, else store it to be delivered if the channel is ever created.
-    if (multiplexer()->inproc_out_.count(message.destination_channel()) > 0) {
-      multiplexer()->inproc_out_[message.destination_channel()]->send(msg);
-//LOG(ERROR) << "---In Connection::Send:  found the channel.";
-    } else {
-      multiplexer()->undelivered_messages_[message.destination_channel()].push_back(message);
-    }
+    Lock l(&(multiplexer_->send_mutex_[message.destination_node()]));  
+    socket_out_->send(msg);
   } else {
     // Message is addressed to valid remote node. Channel validity will be
     // checked by the remote multiplexer.
