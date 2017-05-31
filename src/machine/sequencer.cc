@@ -67,7 +67,7 @@ void Sequencer::RunWriter() {
     double epoch_start = GetTime();
     batch_message.set_batch_number(batch_number);
     batch_message.clear_data();
-LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  will generate new batch, batch_id:"<<batch_number;
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:1  will generate new batch, batch_id:"<<batch_number;
     // Collect txn requests for this epoch.
     txn_id_offset = 0;
     while (!deconstructor_invoked_ &&
@@ -87,6 +87,8 @@ LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  will gen
       }
     }
 
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:2  will generate new batch, batch_id:"<<batch_number;
+
     // Send this epoch's transactions to the central machine of each replica
     for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
       uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_message.batch_number()), i);
@@ -94,6 +96,7 @@ LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  will gen
       batch_message.set_destination_node(machine_id);
       connection_->Send(batch_message);
     }
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:3  will generate new batch, batch_id:"<<batch_number;
   }
 
   Spin(1);
