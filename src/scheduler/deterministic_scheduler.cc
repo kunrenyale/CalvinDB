@@ -232,7 +232,7 @@ void* DeterministicScheduler::LockManagerThread(void* arg) {
   while (true) {
     TxnProto* done_txn;
     while (scheduler->done_queue->Pop(&done_txn) == true) {
-//LOG(ERROR) << "In LockManagerThread:  receive a finished txn: "<< done_txn->txn_id();
+LOG(ERROR) << "In LockManagerThread:  receive a finished txn: "<< done_txn->txn_id();
       // We have received a finished transaction back, release the lock
       scheduler->lock_manager_->Release(done_txn);
       executing_txns--;
@@ -276,7 +276,7 @@ void* DeterministicScheduler::LockManagerThread(void* arg) {
       executing_txns++;
 
       scheduler->txns_queue->Push(txn);
-//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id();
+LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id();
     }
 
     // Report throughput.
