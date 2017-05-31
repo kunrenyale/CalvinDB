@@ -114,6 +114,7 @@ void Sequencer::RunReader() {
 
   MessageProto message;
   uint64 batch_number;
+  uint32 local_replica = configuration_->local_replica_id();
 
   while (!deconstructor_invoked_) {
 
@@ -130,13 +131,18 @@ void Sequencer::RunReader() {
           // Compute readers & writers; store in txn proto.
           set<uint64> readers;
           set<uint64> writers;
-          for (uint32 i = 0; i < (uint32)(txn.read_set_size()); i++)
-            readers.insert(configuration_->LookupPartition(txn.read_set(i)));
-          for (uint32 i = 0; i < (uint32)(txn.write_set_size()); i++)
-            writers.insert(configuration_->LookupPartition(txn.write_set(i)));
+          for (uint32 i = 0; i < (uint32)(txn.read_set_size()); i++) {
+            uint64 mds = configuration_->LookupPartition(txn.read_set(i));
+            readers.insert(configuration_->LookupMachineID(mds, local_replica));
+          }
+          for (uint32 i = 0; i < (uint32)(txn.write_set_size()); i++) {
+            uint64 mds = configuration_->LookupPartition(txn.write_set(i));
+            writers.insert(configuration_->LookupMachineID(mds, local_replica));
+          }
           for (uint32 i = 0; i < (uint32)(txn.read_write_set_size()); i++) {
-            writers.insert(configuration_->LookupPartition(txn.read_write_set(i)));
-            readers.insert(configuration_->LookupPartition(txn.read_write_set(i)));
+            uint64 mds = configuration_->LookupPartition(txn.read_write_set(i));
+            writers.insert(configuration_->LookupMachineID(mds, local_replica));
+            readers.insert(configuration_->LookupMachineID(mds, local_replica));
           }
 
           for (set<uint64>::iterator it = readers.begin(); it != readers.end(); ++it) {
