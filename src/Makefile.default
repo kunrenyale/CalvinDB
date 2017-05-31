@@ -49,7 +49,7 @@ CXXFLAGS := -g -MD -I$(SRCDIR) -I$(OBJDIR) \
             -I$(PROTOB)/src \
             -I$(GLOG)/include \
             -I$(GFLAGS)/include \
-            -Wall -std=c++0x
+            -Wall -Werror
 
 LDFLAGS := -lglog -L$(GLOG)/.libs \
            -lgflags -L$(GFLAGS)/.libs \
