@@ -18,7 +18,7 @@ void* Sequencer::RunSequencerReader(void *arg) {
 }
 
 Sequencer::Sequencer(ClusterConfig* conf, Connection* sequencer_connection, Client* client, Paxos* paxos, uint32 max_batch_size)
-          : epoch_duration_(0.002), configuration_(conf), connection_(sequencer_connection),
+          : epoch_duration_(0.001), configuration_(conf), connection_(sequencer_connection),
           client_(client), deconstructor_invoked_(false), paxos_log_(paxos), max_batch_size_(max_batch_size) {
   // Start Sequencer main loops running in background thread.
 
