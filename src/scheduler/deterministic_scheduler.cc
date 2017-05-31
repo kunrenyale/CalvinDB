@@ -265,6 +265,7 @@ void* DeterministicScheduler::LockManagerThread(void* arg) {
 
         scheduler->lock_manager_->Lock(txn);
         pending_txns++;
+if (machine_id != 0)
 LOG(ERROR) <<machine_id<< ":In LockManagerThread:  begin to acquire locks for txn: "<<txn->txn_id();
       }
     }
