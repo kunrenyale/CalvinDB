@@ -44,7 +44,7 @@ StorageManager::StorageManager(ClusterConfig* config, Connection* connection,
     // Broadcast local reads to (other) writers.
     for (int i = 0; i < txn->writers_size(); i++) {
       if (txn->writers(i) != relative_node_id_) {
-        message.set_destination_node(txn->writers(i));
+        message.set_destination_node(configuration_->LookupMachineID(txn->writers(i), configuration_->local_replica_id()));
         connection_->Send(message);
       }
     }

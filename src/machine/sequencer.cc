@@ -105,16 +105,16 @@ void Sequencer::RunReader() {
 //LOG(ERROR) << "In sequencer:  Starting sequencer reader.";
   // Set up batch messages for each system node.
   map<uint64, MessageProto> batches;
-  for (map<uint64, MachineInfo>::iterator it = configuration_->machines_.begin();
-       it != configuration_->machines_.end(); ++it) {
-    batches[it->first].set_destination_channel("scheduler_");
-    batches[it->first].set_destination_node(it->first);
-    batches[it->first].set_type(MessageProto::TXN_SUBBATCH);
-  }
 
+  uint32 local_replica = configuration_->local_replica_id();
+  for (uint64 i = 0; i < configuration_->nodes_per_replica();i++) {
+    batches[i].set_destination_channel("scheduler_");
+    batches[i].set_destination_node(configuration_->LookupMachineID(i, local_replica));
+    batches[i].set_type(MessageProto::TXN_SUBBATCH);
+  }
+  
   MessageProto message;
   uint64 batch_number;
-  uint32 local_replica = configuration_->local_replica_id();
 
   while (!deconstructor_invoked_) {
 
@@ -133,16 +133,16 @@ void Sequencer::RunReader() {
           set<uint64> writers;
           for (uint32 i = 0; i < (uint32)(txn.read_set_size()); i++) {
             uint64 mds = configuration_->LookupPartition(txn.read_set(i));
-            readers.insert(configuration_->LookupMachineID(mds, local_replica));
+            readers.insert(mds);
           }
           for (uint32 i = 0; i < (uint32)(txn.write_set_size()); i++) {
             uint64 mds = configuration_->LookupPartition(txn.write_set(i));
-            writers.insert(configuration_->LookupMachineID(mds, local_replica));
+            writers.insert(mds);
           }
           for (uint32 i = 0; i < (uint32)(txn.read_write_set_size()); i++) {
             uint64 mds = configuration_->LookupPartition(txn.read_write_set(i));
-            writers.insert(configuration_->LookupMachineID(mds, local_replica));
-            readers.insert(configuration_->LookupMachineID(mds, local_replica));
+            writers.insert(mds);
+            readers.insert(mds);
           }
 
           for (set<uint64>::iterator it = readers.begin(); it != readers.end(); ++it) {
