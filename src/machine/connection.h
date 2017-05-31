@@ -188,6 +188,10 @@ class Connection {
   zmq::socket_t* socket_in_;
 
   zmq::message_t msg_;
+
+  Mutex socket_out_mutex_;
+
+  Mutex socket_in_mutex_;
 };
 
 #endif  // _DB_MACHINE_CONNECTION_H_

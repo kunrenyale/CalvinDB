@@ -17,8 +17,8 @@ void* Sequencer::RunSequencerReader(void *arg) {
   return NULL;
 }
 
-Sequencer::Sequencer(ClusterConfig* conf, Connection* send_connection, Connection* receive_connection, Client* client, Paxos* paxos, uint32 max_batch_size)
-          : epoch_duration_(0.01), configuration_(conf), sending_connection_(send_connection), receiving_connection_(receive_connection),
+Sequencer::Sequencer(ClusterConfig* conf, Connection* sequencer_connection, Client* client, Paxos* paxos, uint32 max_batch_size)
+          : epoch_duration_(0.01), configuration_(conf), connection_(sequencer_connection),
           client_(client), deconstructor_invoked_(false), paxos_log_(paxos), max_batch_size_(max_batch_size) {
   // Start Sequencer main loops running in background thread.
 
@@ -56,7 +56,7 @@ void Sequencer::RunWriter() {
 
   // Set up batch messages for each system node.
   MessageProto batch_message;
-  batch_message.set_destination_channel("sequencer_receiving");
+  batch_message.set_destination_channel("sequencer_");
   batch_message.set_type(MessageProto::TXN_BATCH);
   uint64 batch_number;
   uint32 txn_id_offset;
@@ -92,7 +92,7 @@ void Sequencer::RunWriter() {
       uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_message.batch_number()), i);
 LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  will send TXN_BATCH to :"<<machine_id<<"  batch_id:"<<batch_number;
       batch_message.set_destination_node(machine_id);
-      sending_connection_->Send(batch_message);
+      connection_->Send(batch_message);
     }
   }
 
@@ -118,7 +118,7 @@ void Sequencer::RunReader() {
 
   while (!deconstructor_invoked_) {
 
-    bool got_message = receiving_connection_->GetMessage(&message);
+    bool got_message = connection_->GetMessage(&message);
     if (got_message == true) {
       if (message.type() == MessageProto::TXN_BATCH) {
 //LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie TXN_BATCH message:"<<message.batch_number();
@@ -169,17 +169,17 @@ void Sequencer::RunReader() {
         // Send this epoch's requests to all schedulers.
         for (map<uint64, MessageProto>::iterator it = batches.begin(); it != batches.end(); ++it) {
           it->second.set_batch_number(batch_number);
-          sending_connection_->Send(it->second);
+          connection_->Send(it->second);
           it->second.clear_data();
         }
 
         // Send “vote” to the head machines;
         MessageProto vote_message;
-        vote_message.set_destination_channel("sequencer_receiving");
+        vote_message.set_destination_channel("sequencer_");
         vote_message.set_destination_node(0);
         vote_message.set_type(MessageProto::BATCH_VOTE);
         vote_message.add_misc_int(message.batch_number());
-        sending_connection_->Send(vote_message);
+        connection_->Send(vote_message);
 
       } else if (message.type() == MessageProto::BATCH_VOTE) {
 //LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie BATCH_VOTE message:"<<message.misc_int(0);

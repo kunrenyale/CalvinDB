@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
   Spin(1);
 
   // Initialize sequencer component and start sequencer thread running.
-  Sequencer sequencer(&config, multiplexer.NewConnection("sequencer_sending"), multiplexer.NewConnection("sequencer_receiving"), client, paxos, FLAGS_max_batch_size);
+  Sequencer sequencer(&config, multiplexer.NewConnection("sequencer_"), client, paxos, FLAGS_max_batch_size);
 
   LOG(ERROR) << FLAGS_machine_id << ":Created sequencer ";
  

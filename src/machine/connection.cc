@@ -309,7 +309,7 @@ void Connection::Send(const MessageProto& message) {
                      message_string);
 
   if (message.destination_node() == multiplexer()->Local_node_id()) {
-    Lock l(&(multiplexer_->send_mutex_[message.destination_node()]));  
+    Lock l(&socket_out_mutex_);  
     socket_out_->send(msg);
   } else {
     // Message is addressed to valid remote node. Channel validity will be
@@ -320,6 +320,7 @@ void Connection::Send(const MessageProto& message) {
 }
 
 bool Connection::GetMessage(MessageProto* message) {
+  Lock l(&socket_in_mutex_);
   zmq::message_t msg_;
   if (socket_in_->recv(&msg_, ZMQ_NOBLOCK)) {
     // Received a message.
