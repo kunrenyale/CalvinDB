@@ -6,8 +6,7 @@
 using zmq::socket_t;
 
 ConnectionMultiplexer::ConnectionMultiplexer(ClusterConfig* config)
-    : configuration_(config), context_(1), new_connection_channel_(NULL),
-      delete_connection_channel_(NULL), deconstructor_invoked_(false) {
+    : configuration_(config), context_(1), deconstructor_invoked_(false) {
   local_node_id_ = config->local_node_id();
   port_ = config->machines_.find(local_node_id_)->second.port();
 
@@ -100,7 +99,7 @@ Connection* ConnectionMultiplexer::NewConnection(const string& channel) {
     // Channel name already in use. Report an error and set new_connection_
     // (which NewConnection() will return) to NULL.
     std::cerr << "Attempt to create channel that already exists: "
-              << (*new_connection_channel_) << "\n" << std::flush;
+              << channel << "\n" << std::flush;
     new_connection = NULL;
    } else {
      // Channel name is not already in use. Create a new Connection object
@@ -144,7 +143,7 @@ Connection* ConnectionMultiplexer::NewConnection(const string& channel, AtomicQu
     // Channel name already in use. Report an error and set new_connection_
     // (which NewConnection() will return) to NULL.
     std::cerr << "Attempt to create channel that already exists: "
-              << (*new_connection_channel_) << "\n" << std::flush;
+              << channel << "\n" << std::flush;
     new_connection = NULL;
    } else {
      // Channel name is not already in use. Create a new Connection object
@@ -177,19 +176,22 @@ Connection* ConnectionMultiplexer::NewConnection(const string& channel, AtomicQu
   return new_connection;
 }
 
+
+void ConnectionMultiplexer::DeleteConnection(const string& channel) {
+  // Serve any pending (valid) connection deletion request.
+  Lock l(&delete_connection_mutex_);
+  if (inproc_out_.count(channel) > 0) {
+    delete inproc_out_[channel];
+    inproc_out_.erase(channel);
+  }
+}
+
+
 void ConnectionMultiplexer::Run() {
   MessageProto message;
   zmq::message_t msg;
 
   while (!deconstructor_invoked_) {
-    // Serve any pending (valid) connection deletion request.
-    if (delete_connection_channel_ != NULL &&
-        inproc_out_.count(*delete_connection_channel_) > 0) {
-      delete inproc_out_[*delete_connection_channel_];
-      inproc_out_.erase(*delete_connection_channel_);
-      delete_connection_channel_ = NULL;
-    }
-
     // Forward next message from a remote node (if any).
     if (remote_in_->recv(&msg, ZMQ_NOBLOCK)) {
       message.ParseFromArray(msg.data(), msg.size());
@@ -278,19 +280,12 @@ Connection::~Connection() {
     UnlinkChannel(*it);
   }
 
-  // Disallow concurrent calls to NewConnection/~Connection.
-  Lock l(&(multiplexer_->new_connection_mutex_));
-
   // Delete socket on Connection end.
   delete socket_in_;
   delete socket_out_;
 
   // Prompt multiplexer to delete socket on its end.
-  multiplexer_->delete_connection_channel_ = &channel_;
-
-  // Wait for the Run() loop to delete its socket for this Connection object.
-  // (It will then reset delete_connection_channel_ to NULL.)
-  while (multiplexer_->delete_connection_channel_ != NULL) {}
+  multiplexer_->DeleteConnection(channel_);
 }
 
 /**void Connection::Send(const MessageProto& message) {

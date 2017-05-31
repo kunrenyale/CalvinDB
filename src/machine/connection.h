@@ -48,6 +48,8 @@ class ConnectionMultiplexer {
   
   Connection* NewConnection(const string& channel, AtomicQueue<MessageProto>** aa);
 
+  void DeleteConnection(const string& channel);
+
   zmq::context_t* context() { return &context_; }
 
   uint64 Local_node_id() {return local_node_id_;}
@@ -102,20 +104,11 @@ class ConnectionMultiplexer {
   //
   unordered_map<string, vector<MessageProto> > undelivered_messages_;
 
-  // Protects concurrent calls to NewConnection().
+  // Protects concurrent calls to NewConnection() and DeleteConnection
   Mutex new_connection_mutex_;
+  Mutex delete_connection_mutex_;
   
   Mutex* send_mutex_;
-  
-  // Specifies a requested channel. Null if there is no outstanding new
-  // connection request.
-  const string* new_connection_channel_;
-  // Specifies channel requested to be deleted. Null if there is no outstanding
-  // connection deletion request.
-  const string* delete_connection_channel_;
-
-  // Pointer to Connection objects recently created in the Run() thread.
-  Connection* new_connection_;
 
   // False until the deconstructor is called. As soon as it is set to true, the
   // main loop sees it and stops.
