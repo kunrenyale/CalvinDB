@@ -93,35 +93,88 @@ Connection* ConnectionMultiplexer::NewConnection(const string& channel) {
 //LOG(ERROR) << "main thread: will create new connection---- ";
   // Disallow concurrent calls to NewConnection/~Connection.
   Lock l(&new_connection_mutex_);
+  
+  Connection* new_connection = new Connection();
 
-  // Register the new connection request.
-  new_connection_channel_ = &channel;
+  if (inproc_out_.count(channel) > 0) {
+    // Channel name already in use. Report an error and set new_connection_
+    // (which NewConnection() will return) to NULL.
+    std::cerr << "Attempt to create channel that already exists: "
+              << (*new_connection_channel_) << "\n" << std::flush;
+    new_connection = NULL;
+   } else {
+     // Channel name is not already in use. Create a new Connection object
+     // and connect it to this multiplexer.
+//LOG(ERROR) << "connection thread: will create new connection---- ";
+     new_connection->channel_ = channel;
+     new_connection->multiplexer_ = this;
+     char endpoint[256];
+     snprintf(endpoint, sizeof(endpoint), "inproc://%s", channel.c_str());
+     inproc_out_[channel] = new socket_t(context_, ZMQ_PUSH);
+     inproc_out_[channel]->bind(endpoint);
+     new_connection->socket_in_ = new socket_t(context_, ZMQ_PULL);
+     new_connection->socket_in_->connect(endpoint);
+     new_connection->socket_out_ = new socket_t(context_, ZMQ_PUSH);
+     new_connection->socket_out_->connect("inproc://__inproc_in_endpoint__");
 
-  // Wait for the Run() loop to create the Connection object. (It will reset
-  // new_connection_channel_ to NULL when the new connection has been created.
-  while (new_connection_channel_ != NULL) {}
+     // Forward on any messages sent to this channel before it existed.
+     vector<MessageProto>::iterator i;
+     for (i = undelivered_messages_[channel].begin();
+          i != undelivered_messages_[channel].end(); ++i) {
+       Send(*i);
+     }
+     undelivered_messages_.erase(channel);
+   }
 
-  Connection* connection = new_connection_;
-  new_connection_ = NULL;
+   if ((channel.substr(0, 9) == "scheduler") && (channel.substr(9,1) != "_")) {
+     link_unlink_queue_[channel] = new AtomicQueue<MessageProto>();
+   }
 //LOG(ERROR) << "main thread: finish create new connection---- ";
-  return connection;
+  return new_connection;
 }
 
 Connection* ConnectionMultiplexer::NewConnection(const string& channel, AtomicQueue<MessageProto>** aa) {
   // Disallow concurrent calls to NewConnection/~Connection.
   Lock l(&new_connection_mutex_);
   remote_result_[channel] = *aa;
-  // Register the new connection request.
-  new_connection_channel_ = &channel;
 
-  // Wait for the Run() loop to create the Connection object. (It will reset
-  // new_connection_channel_ to NULL when the new connection has been created.
-  while (new_connection_channel_ != NULL) {}
+  Connection* new_connection = new Connection();
 
-  Connection* connection = new_connection_;
-  new_connection_ = NULL;
+  if (inproc_out_.count(channel) > 0) {
+    // Channel name already in use. Report an error and set new_connection_
+    // (which NewConnection() will return) to NULL.
+    std::cerr << "Attempt to create channel that already exists: "
+              << (*new_connection_channel_) << "\n" << std::flush;
+    new_connection = NULL;
+   } else {
+     // Channel name is not already in use. Create a new Connection object
+     // and connect it to this multiplexer.
+//LOG(ERROR) << "connection thread: will create new connection---- ";
+     new_connection->channel_ = channel;
+     new_connection->multiplexer_ = this;
+     char endpoint[256];
+     snprintf(endpoint, sizeof(endpoint), "inproc://%s", channel.c_str());
+     inproc_out_[channel] = new socket_t(context_, ZMQ_PUSH);
+     inproc_out_[channel]->bind(endpoint);
+     new_connection->socket_in_ = new socket_t(context_, ZMQ_PULL);
+     new_connection->socket_in_->connect(endpoint);
+     new_connection->socket_out_ = new socket_t(context_, ZMQ_PUSH);
+     new_connection->socket_out_->connect("inproc://__inproc_in_endpoint__");
 
-  return connection;
+     // Forward on any messages sent to this channel before it existed.
+     vector<MessageProto>::iterator i;
+     for (i = undelivered_messages_[channel].begin();
+          i != undelivered_messages_[channel].end(); ++i) {
+       Send(*i);
+     }
+     undelivered_messages_.erase(channel);
+   }
+
+   if ((channel.substr(0, 9) == "scheduler") && (channel.substr(9,1) != "_")) {
+     link_unlink_queue_[channel] = new AtomicQueue<MessageProto>();
+   }
+//LOG(ERROR) << "main thread: finish create new connection---- ";
+  return new_connection;
 }
 
 void ConnectionMultiplexer::Run() {
@@ -129,51 +182,6 @@ void ConnectionMultiplexer::Run() {
   zmq::message_t msg;
 
   while (!deconstructor_invoked_) {
-    // Serve any pending NewConnection request.
-    if (new_connection_channel_ != NULL) {
-      if (inproc_out_.count(*new_connection_channel_) > 0) {
-        // Channel name already in use. Report an error and set new_connection_
-        // (which NewConnection() will return) to NULL.
-        std::cerr << "Attempt to create channel that already exists: "
-                  << (*new_connection_channel_) << "\n" << std::flush;
-        new_connection_ = NULL;
-      } else {
-        // Channel name is not already in use. Create a new Connection object
-        // and connect it to this multiplexer.
-//LOG(ERROR) << "connection thread: will create new connection---- ";
-        new_connection_ = new Connection();
-        new_connection_->channel_ = *new_connection_channel_;
-        new_connection_->multiplexer_ = this;
-        char endpoint[256];
-        snprintf(endpoint, sizeof(endpoint), "inproc://%s",
-                 new_connection_channel_->c_str());
-        inproc_out_[*new_connection_channel_] =
-            new socket_t(context_, ZMQ_PUSH);
-        inproc_out_[*new_connection_channel_]->bind(endpoint);
-        new_connection_->socket_in_ = new socket_t(context_, ZMQ_PULL);
-        new_connection_->socket_in_->connect(endpoint);
-        new_connection_->socket_out_ = new socket_t(context_, ZMQ_PUSH);
-        new_connection_->socket_out_
-            ->connect("inproc://__inproc_in_endpoint__");
-
-          // Forward on any messages sent to this channel before it existed.
-        vector<MessageProto>::iterator i;
-        for (i = undelivered_messages_[*new_connection_channel_].begin();
-             i != undelivered_messages_[*new_connection_channel_].end(); ++i) {
-          Send(*i);
-        }
-        undelivered_messages_.erase(*new_connection_channel_);
-      }
-
-
-      if ((new_connection_channel_->substr(0, 9) == "scheduler") && (new_connection_channel_->substr(9,1) != "_")) {
-        link_unlink_queue_[*new_connection_channel_] = new AtomicQueue<MessageProto>();
-      }
-      // Reset request variable.
-      new_connection_channel_ = NULL;
-//LOG(ERROR) << "connection thread: finish create new connection---- ";
-    }
-
     // Serve any pending (valid) connection deletion request.
     if (delete_connection_channel_ != NULL &&
         inproc_out_.count(*delete_connection_channel_) > 0) {
