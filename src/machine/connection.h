@@ -116,6 +116,8 @@ class ConnectionMultiplexer {
 
   uint64 local_node_id_;
 
+  pthread_mutex_t test_mutex_;
+
   // DISALLOW_COPY_AND_ASSIGN
   ConnectionMultiplexer(const ConnectionMultiplexer&);
   ConnectionMultiplexer& operator=(const ConnectionMultiplexer&);

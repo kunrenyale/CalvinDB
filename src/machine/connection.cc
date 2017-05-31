@@ -25,6 +25,8 @@ ConnectionMultiplexer::ConnectionMultiplexer(ClusterConfig* config)
 
   send_mutex_ = new Mutex[(int)config->all_nodes_size()];
 
+pthread_mutex_init(&test_mutex_, NULL);
+
   // Connect to remote outgoing sockets.
   for (map<uint64, MachineInfo>::const_iterator it = config->machines_.begin();
        it != config->machines_.end(); ++it) {
@@ -91,8 +93,8 @@ ConnectionMultiplexer::~ConnectionMultiplexer() {
 Connection* ConnectionMultiplexer::NewConnection(const string& channel) {
 //LOG(ERROR) << "main thread: will create new connection---- ";
   // Disallow concurrent calls to NewConnection/~Connection.
-  Lock l(&new_connection_mutex_);
-  
+  //Lock l(&new_connection_mutex_);
+pthread_mutex_lock(&test_mutex_);  
   Connection* new_connection = new Connection();
 
   if (inproc_out_.count(channel) > 0) {
@@ -129,12 +131,14 @@ Connection* ConnectionMultiplexer::NewConnection(const string& channel) {
      link_unlink_queue_[channel] = new AtomicQueue<MessageProto>();
    }
 //LOG(ERROR) << "main thread: finish create new connection---- ";
+pthread_mutex_unlock(&test_mutex_); 
   return new_connection;
 }
 
 Connection* ConnectionMultiplexer::NewConnection(const string& channel, AtomicQueue<MessageProto>** aa) {
   // Disallow concurrent calls to NewConnection/~Connection.
-  Lock l(&new_connection_mutex_);
+ // Lock l(&new_connection_mutex_);
+pthread_mutex_lock(&test_mutex_); 
   remote_result_[channel] = *aa;
 
   Connection* new_connection = new Connection();
@@ -173,17 +177,20 @@ Connection* ConnectionMultiplexer::NewConnection(const string& channel, AtomicQu
      link_unlink_queue_[channel] = new AtomicQueue<MessageProto>();
    }
 //LOG(ERROR) << "main thread: finish create new connection---- ";
+pthread_mutex_unlock(&test_mutex_); 
   return new_connection;
 }
 
 
 void ConnectionMultiplexer::DeleteConnection(const string& channel) {
   // Serve any pending (valid) connection deletion request.
-  Lock l(&delete_connection_mutex_);
+  //Lock l(&delete_connection_mutex_);
+pthread_mutex_lock(&test_mutex_); 
   if (inproc_out_.count(channel) > 0) {
     delete inproc_out_[channel];
     inproc_out_.erase(channel);
   }
+pthread_mutex_unlock(&test_mutex_); 
 }
 
 
@@ -267,8 +274,10 @@ void ConnectionMultiplexer::Send(const MessageProto& message) {
     } else {
       // Message is addressed to valid remote node. Channel validity will be
       // checked by the remote multiplexer.
-      Lock l(&send_mutex_[message.destination_node()]);  
+      //Lock l(&send_mutex_[message.destination_node()]);  
+pthread_mutex_lock(&test_mutex_); 
       remote_out_[message.destination_node()]->send(msg);
+pthread_mutex_unlock(&test_mutex_); 
     } 
   }
 }
@@ -289,7 +298,8 @@ Connection::~Connection() {
 }
 
 void Connection::Send(const MessageProto& message) {
-  Lock l(&socket_out_mutex_);  
+  //Lock l(&socket_out_mutex_);  
+pthread_mutex_lock(&multiplexer_->test_mutex_); 
   // Prepare message.
   string* message_string = new string();
   message.SerializeToString(message_string);
@@ -300,6 +310,7 @@ void Connection::Send(const MessageProto& message) {
                      message_string);
   // Send message.
   socket_out_->send(msg);
+pthread_mutex_unlock(&multiplexer_->test_mutex_); 
 }
 
 /**void Connection::Send(const MessageProto& message) {
@@ -324,14 +335,17 @@ void Connection::Send(const MessageProto& message) {
 }**/
 
 bool Connection::GetMessage(MessageProto* message) {
-  Lock l(&socket_in_mutex_);
+  //Lock l(&socket_in_mutex_);
+pthread_mutex_lock(&multiplexer_->test_mutex_); 
   zmq::message_t msg_;
   if (socket_in_->recv(&msg_, ZMQ_NOBLOCK)) {
     // Received a message.
     message->ParseFromArray(msg_.data(), msg_.size());
+pthread_mutex_unlock(&multiplexer_->test_mutex_); 
     return true;
   } else {
     // No message received at this time.
+pthread_mutex_unlock(&multiplexer_->test_mutex_); 
     return false;
   }
 }
