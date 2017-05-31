@@ -123,7 +123,7 @@ void Paxos::RunLeader() {
     sequence_message.set_type(MessageProto::PAXOS_BATCH_ORDER);
     sequence_message.set_destination_channel("scheduler_");
     for (uint64 i = local_replica * machines_per_replica; i < (local_replica + 1)*machines_per_replica ;i++) {
-LOG(ERROR) <<this_machine_id_<< ":In paxos log:  send PAXOS_BATCH_ORDER: "<<version<<"  to node:"<<i;
+//LOG(ERROR) <<this_machine_id_<< ":In paxos log:  send PAXOS_BATCH_ORDER: "<<version<<"  to node:"<<i;
       sequence_message.set_destination_node(i);
       paxos_connection_->Send(sequence_message);
     }
