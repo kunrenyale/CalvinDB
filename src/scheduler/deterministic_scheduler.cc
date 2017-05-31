@@ -276,7 +276,7 @@ void* DeterministicScheduler::LockManagerThread(void* arg) {
       executing_txns++;
 
       scheduler->txns_queue->Push(txn);
-//LOG(ERROR) << "In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id();
+LOG(ERROR) << "In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id();
     }
 
     // Report throughput.

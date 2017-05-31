@@ -169,9 +169,6 @@ void Sequencer::RunReader() {
         // Send this epoch's requests to all schedulers.
         for (map<uint64, MessageProto>::iterator it = batches.begin(); it != batches.end(); ++it) {
           it->second.set_batch_number(batch_number);
-if (it->second.data_size() == 0) {
-LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie TXN_BATCH message:"<<message.batch_number();
-}
           sending_connection_->Send(it->second);
           it->second.clear_data();
         }
