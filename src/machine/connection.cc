@@ -192,8 +192,8 @@ void ConnectionMultiplexer::Run() {
     // local Link/UnlinkChannel requests.
     if (inproc_in_->recv(&msg, ZMQ_NOBLOCK)) {
       message.ParseFromArray(msg.data(), msg.size());
-        // Normal message. Forward appropriately.
-        Send(message);
+      // Normal message. Forward appropriately.
+      Send(message);
     }
 
    for (unordered_map<string, AtomicQueue<MessageProto>*>::iterator it = link_unlink_queue_.begin();
