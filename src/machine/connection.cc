@@ -288,7 +288,8 @@ Connection::~Connection() {
   multiplexer_->DeleteConnection(channel_);
 }
 
-/**void Connection::Send(const MessageProto& message) {
+void Connection::Send(const MessageProto& message) {
+  Lock l(&socket_out_mutex_);  
   // Prepare message.
   string* message_string = new string();
   message.SerializeToString(message_string);
@@ -299,9 +300,9 @@ Connection::~Connection() {
                      message_string);
   // Send message.
   socket_out_->send(msg);
-} **/
+}
 
-void Connection::Send(const MessageProto& message) {
+/**void Connection::Send(const MessageProto& message) {
   // Prepare message.
   string* message_string = new string();
   message.SerializeToString(message_string);
@@ -320,7 +321,7 @@ void Connection::Send(const MessageProto& message) {
     Lock l(&(multiplexer_->send_mutex_[message.destination_node()]));                   
     multiplexer()->remote_out_[message.destination_node()]->send(msg);
   }
-}
+}**/
 
 bool Connection::GetMessage(MessageProto* message) {
   Lock l(&socket_in_mutex_);
