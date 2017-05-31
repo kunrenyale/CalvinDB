@@ -248,6 +248,7 @@ void ConnectionMultiplexer::Send(const MessageProto& message) {
 
     // Send message.
     if (message.destination_node() == local_node_id_) {
+      Lock l(&send_mutex_[message.destination_node()]); 
       // Message is addressed to a local channel. If channel is valid, send the
       // message on, else store it to be delivered if the channel is ever created.
       if (inproc_out_.count(message.destination_channel()) > 0)
