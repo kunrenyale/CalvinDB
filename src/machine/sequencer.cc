@@ -190,7 +190,7 @@ void Sequencer::RunReader() {
         // If block is now written to (exactly) a majority of replicas, submit
         // to paxos leader.
         if (votes == configuration_->replicas_size() / 2 + 1) {
-LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie BATCH_VOTE message, will append:"<<batch_id;
+//LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie BATCH_VOTE message, will append:"<<batch_id;
           paxos_log_->Append(batch_id);
         }        
       }

@@ -156,7 +156,7 @@ MessageProto* GetBatch(Connection* connection) {
            batches_data[message->batch_number()] = message;
            message = new MessageProto();
          } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
-LOG(ERROR) << "In scheduler:  receive a sequence: "<<message->misc_int(0);
+LOG(ERROR) << message->destination_node()<< ":In scheduler:  receive a sequence: "<<message->misc_int(0);
            if (message->misc_int(0) == current_sequence_id_) {
              current_sequence_ = new Sequence();
              current_sequence_->ParseFromString(message->data(0));
@@ -206,7 +206,7 @@ LOG(ERROR) << "In scheduler:  receive a sequence: "<<message->misc_int(0);
            message = new MessageProto();
          }
        } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
-LOG(ERROR) << "In scheduler:  receive a sequence: "<<message->misc_int(0);
+LOG(ERROR)<< message->destination_node()<< ":In scheduler:  receive a sequence: "<<message->misc_int(0);
          global_batches_order[message->misc_int(0)] = message;
          message = new MessageProto();
        }
@@ -265,7 +265,7 @@ void* DeterministicScheduler::LockManagerThread(void* arg) {
 
         scheduler->lock_manager_->Lock(txn);
         pending_txns++;
-//LOG(ERROR) << "In LockManagerThread:  begin to acquire locks for txn: "<<txn->txn_id();
+LOG(ERROR) <<machine_id<< ":In LockManagerThread:  begin to acquire locks for txn: "<<txn->txn_id();
       }
     }
 

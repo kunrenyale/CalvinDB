@@ -181,8 +181,6 @@ void Paxos::RunFollower() {
       uint64 version = append_message.misc_int(0);
       string data = append_message.data(0);
 
-      log_->Append(version, data);
-
       // Send the order to the locking thread
       append_message.set_type(MessageProto::PAXOS_BATCH_ORDER);
       append_message.set_destination_channel("scheduler_");
@@ -191,6 +189,9 @@ void Paxos::RunFollower() {
         paxos_connection_->Send(append_message);
 LOG(ERROR) <<this_machine_id_<< ":In paxos log:  send PAXOS_BATCH_ORDER: "<<version<<"  to node:"<<i;
       }
+
+
+      log_->Append(version, data);
     }
   }
 }
