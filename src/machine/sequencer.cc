@@ -67,7 +67,7 @@ void Sequencer::RunWriter() {
     double epoch_start = GetTime();
     batch_message.set_batch_number(batch_number);
     batch_message.clear_data();
-
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  will generate new batch, batch_id:"<<batch_number;
     // Collect txn requests for this epoch.
     txn_id_offset = 0;
     while (!deconstructor_invoked_ &&
