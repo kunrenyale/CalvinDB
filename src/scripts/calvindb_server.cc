@@ -18,10 +18,10 @@ DEFINE_bool(calvin_version, false, "Print Calvin version information");
 DEFINE_string(binary, "calvindb_server", "Calvin binary executable program");
 DEFINE_string(config, "calvin.conf", "conf file of Calvin cluster");
 DEFINE_int32(machine_id, 0, "machine id");
-DEFINE_int32(experiment, 0, "experiment that you want to run");
+DEFINE_int32(experiment, 0, "the experiment that you want to run, default is microbenchmark");
 DEFINE_int32(percent_mp, 0, "percent of distributed txns");
 DEFINE_int32(hot_records, 10000, "number of hot records--to control contention");
-DEFINE_int32(max_batch_size, 400, "max batch size of txns per epoch");
+DEFINE_int32(max_batch_size, 200, "max batch size of txns per epoch");
 
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
@@ -109,14 +109,10 @@ int main(int argc, char** argv) {
 
   LOG(ERROR) << FLAGS_machine_id << ":Created paxos log "; 
 
-  Spin(1);
-
   // Initialize sequencer component and start sequencer thread running.
   Sequencer sequencer(&config, multiplexer, client, paxos, FLAGS_max_batch_size);
 
   LOG(ERROR) << FLAGS_machine_id << ":Created sequencer ";
- 
-  Spin(1);
 
    // Run scheduler in main thread.
   if (FLAGS_experiment == 0) {

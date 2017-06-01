@@ -42,7 +42,7 @@ class Microbenchmark : public Application {
   int hot_records;
   static const int kRWSetSize = 10;  // MUST BE EVEN
   static const int kDBSize = 10000000;
-  static const int kRecordSize = 200;
+  static const int kRecordSize = 100;
 
 
   virtual void InitializeStorage(Storage* storage, ClusterConfig* conf) const;

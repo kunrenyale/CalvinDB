@@ -53,7 +53,6 @@ Sequencer::~Sequencer() {
 
 
 void Sequencer::RunWriter() {
-  Spin(1);
 
 //LOG(ERROR) << "In sequencer:  Starting sequencer writer.";
 
@@ -86,7 +85,7 @@ void Sequencer::RunWriter() {
         txn_id_offset++;
         delete txn;
       } else {
-        usleep(20);
+        usleep(50);
       }
     }
 
@@ -101,11 +100,9 @@ void Sequencer::RunWriter() {
     }
   }
 
-  Spin(1);
 }
 
 void Sequencer::RunReader() {
-  Spin(1);
 
 //LOG(ERROR) << "In sequencer:  Starting sequencer reader.";
   // Set up batch messages for each system node.
@@ -208,7 +205,7 @@ void Sequencer::RunReader() {
     }
 
     if (got_message == false) {
-      usleep(100);
+      usleep(50);
     }
   }
 }

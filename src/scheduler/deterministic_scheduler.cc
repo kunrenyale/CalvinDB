@@ -37,8 +37,6 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
     connection_->NewChannel(channel);
   }
 
-  Spin(1);
-
   // start lock manager thread
   cpu_set_t cpuset;
   pthread_attr_t attr1;

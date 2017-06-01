@@ -170,6 +170,7 @@ void Paxos::RunFollower() {
         return;
       }
     }
+
     if (message.type() == MessageProto::PAXOS_DATA) {
       // New proposal.
       uncommitted.push(message);
