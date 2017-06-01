@@ -94,6 +94,7 @@ int main(int argc, char** argv) {
     synchronization_message.Clear();
     if (synchronization_queue->Pop(&synchronization_message)) {
       assert(synchronization_message.type() == MessageProto::EMPTY);
+  LOG(ERROR) << FLAGS_machine_id << ":receive an synchronization message"; 
       synchronization_counter++;
     }
   }

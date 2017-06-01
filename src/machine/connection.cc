@@ -135,11 +135,13 @@ void ConnectionMultiplexer::Run() {
     got_message = remote_in_->recv(&msg, ZMQ_NOBLOCK);
     if (got_message == true) {
       message.ParseFromArray(msg.data(), msg.size());
-LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage, channel:"<<message.destination_channel();           
+        
       if (channel_results_.count(message.destination_channel()) > 0) {
         channel_results_[message.destination_channel()]->Push(message);
+LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage, channel:"<<message.destination_channel();   
       } else {
         undelivered_messages_[message.destination_channel()].push_back(message);
+LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage(undeliver), channel:"<<message.destination_channel();   
       }
       message.Clear();
     }
