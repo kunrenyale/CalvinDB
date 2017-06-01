@@ -81,21 +81,19 @@ int main(int argc, char** argv) {
 
   MessageProto synchronization_message;
   synchronization_message.set_type(MessageProto::EMPTY);
-  synchronization_message.set_destination_channel("synchronization_connection");
+  synchronization_message.set_destination_channel("synchronization_channel");
   for (uint64 i = 0; i < (uint64)(config.all_nodes_size()); i++) {
     synchronization_message.set_destination_node(i);
     if (i != static_cast<uint64>(config.local_node_id())) {
       multiplexer->Send(synchronization_message);
-  LOG(ERROR) << FLAGS_machine_id << ":send an synchronization message to:"<<i; 
     }
   }
 
   uint32 synchronization_counter = 1;
   while (synchronization_counter < (uint64)(config.all_nodes_size())) {
     synchronization_message.Clear();
-    if (multiplexer->GotMessage("synchronization_connection", &synchronization_message)) {
+    if (multiplexer->GotMessage("synchronization_channel", &synchronization_message)) {
       CHECK(synchronization_message.type() == MessageProto::EMPTY);
-  LOG(ERROR) << FLAGS_machine_id << ":receive an synchronization message"; 
       synchronization_counter++;
     }
   }
