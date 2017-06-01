@@ -82,6 +82,10 @@ ConnectionMultiplexer::~ConnectionMultiplexer() {
 
 
 bool ConnectionMultiplexer::GotMessage(const string& channel, MessageProto* message) {
+  while (channel_results_.count(channel) == 0) {
+    usleep(100);
+  }
+
   CHECK(channel_results_.count(channel) > 0);
   
   if (channel_results_[channel]->Pop(message)) {
