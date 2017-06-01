@@ -121,7 +121,7 @@ int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {
 
     // The following code is for microbenchmark "long" transaction, uncomment it if for "long" transaction
     int x = 1;
-    for (int j = 1; j = 10000; j++) {
+    for (int j = 1; j < 10000; j++) {
       for(int i = 0; i < 110000; i++) {
         x = x*x+1;
         x = x+10;
