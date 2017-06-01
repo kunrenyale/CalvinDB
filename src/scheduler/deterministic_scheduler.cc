@@ -18,19 +18,25 @@ using std::map;
 
 
 DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
-                                               Connection* batch_connection,
                                                Storage* storage,
-                                               const Application* application)
-    : configuration_(conf), batch_connection_(batch_connection),
-      storage_(storage), application_(application) {
+                                               const Application* application,
+                                               ConnectionMultiplexer* connection)
+    : configuration_(conf), storage_(storage), application_(application),connection_(connection) {
   
   ready_txns_ = new std::deque<TxnProto*>();
   lock_manager_ = new DeterministicLockManager(ready_txns_, configuration_);
   txns_queue = new AtomicQueue<TxnProto*>();
   done_queue = new AtomicQueue<TxnProto*>();
 
-  for (int i = 0; i < NUM_THREADS; i++) { 
-    message_queues[i] = new AtomicQueue<MessageProto>();
+
+  batch_queue_ = connection_->NewChannel("scheduler_");
+  CHECK(batch_queue_ != NULL);
+
+  for (int i = 0; i < NUM_THREADS; i++) {
+    string channel("scheduler");
+    channel.append(IntToString(i));
+    message_queues[i] = connection_->NewChannel(channel);
+    CHECK(message_queues[i] != NULL);
   }
 
   Spin(1);
@@ -46,10 +52,6 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
 
   // Start all worker threads.
   for (int i = 0; i < NUM_THREADS; i++) {
-    string channel("scheduler");
-    channel.append(IntToString(i));
-    thread_connections_[i] = batch_connection_->multiplexer()->NewConnection(channel, &message_queues[i]);
-
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     CPU_ZERO(&cpuset);
@@ -76,6 +78,9 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
 
   unordered_map<string, StorageManager*> active_txns;
 
+  string channel("scheduler");
+  channel.append(IntToString(thread));
+
   // Begin main loop.
   MessageProto message;
   while (true) {
@@ -91,8 +96,7 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
         scheduler->application_->Execute(txn, manager);
         delete manager;
 
-        scheduler->thread_connections_[thread]->
-            UnlinkChannel(IntToString(txn->txn_id()));
+        scheduler->connection_->UnlinkChannel(IntToString(txn->txn_id()));
         active_txns.erase(message.destination_channel());
         // Respond to scheduler;
         scheduler->done_queue->Push(txn);
@@ -104,7 +108,7 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
       if (got_it == true) {
         // Create manager.
         StorageManager* manager = new StorageManager(scheduler->configuration_,
-                                      scheduler->thread_connections_[thread],
+                                      scheduler->connection_,
                                       scheduler->storage_, txn);
 
         // Writes occur at this node.
@@ -116,7 +120,7 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
           // Respond to scheduler;
           scheduler->done_queue->Push(txn);
         } else {
-          scheduler->thread_connections_[thread]->LinkChannel(IntToString(txn->txn_id()));
+          scheduler->connection_->LinkChannel(IntToString(txn->txn_id()), channel);
           // There are outstanding remote reads.
           active_txns[IntToString(txn->txn_id())] = manager;
         }
@@ -127,6 +131,11 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
 }
 
 DeterministicScheduler::~DeterministicScheduler() {
+  pthread_join(lock_manager_thread_, NULL);
+
+  for (int i = 0; i < NUM_THREADS; i++) {
+    pthread_join(threads_[i], NULL);
+  }
 }
 
 
@@ -138,7 +147,7 @@ uint32 current_sequence_id_ = 0;
 uint32 current_sequence_batch_index_ = 0;;
 uint64 current_batch_id_ = 0;
 
-MessageProto* GetBatch(Connection* connection) {
+MessageProto* GetBatch(AtomicQueue<MessageProto>* batch_queue) {
    if (current_sequence_ == NULL) {
      if (global_batches_order.count(current_sequence_id_) > 0) {
        MessageProto* sequence_message = global_batches_order[current_sequence_id_];
@@ -150,7 +159,7 @@ MessageProto* GetBatch(Connection* connection) {
      } else {
        // Receive the batch data or global batch order
        MessageProto* message = new MessageProto();
-       while (connection->GetMessage(message)) {
+       while (batch_queue->Pop(message)) {
          if (message->type() == MessageProto::TXN_SUBBATCH) {
 //LOG(ERROR) << "In scheduler:  receive a subbatch: "<<message->batch_number();
            batches_data[message->batch_number()] = message;
@@ -195,7 +204,7 @@ MessageProto* GetBatch(Connection* connection) {
    } else {
      // Receive the batch data or global batch order
      MessageProto* message = new MessageProto();
-     while (connection->GetMessage(message)) {
+     while (batch_queue->Pop(message)) {
        if (message->type() == MessageProto::TXN_SUBBATCH) {
 //LOG(ERROR) << "In scheduler:  receive a subbatch: "<<message->batch_number();
          if ((uint64)(message->batch_number()) == current_batch_id_) {
@@ -244,12 +253,12 @@ void* DeterministicScheduler::LockManagerThread(void* arg) {
 
     // Have we run out of txns in our batch? Let's get some new ones.
     if (batch_message == NULL) {
-      batch_message = GetBatch(scheduler->batch_connection_);
+      batch_message = GetBatch(scheduler->batch_queue_);
     // Done with current batch, get next.
     } else if (batch_offset >= batch_message->data_size()) {
         batch_offset = 0;
         delete batch_message;
-        batch_message = GetBatch(scheduler->batch_connection_);
+        batch_message = GetBatch(scheduler->batch_queue_);
 
     // Current batch has remaining txns, grab up to 10.
     } else if (executing_txns + pending_txns < 2000) {

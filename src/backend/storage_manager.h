@@ -45,7 +45,7 @@ class TxnProto;
 
 class StorageManager {
  public:
-  StorageManager(ClusterConfig* config, Connection* connection,
+  StorageManager(ClusterConfig* config, ConnectionMultiplexer* connection,
                  Storage* actual_storage, TxnProto* txn);
 
   ~StorageManager();
@@ -70,7 +70,7 @@ class StorageManager {
   ClusterConfig* configuration_;
 
   // A Connection object that can be used to send and receive messages.
-  Connection* connection_;
+  ConnectionMultiplexer* connection_;
 
   // Storage layer that *actually* stores data objects on this node.
   Storage* actual_storage_;

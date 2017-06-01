@@ -17,10 +17,14 @@ void* Sequencer::RunSequencerReader(void *arg) {
   return NULL;
 }
 
-Sequencer::Sequencer(ClusterConfig* conf, Connection* sequencer_connection, Client* client, Paxos* paxos, uint32 max_batch_size)
-          : epoch_duration_(0.1), configuration_(conf), connection_(sequencer_connection),
+Sequencer::Sequencer(ClusterConfig* conf, ConnectionMultiplexer* connection, Client* client, Paxos* paxos, uint32 max_batch_size)
+          : epoch_duration_(0.1), configuration_(conf), connection_(connection),
           client_(client), deconstructor_invoked_(false), paxos_log_(paxos), max_batch_size_(max_batch_size) {
   // Start Sequencer main loops running in background thread.
+
+
+  sequencer_queue_ = connection_->NewChannel("sequencer_");
+  CHECK(sequencer_queue_ != NULL);
 
   cpu_set_t cpuset;
   pthread_attr_t attr_writer;
@@ -120,7 +124,7 @@ void Sequencer::RunReader() {
 
   while (!deconstructor_invoked_) {
 
-    bool got_message = connection_->GetMessage(&message);
+    bool got_message = sequencer_queue_->Pop(&message);
     if (got_message == true) {
       if (message.type() == MessageProto::TXN_BATCH) {
 //LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie TXN_BATCH message:"<<message.batch_number();

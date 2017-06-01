@@ -10,22 +10,24 @@ ConnectionMultiplexer::ConnectionMultiplexer(ClusterConfig* config)
   local_node_id_ = config->local_node_id();
   port_ = config->machines_.find(local_node_id_)->second.port();
 
-  // Bind local (inproc) incoming socket.
-  inproc_in_ = new socket_t(context_, ZMQ_PULL);
-  inproc_in_->bind("inproc://__inproc_in_endpoint__");
-
   // Bind port for remote incoming socket.
   char endpoint[256];
   snprintf(endpoint, sizeof(endpoint), "tcp://*:%d", port_);
   remote_in_ = new socket_t(context_, ZMQ_PULL);
   remote_in_->bind(endpoint);
 
+  // Initialize mutexes.
+  for (map<uint64, MachineInfo>::const_iterator it = config->machines_.begin();
+       it != config->machines_.end(); ++it) {
+      mutexes_[it->second.id()] = new Mutex();
+  }
+
+  new_channel_mutex_ = new Mutex();
+
+  link_unlink_queue_ = new AtomicQueue<MessageProto>();
+
   // Wait for other nodes to bind sockets before connecting to them.
   Spin(0.1);
-
-  send_mutex_ = new Mutex[(int)config->all_nodes_size()];
-
-pthread_mutex_init(&test_mutex_, NULL);
 
   // Connect to remote outgoing sockets.
   for (map<uint64, MachineInfo>::const_iterator it = config->machines_.begin();
@@ -67,174 +69,102 @@ ConnectionMultiplexer::~ConnectionMultiplexer() {
 
   // Close tcp sockets.
   delete remote_in_;
-  for (unordered_map<int, zmq::socket_t*>::iterator it = remote_out_.begin();
+  for (unordered_map<uint64, zmq::socket_t*>::iterator it = remote_out_.begin();
        it != remote_out_.end(); ++it) {
     delete it->second;
   }
+  
+  for (unordered_map<string, AtomicQueue<MessageProto>*>::iterator it = channel_results_.begin();
+       it != channel_results_.end(); ++it) {
+    delete it->second;
+  }
+  
+  delete link_unlink_queue_;
 
-  // Close inproc sockets.
-  delete inproc_in_;
-  for (unordered_map<string, zmq::socket_t*>::iterator it = inproc_out_.begin();
-       it != inproc_out_.end(); ++it) {
-    delete it->second;
-  }
-  
-  for (unordered_map<string, AtomicQueue<MessageProto>*>::iterator it = remote_result_.begin();
-       it != remote_result_.end(); ++it) {
-    delete it->second;
-  }
-  
-  for (unordered_map<string, AtomicQueue<MessageProto>*>::iterator it = link_unlink_queue_.begin();
-       it != link_unlink_queue_.end(); ++it) {
+  for (unordered_map<uint64, Mutex*>::iterator it = mutexes_.begin();it != mutexes_.end(); ++it) {
     delete it->second;
   }
 }
 
-Connection* ConnectionMultiplexer::NewConnection(const string& channel) {
-//LOG(ERROR) << "main thread: will create new connection---- ";
-  // Disallow concurrent calls to NewConnection/~Connection.
-  //Lock l(&new_connection_mutex_);
-pthread_mutex_lock(&test_mutex_);  
-  Connection* new_connection = new Connection();
 
-  if (inproc_out_.count(channel) > 0) {
+AtomicQueue<MessageProto>* ConnectionMultiplexer::NewChannel(const string& channel) {
+  // Disallow concurrent calls to NewConnection/~Connection.
+  Lock l(new_channel_mutex_);
+
+  if (channel_results_.count(channel) > 0) {
     // Channel name already in use. Report an error and set new_connection_
     // (which NewConnection() will return) to NULL.
     std::cerr << "Attempt to create channel that already exists: "
               << channel << "\n" << std::flush;
-    new_connection = NULL;
-   } else {
-     // Channel name is not already in use. Create a new Connection object
-     // and connect it to this multiplexer.
-//LOG(ERROR) << "connection thread: will create new connection---- ";
-     new_connection->channel_ = channel;
-     new_connection->multiplexer_ = this;
-     char endpoint[256];
-     snprintf(endpoint, sizeof(endpoint), "inproc://%s", channel.c_str());
-     inproc_out_[channel] = new socket_t(context_, ZMQ_PUSH);
-     inproc_out_[channel]->bind(endpoint);
-     new_connection->socket_in_ = new socket_t(context_, ZMQ_PULL);
-     new_connection->socket_in_->connect(endpoint);
-     new_connection->socket_out_ = new socket_t(context_, ZMQ_PUSH);
-     new_connection->socket_out_->connect("inproc://__inproc_in_endpoint__");
+    return NULL;
+  }
+  
+  AtomicQueue<MessageProto>* channel_queue = new AtomicQueue<MessageProto>(); 
+  channel_results_[channel] = channel_queue;
 
-     // Forward on any messages sent to this channel before it existed.
-     vector<MessageProto>::iterator i;
-     for (i = undelivered_messages_[channel].begin();
-          i != undelivered_messages_[channel].end(); ++i) {
-       Send(*i);
-     }
-     undelivered_messages_.erase(channel);
-   }
+  // Forward on any messages sent to this channel before it existed.
+  vector<MessageProto>::iterator i;
+  for (i = undelivered_messages_[channel].begin(); i != undelivered_messages_[channel].end(); ++i) {
+    channel_results_[channel]->Push(*i);
+  }
+  
+  undelivered_messages_.erase(channel);
 
-   if ((channel.substr(0, 9) == "scheduler") && (channel.substr(9,1) != "_")) {
-     link_unlink_queue_[channel] = new AtomicQueue<MessageProto>();
-   }
-//LOG(ERROR) << "main thread: finish create new connection---- ";
-pthread_mutex_unlock(&test_mutex_); 
-  return new_connection;
-}
-
-Connection* ConnectionMultiplexer::NewConnection(const string& channel, AtomicQueue<MessageProto>** aa) {
-  // Disallow concurrent calls to NewConnection/~Connection.
- // Lock l(&new_connection_mutex_);
-pthread_mutex_lock(&test_mutex_); 
-  remote_result_[channel] = *aa;
-
-  Connection* new_connection = new Connection();
-
-  if (inproc_out_.count(channel) > 0) {
-    // Channel name already in use. Report an error and set new_connection_
-    // (which NewConnection() will return) to NULL.
-    std::cerr << "Attempt to create channel that already exists: "
-              << channel << "\n" << std::flush;
-    new_connection = NULL;
-   } else {
-     // Channel name is not already in use. Create a new Connection object
-     // and connect it to this multiplexer.
-//LOG(ERROR) << "connection thread: will create new connection---- ";
-     new_connection->channel_ = channel;
-     new_connection->multiplexer_ = this;
-     char endpoint[256];
-     snprintf(endpoint, sizeof(endpoint), "inproc://%s", channel.c_str());
-     inproc_out_[channel] = new socket_t(context_, ZMQ_PUSH);
-     inproc_out_[channel]->bind(endpoint);
-     new_connection->socket_in_ = new socket_t(context_, ZMQ_PULL);
-     new_connection->socket_in_->connect(endpoint);
-     new_connection->socket_out_ = new socket_t(context_, ZMQ_PUSH);
-     new_connection->socket_out_->connect("inproc://__inproc_in_endpoint__");
-
-     // Forward on any messages sent to this channel before it existed.
-     vector<MessageProto>::iterator i;
-     for (i = undelivered_messages_[channel].begin();
-          i != undelivered_messages_[channel].end(); ++i) {
-       Send(*i);
-     }
-     undelivered_messages_.erase(channel);
-   }
-
-   if ((channel.substr(0, 9) == "scheduler") && (channel.substr(9,1) != "_")) {
-     link_unlink_queue_[channel] = new AtomicQueue<MessageProto>();
-   }
-//LOG(ERROR) << "main thread: finish create new connection---- ";
-pthread_mutex_unlock(&test_mutex_); 
-  return new_connection;
+  return channel_queue;
 }
 
 
-void ConnectionMultiplexer::DeleteConnection(const string& channel) {
+void ConnectionMultiplexer::DeleteChannel(const string& channel) {
   // Serve any pending (valid) connection deletion request.
-  //Lock l(&delete_connection_mutex_);
-pthread_mutex_lock(&test_mutex_); 
-  if (inproc_out_.count(channel) > 0) {
-    delete inproc_out_[channel];
-    inproc_out_.erase(channel);
+  Lock l(new_channel_mutex_);
+  if (channel_results_.count(channel) > 0) {
+    delete channel_results_[channel];
+    channel_results_.erase(channel);
   }
-pthread_mutex_unlock(&test_mutex_); 
 }
 
 
 void ConnectionMultiplexer::Run() {
   MessageProto message;
   zmq::message_t msg;
+  bool got_message= false;
+  bool got_request = false;
 
   while (!deconstructor_invoked_) {
     // Forward next message from a remote node (if any).
-    if (remote_in_->recv(&msg, ZMQ_NOBLOCK)) {
+    got_message = remote_in_->recv(&msg, ZMQ_NOBLOCK);
+    if (got_message == true) {
       message.ParseFromArray(msg.data(), msg.size());
-      Send(message);
+          
+      if (channel_results_.count(message.destination_channel()) > 0) {
+        channel_results_[message.destination_channel()]->Push(message);
+      } else {
+        undelivered_messages_[message.destination_channel()].push_back(message);
+      }
+      message.Clear();
     }
-
-    // Forward next message from a local component (if any), intercepting
-    // local Link/UnlinkChannel requests.
-    if (inproc_in_->recv(&msg, ZMQ_NOBLOCK)) {
-      message.ParseFromArray(msg.data(), msg.size());
-      // Normal message. Forward appropriately.
-      Send(message);
-    }
-
-   for (unordered_map<string, AtomicQueue<MessageProto>*>::iterator it = link_unlink_queue_.begin();
-        it != link_unlink_queue_.end(); ++it) {
-      
-     MessageProto message;
-     bool got_it = it->second->Pop(&message);
-     if (got_it == true) {
+    
+     got_request = link_unlink_queue_->Pop(&message);
+     if (got_request == true) {
        if (message.type() == MessageProto::LINK_CHANNEL) {
-         remote_result_[message.channel_request()] = remote_result_[it->first];
+         channel_results_[message.channel_request()] = channel_results_[message.main_channel()];
          // Forward on any messages sent to this channel before it existed.
          vector<MessageProto>::iterator i;
          for (i = undelivered_messages_[message.channel_request()].begin();
               i != undelivered_messages_[message.channel_request()].end();
               ++i) {
-           Send(*i);
+           channel_results_[message.main_channel()]->Push(*i);
          }
          undelivered_messages_.erase(message.channel_request());
        } else if (message.type() == MessageProto::UNLINK_CHANNEL) {
-         remote_result_.erase(message.channel_request());
+         channel_results_.erase(message.channel_request());
        }
+       message.Clear();
      }
-   }
-       
+
+     if (got_message == false && got_request == false) {
+       usleep(20);
+     }     
   }
 }
 
@@ -246,13 +176,16 @@ void* ConnectionMultiplexer::RunMultiplexer(void *multiplexer) {
 
 void ConnectionMultiplexer::Send(const MessageProto& message) {
 
-  if (message.type() == MessageProto::READ_RESULT) {
-    if (remote_result_.count(message.destination_channel()) > 0) {
-      remote_result_[message.destination_channel()]->Push(message);
+  if (message.destination_node() == local_node_id_) {
+    // Message is addressed to a local channel. If channel is valid, send the
+    // message on, else store it to be delivered if the channel is ever created.
+    if (channel_results_.count(message.destination_channel()) > 0) {
+      channel_results_[message.destination_channel()]->Push(message);
     } else {
       undelivered_messages_[message.destination_channel()].push_back(message);
     }
   } else {
+    Lock l(mutexes_[message.destination_node()]);
 
     // Prepare message.
     string* message_string = new string();
@@ -263,118 +196,23 @@ void ConnectionMultiplexer::Send(const MessageProto& message) {
                        DeleteString,
                        message_string);
 
-    // Send message.
-    if (message.destination_node() == local_node_id_) {
-      // Message is addressed to a local channel. If channel is valid, send the
-      // message on, else store it to be delivered if the channel is ever created.
-      if (inproc_out_.count(message.destination_channel()) > 0)
-        inproc_out_[message.destination_channel()]->send(msg);
-      else
-        undelivered_messages_[message.destination_channel()].push_back(message);
-    } else {
-      // Message is addressed to valid remote node. Channel validity will be
-      // checked by the remote multiplexer.
-      //Lock l(&send_mutex_[message.destination_node()]);  
-pthread_mutex_lock(&test_mutex_); 
-      remote_out_[message.destination_node()]->send(msg);
-pthread_mutex_unlock(&test_mutex_); 
-    } 
+    remote_out_[message.destination_node()]->send(msg);
   }
 }
 
-Connection::~Connection() {
-  // Unlink any linked channels.
-  for (set<string>::iterator it = linked_channels_.begin();
-       it != linked_channels_.end(); ++it) {
-    UnlinkChannel(*it);
-  }
 
-  // Delete socket on Connection end.
-  delete socket_in_;
-  delete socket_out_;
-
-  // Prompt multiplexer to delete socket on its end.
-  multiplexer_->DeleteConnection(channel_);
-}
-
-void Connection::Send(const MessageProto& message) {
-  //Lock l(&socket_out_mutex_);  
-pthread_mutex_lock(&multiplexer_->test_mutex_); 
-  // Prepare message.
-  string* message_string = new string();
-  message.SerializeToString(message_string);
-  zmq::message_t msg(reinterpret_cast<void*>(
-                       const_cast<char*>(message_string->data())),
-                     message_string->size(),
-                     DeleteString,
-                     message_string);
-  // Send message.
-  socket_out_->send(msg);
-pthread_mutex_unlock(&multiplexer_->test_mutex_); 
-}
-
-/**void Connection::Send(const MessageProto& message) {
-  // Prepare message.
-  string* message_string = new string();
-  message.SerializeToString(message_string);
-  zmq::message_t msg(reinterpret_cast<void*>(
-                       const_cast<char*>(message_string->data())),
-                     message_string->size(),
-                     DeleteString,
-                     message_string);
-
-  if (message.destination_node() == multiplexer()->Local_node_id()) {
-    Lock l(&socket_out_mutex_);  
-    socket_out_->send(msg);
-  } else {
-    // Message is addressed to valid remote node. Channel validity will be
-    // checked by the remote multiplexer.
-    Lock l(&(multiplexer_->send_mutex_[message.destination_node()]));                   
-    multiplexer()->remote_out_[message.destination_node()]->send(msg);
-  }
-}**/
-
-bool Connection::GetMessage(MessageProto* message) {
-  //Lock l(&socket_in_mutex_);
-pthread_mutex_lock(&multiplexer_->test_mutex_); 
-  zmq::message_t msg_;
-  if (socket_in_->recv(&msg_, ZMQ_NOBLOCK)) {
-    // Received a message.
-    message->ParseFromArray(msg_.data(), msg_.size());
-pthread_mutex_unlock(&multiplexer_->test_mutex_); 
-    return true;
-  } else {
-    // No message received at this time.
-pthread_mutex_unlock(&multiplexer_->test_mutex_); 
-    return false;
-  }
-}
-
-bool Connection::GetMessageBlocking(MessageProto* message,
-                                    double max_wait_time) {
-  double start = GetTime();
-  do {
-    if (GetMessage(message)) {
-      // Received a message.
-      return true;
-    }
-  } while (GetTime() < start + max_wait_time);
-
-  // Waited for max_wait_time, but no message was received.
-  return false;
-}
-
-void Connection::LinkChannel(const string& channel) {
+void ConnectionMultiplexer::LinkChannel(const string& channel, const string& main_channel) {
   MessageProto m;
   m.set_type(MessageProto::LINK_CHANNEL);
   m.set_channel_request(channel);
-  multiplexer()->link_unlink_queue_[channel_]->Push(m);
+  m.set_main_channel(main_channel);
+  link_unlink_queue_->Push(m);
 }
 
-void Connection::UnlinkChannel(const string& channel) {
+void ConnectionMultiplexer::UnlinkChannel(const string& channel) {
   MessageProto m;
-  m.set_type(MessageProto::UNLINK_CHANNEL);
+  m.set_type(MessageProto::LINK_CHANNEL);
   m.set_channel_request(channel);
-  multiplexer()->link_unlink_queue_[channel_]->Push(m);
+  link_unlink_queue_->Push(m);
 }
 

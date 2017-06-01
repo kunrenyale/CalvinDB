@@ -3,7 +3,7 @@
 
 #include "backend/storage_manager.h"
 
-StorageManager::StorageManager(ClusterConfig* config, Connection* connection,
+StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* connection,
                                Storage* actual_storage, TxnProto* txn)
     : configuration_(config), connection_(connection),
       actual_storage_(actual_storage), txn_(txn), relative_node_id_(config->relative_node_id()) {

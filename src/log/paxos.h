@@ -27,7 +27,7 @@ using std::set;
 
 class Paxos {
  public:
-  Paxos(Log* log, ClusterConfig* config, Connection* paxos_connection);
+  Paxos(Log* log, ClusterConfig* config, ConnectionMultiplexer* connection);
 
   ~Paxos();
 
@@ -65,7 +65,9 @@ class Paxos {
   ClusterConfig* configuration_;
   uint64 this_machine_id_;
 
-  Connection* paxos_connection_;
+  ConnectionMultiplexer* connection_;
+
+  AtomicQueue<MessageProto>* paxos_queue_;
 
   // Separate pthread contexts in which to run the leader or follower thread.
   pthread_t leader_thread_;

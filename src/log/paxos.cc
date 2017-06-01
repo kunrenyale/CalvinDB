@@ -4,8 +4,8 @@
 #include "log/paxos.h"
 
 
-Paxos::Paxos(Log* log, ClusterConfig* config, Connection* paxos_connection)
-    : log_(log), configuration_(config), paxos_connection_(paxos_connection) {
+Paxos::Paxos(Log* log, ClusterConfig* config, ConnectionMultiplexer* connection)
+    : log_(log), configuration_(config), connection_(connection) {
   // Init participants_
   participants_.push_back(0);
   go_ = true;
@@ -16,7 +16,10 @@ Paxos::Paxos(Log* log, ClusterConfig* config, Connection* paxos_connection)
   }
 
   this_machine_id_ = configuration_->local_node_id();
-
+  
+  paxos_queue_ = connection_->NewChannel("paxos_log_");
+  CHECK(paxos_queue_ != NULL);
+  
   cpu_set_t cpuset;
   pthread_attr_t attr_writer;
   pthread_attr_init(&attr_writer);
@@ -33,7 +36,12 @@ Paxos::Paxos(Log* log, ClusterConfig* config, Connection* paxos_connection)
 }
 
 Paxos::~Paxos() {
-    Stop();
+  Stop();
+  if (IsLeader()) {
+    pthread_join(leader_thread_, NULL);
+  } else {
+    pthread_join(follower_thread_, NULL);
+  }
 }
 
 void* Paxos::RunLeaderThread(void *arg) {
@@ -99,7 +107,7 @@ void Paxos::RunLeader() {
 
     for (uint32 i = 1; i < participants_.size(); i++) {
       sequence_message.set_destination_node(participants_[i]);
-      paxos_connection_->Send(sequence_message);
+      connection_->Send(sequence_message);
     }
 
     uint64 acks = 1;
@@ -107,7 +115,7 @@ void Paxos::RunLeader() {
     // Collect Acks.
     MessageProto message;
     while (acks < quorum) {
-      while (paxos_connection_->GetMessage(&message) == false) {
+      while (paxos_queue_->Pop(&message) == false) {
         usleep(10);
         if (!go_) {
           return;
@@ -125,7 +133,7 @@ void Paxos::RunLeader() {
     for (uint64 i = local_replica * machines_per_replica; i < (local_replica + 1)*machines_per_replica ;i++) {
 //LOG(ERROR) <<this_machine_id_<< ":In paxos log:  send PAXOS_BATCH_ORDER: "<<version<<"  to node:"<<i;
       sequence_message.set_destination_node(i);
-      paxos_connection_->Send(sequence_message);
+      connection_->Send(sequence_message);
     }
 
     sequence_message.clear_data();
@@ -135,7 +143,7 @@ void Paxos::RunLeader() {
     sequence_message.set_destination_channel("paxos_log_");
     for (uint32 i = 1; i < participants_.size(); i++) {
       sequence_message.set_destination_node(participants_[i]);
-      paxos_connection_->Send(sequence_message);
+      connection_->Send(sequence_message);
     }
    
     sequence_message.Clear();
@@ -157,7 +165,7 @@ void Paxos::RunFollower() {
 
   while (go_) {
     // Get message from leader.
-    while (!paxos_connection_->GetMessage(&message)) {
+    while (paxos_queue_->Pop(&message) == false) {
       usleep(20);
       if (!go_) {
         return;
@@ -170,7 +178,7 @@ void Paxos::RunFollower() {
       ack_message.set_destination_node(participants_[0]);
       ack_message.set_type(MessageProto::PAXOS_DATA_ACK);
       ack_message.set_destination_channel("paxos_log_");
-      paxos_connection_->Send(ack_message);
+      connection_->Send(ack_message);
 
     } else if (message.type() == MessageProto::PAXOS_COMMIT){
       // Commit message.
@@ -186,7 +194,7 @@ void Paxos::RunFollower() {
       append_message.set_destination_channel("scheduler_");
       for (uint64 i = local_replica * machines_per_replica; i < (local_replica + 1)*machines_per_replica ;i++) {
         append_message.set_destination_node(i);
-        paxos_connection_->Send(append_message);
+        connection_->Send(append_message);
 //LOG(ERROR) <<this_machine_id_<< ":In paxos log:  send PAXOS_BATCH_ORDER: "<<version<<"  to node:"<<i;
       }
 

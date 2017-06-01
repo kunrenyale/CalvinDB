@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
   LOG(ERROR)<<FLAGS_machine_id <<":Created config ";
 
   // Build connection context and start multiplexer thread running.
-  ConnectionMultiplexer multiplexer(&config);
+  ConnectionMultiplexer* multiplexer = new ConnectionMultiplexer(&config);
 
   Spin(1);
 
@@ -77,32 +77,34 @@ int main(int argc, char** argv) {
   LOG(ERROR) << FLAGS_machine_id << ":Created application "; 
 
   // Synchronization loadgen start with other machines.
-  Connection* synchronization_connection = multiplexer.NewConnection("synchronization_connection");
+  AtomicQueue<MessageProto>* synchronization_queue = multiplexer->NewChannel("synchronization_channel");
+  CHECK(synchronization_queue != NULL);
+
   MessageProto synchronization_message;
   synchronization_message.set_type(MessageProto::EMPTY);
   synchronization_message.set_destination_channel("synchronization_connection");
-  for (uint32 i = 0; i < (uint32)(config.all_nodes_size()); i++) {
+  for (uint64 i = 0; i < (uint64)(config.all_nodes_size()); i++) {
     synchronization_message.set_destination_node(i);
-    if (i != static_cast<uint32>(config.local_node_id())) {
-      synchronization_connection->Send(synchronization_message);
+    if (i != static_cast<uint64>(config.local_node_id())) {
+      multiplexer->Send(synchronization_message);
     }
   }
   uint32 synchronization_counter = 1;
-  while (synchronization_counter < (uint32)(config.all_nodes_size())) {
+  while (synchronization_counter < (uint64)(config.all_nodes_size())) {
     synchronization_message.Clear();
-    if (synchronization_connection->GetMessage(&synchronization_message)) {
+    if (synchronization_queue->Pop(&synchronization_message)) {
       assert(synchronization_message.type() == MessageProto::EMPTY);
       synchronization_counter++;
     }
   }
   
-  delete synchronization_connection;
+  multiplexer->DeleteChannel("synchronization_channel");
   LOG(ERROR) << FLAGS_machine_id << ":After synchronization"; 
 
   // Create Paxos
   Paxos* paxos = NULL;
   if (FLAGS_machine_id % config.nodes_per_replica() == 0) {
-    paxos = new Paxos(new LocalMemLog(), &config, multiplexer.NewConnection("paxos_log_"));
+    paxos = new Paxos(new LocalMemLog(), &config, multiplexer);
   }
 
   LOG(ERROR) << FLAGS_machine_id << ":Created paxos log "; 
@@ -110,7 +112,7 @@ int main(int argc, char** argv) {
   Spin(1);
 
   // Initialize sequencer component and start sequencer thread running.
-  Sequencer sequencer(&config, multiplexer.NewConnection("sequencer_"), client, paxos, FLAGS_max_batch_size);
+  Sequencer sequencer(&config, multiplexer, client, paxos, FLAGS_max_batch_size);
 
   LOG(ERROR) << FLAGS_machine_id << ":Created sequencer ";
  
@@ -119,9 +121,9 @@ int main(int argc, char** argv) {
    // Run scheduler in main thread.
   if (FLAGS_experiment == 0) {
     DeterministicScheduler scheduler(&config,
-                                     multiplexer.NewConnection("scheduler_"),
                                      storage,
-                                     application);
+                                     application,
+                                     multiplexer);
   } else {
     // Other benchmark
   }

@@ -50,8 +50,7 @@ class TxnProto;
 
 class DeterministicScheduler : public Scheduler {
  public:
-  DeterministicScheduler(ClusterConfig* conf, Connection* batch_connection,
-                         Storage* storage, const Application* application);
+  DeterministicScheduler(ClusterConfig* conf, Storage* storage, const Application* application,ConnectionMultiplexer* connection);
   virtual ~DeterministicScheduler();
 
  private:
@@ -65,11 +64,8 @@ class DeterministicScheduler : public Scheduler {
 
   // Thread contexts and their associated Connection objects.
   pthread_t threads_[NUM_THREADS];
-  Connection* thread_connections_[NUM_THREADS];
 
   pthread_t lock_manager_thread_;
-  // Connection for receiving txn batches from sequencer.
-  Connection* batch_connection_;
 
   // Storage layer used in application execution.
   Storage* storage_;
@@ -90,6 +86,10 @@ class DeterministicScheduler : public Scheduler {
   AtomicQueue<TxnProto*>* txns_queue;
   AtomicQueue<TxnProto*>* done_queue;
   
+  // Connection for receiving txn batches from sequencer.
+  ConnectionMultiplexer* connection_;
+
+  AtomicQueue<MessageProto>* batch_queue_;
   AtomicQueue<MessageProto>* message_queues[NUM_THREADS];
   
 };
