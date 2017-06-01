@@ -106,6 +106,8 @@ int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {
   // Read all elements of 'txn->read_set()', add one to each, write them all
   // back out.
 
+double execution_start = GetTime();
+
   for (int i = 0; i < kRWSetSize; i++) {
     Record* val = storage->ReadObject(txn->read_write_set(i));
     // Not necessary since storage already has a pointer to val.
@@ -120,16 +122,26 @@ int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {
     }
 
     // The following code is for microbenchmark "long" transaction, uncomment it if for "long" transaction
-    int x = 1;
+    /**int x = 1;
     for (int j = 1; j < 1000000; j++) {
       for(int i = 0; i < 1000000; i++) {
         x = x*x+1;
         x = x+10;
         x = x-2;
       }
-    }
+    }**/
 
   }
+
+  while (GetTime() - execution_start < 0.0001) {
+    int x = 1;
+    for(int i = 0; i < 10000; i++) {
+      x = x*x+1;
+      x = x+10;
+      x = x-2;
+    }
+  }
+
   return 0;
 }
 
