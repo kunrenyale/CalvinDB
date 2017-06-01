@@ -82,7 +82,7 @@ ConnectionMultiplexer::~ConnectionMultiplexer() {
 
 
 bool ConnectionMultiplexer::GotMessage(const string& channel, MessageProto* message) {
-  assert(channel_results_.count(channel) > 0);
+  CHECK(channel_results_.count(channel) > 0);
   
   if (channel_results_[channel]->Pop(message)) {
     return true;

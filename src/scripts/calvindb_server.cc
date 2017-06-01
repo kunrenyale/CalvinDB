@@ -86,13 +86,15 @@ int main(int argc, char** argv) {
     synchronization_message.set_destination_node(i);
     if (i != static_cast<uint64>(config.local_node_id())) {
       multiplexer->Send(synchronization_message);
+  LOG(ERROR) << FLAGS_machine_id << ":send an synchronization message to:"<<i; 
     }
   }
+
   uint32 synchronization_counter = 1;
   while (synchronization_counter < (uint64)(config.all_nodes_size())) {
     synchronization_message.Clear();
     if (multiplexer->GotMessage("synchronization_connection", &synchronization_message)) {
-      assert(synchronization_message.type() == MessageProto::EMPTY);
+      CHECK(synchronization_message.type() == MessageProto::EMPTY);
   LOG(ERROR) << FLAGS_machine_id << ":receive an synchronization message"; 
       synchronization_counter++;
     }
