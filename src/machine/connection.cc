@@ -135,7 +135,7 @@ void ConnectionMultiplexer::Run() {
     got_message = remote_in_->recv(&msg, ZMQ_NOBLOCK);
     if (got_message == true) {
       message.ParseFromArray(msg.data(), msg.size());
-          
+LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage, channel:"<<message.destination_channel();           
       if (channel_results_.count(message.destination_channel()) > 0) {
         channel_results_[message.destination_channel()]->Push(message);
       } else {
@@ -186,7 +186,7 @@ void ConnectionMultiplexer::Send(const MessageProto& message) {
     }
   } else {
     Lock l(mutexes_[message.destination_node()]);
-
+LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), before send a meesage, send to :"<<message.destination_node();
     // Prepare message.
     string* message_string = new string();
     message.SerializeToString(message_string);
@@ -197,6 +197,7 @@ void ConnectionMultiplexer::Send(const MessageProto& message) {
                        message_string);
 
     remote_out_[message.destination_node()]->send(msg);
+LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), after send a meesage, send to :"<<message.destination_node();
   }
 }
 
