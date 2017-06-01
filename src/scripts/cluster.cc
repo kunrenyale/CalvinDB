@@ -16,7 +16,7 @@ DEFINE_string(ssh_key3, "-i ~/Ireland.pem", "ssh_key for the third data center(I
 DEFINE_int32(experiment, 0, "the experiment that you want to run");
 DEFINE_int32(percent_mp, 0, "percent of distributed txns");
 DEFINE_int32(hot_records, 10000, "number of hot records--to control contention");
-DEFINE_int32(max_batch_size, 400, "max batch size of txns per epoch");
+DEFINE_int32(max_batch_size, 200, "max batch size of txns per epoch");
 
 int main(int argc, char** argv) {
   google::ParseCommandLineFlags(&argc, &argv, true);
