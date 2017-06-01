@@ -123,10 +123,10 @@ void ConnectionMultiplexer::Run() {
         
       if (channel_results_.count(message.destination_channel()) > 0) {
         channel_results_[message.destination_channel()]->Push(message);
-//LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage, channel:"<<message.destination_channel();   
+LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage1, channel:"<<message.destination_channel();   
       } else {
         undelivered_messages_[message.destination_channel()].push_back(message);
-//LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage(undeliver), channel:"<<message.destination_channel();   
+LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage(undeliver1), channel:"<<message.destination_channel();   
       }
       message.Clear();
     }
@@ -147,6 +147,7 @@ void ConnectionMultiplexer::Run() {
       vector<MessageProto>::iterator i;
       for (i = undelivered_messages_[channel].begin(); i != undelivered_messages_[channel].end(); ++i) {
         channel_results_[channel]->Push(*i);
+LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), creat new channel get undelivered_messages, channel:"<<channel; 
       }
   
       undelivered_messages_.erase(channel);
