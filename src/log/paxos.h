@@ -67,8 +67,6 @@ class Paxos {
 
   ConnectionMultiplexer* connection_;
 
-  AtomicQueue<MessageProto>* paxos_queue_;
-
   // Separate pthread contexts in which to run the leader or follower thread.
   pthread_t leader_thread_;
   pthread_t follower_thread_;

@@ -17,8 +17,7 @@ Paxos::Paxos(Log* log, ClusterConfig* config, ConnectionMultiplexer* connection)
 
   this_machine_id_ = configuration_->local_node_id();
   
-  paxos_queue_ = connection_->NewChannel("paxos_log_");
-  CHECK(paxos_queue_ != NULL);
+  connection_->NewChannel("paxos_log_");
   
   cpu_set_t cpuset;
   pthread_attr_t attr_writer;
@@ -115,7 +114,7 @@ void Paxos::RunLeader() {
     // Collect Acks.
     MessageProto message;
     while (acks < quorum) {
-      while (paxos_queue_->Pop(&message) == false) {
+      while (connection_->GotMessage("paxos_log_", &message) == false) {
         usleep(10);
         if (!go_) {
           return;
@@ -165,7 +164,7 @@ void Paxos::RunFollower() {
 
   while (go_) {
     // Get message from leader.
-    while (paxos_queue_->Pop(&message) == false) {
+    while (connection_->GotMessage("paxos_log_", &message) == false) {
       usleep(20);
       if (!go_) {
         return;

@@ -23,8 +23,7 @@ Sequencer::Sequencer(ClusterConfig* conf, ConnectionMultiplexer* connection, Cli
   // Start Sequencer main loops running in background thread.
 
 
-  sequencer_queue_ = connection_->NewChannel("sequencer_");
-  CHECK(sequencer_queue_ != NULL);
+  connection_->NewChannel("sequencer_");
 
   cpu_set_t cpuset;
   pthread_attr_t attr_writer;
@@ -124,7 +123,7 @@ void Sequencer::RunReader() {
 
   while (!deconstructor_invoked_) {
 
-    bool got_message = sequencer_queue_->Pop(&message);
+    bool got_message = connection_->GotMessage("sequencer_", &message);
     if (got_message == true) {
       if (message.type() == MessageProto::TXN_BATCH) {
 //LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie TXN_BATCH message:"<<message.batch_number();

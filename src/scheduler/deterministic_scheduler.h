@@ -88,9 +88,6 @@ class DeterministicScheduler : public Scheduler {
   
   // Connection for receiving txn batches from sequencer.
   ConnectionMultiplexer* connection_;
-
-  AtomicQueue<MessageProto>* batch_queue_;
-  AtomicQueue<MessageProto>* message_queues[NUM_THREADS];
   
 };
 #endif  // _DB_SCHEDULER_DETERMINISTIC_SCHEDULER_H_

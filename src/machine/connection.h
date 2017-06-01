@@ -44,13 +44,15 @@ class ConnectionMultiplexer {
   // the channel name is already in use, in which case NULL is returned. The
   // caller (not the multiplexer) owns of the newly created Connection object.
   
-  AtomicQueue<MessageProto>* NewChannel(const string& channel);
+  void NewChannel(const string& channel);
 
   void DeleteChannel(const string& channel);
 
   void LinkChannel(const string& channel, const string& main_channel);
 
   void UnlinkChannel(const string& channel);
+
+  bool GotMessage(const string& channel, MessageProto* message);
 
   void Send(const MessageProto& message);
 
@@ -88,22 +90,22 @@ class ConnectionMultiplexer {
   // Sockets for outgoing traffic to other nodes. Keyed by node_id.
   // Type = ZMQ_PUSH.
   unordered_map<uint64, zmq::socket_t*> remote_out_;
-
-  // Mutexes guarding out-bound sockets.
-  unordered_map<uint64, Mutex*> mutexes_;
   
   unordered_map<string, AtomicQueue<MessageProto>*> channel_results_;
   
   AtomicQueue<MessageProto>* link_unlink_queue_;
+
+  AtomicQueue<string>* new_channel_queue_;
+
+  AtomicQueue<string>* delete_channel_queue_;
+
+  AtomicQueue<MessageProto>* send_message_queue_;
 
   // Stores messages addressed to local channels that do not exist at the time
   // the message is received (so that they may be delivered if a connection is
   // ever created with the specified channel name).
   //
   unordered_map<string, vector<MessageProto> > undelivered_messages_;
-
-  // Protects concurrent calls to NewConnection() and DeleteConnection
-  Mutex* new_channel_mutex_;
 
   // False until the deconstructor is called. As soon as it is set to true, the
   // main loop sees it and stops.

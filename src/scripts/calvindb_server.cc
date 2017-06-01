@@ -77,8 +77,7 @@ int main(int argc, char** argv) {
   LOG(ERROR) << FLAGS_machine_id << ":Created application "; 
 
   // Synchronization loadgen start with other machines.
-  AtomicQueue<MessageProto>* synchronization_queue = multiplexer->NewChannel("synchronization_channel");
-  CHECK(synchronization_queue != NULL);
+  multiplexer->NewChannel("synchronization_channel");
 
   MessageProto synchronization_message;
   synchronization_message.set_type(MessageProto::EMPTY);
@@ -92,7 +91,7 @@ int main(int argc, char** argv) {
   uint32 synchronization_counter = 1;
   while (synchronization_counter < (uint64)(config.all_nodes_size())) {
     synchronization_message.Clear();
-    if (synchronization_queue->Pop(&synchronization_message)) {
+    if (multiplexer->GotMessage("synchronization_connection", &synchronization_message)) {
       assert(synchronization_message.type() == MessageProto::EMPTY);
   LOG(ERROR) << FLAGS_machine_id << ":receive an synchronization message"; 
       synchronization_counter++;

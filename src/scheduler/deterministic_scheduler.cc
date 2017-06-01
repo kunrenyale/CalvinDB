@@ -29,14 +29,12 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
   done_queue = new AtomicQueue<TxnProto*>();
 
 
-  batch_queue_ = connection_->NewChannel("scheduler_");
-  CHECK(batch_queue_ != NULL);
+  connection_->NewChannel("scheduler_");
 
   for (int i = 0; i < NUM_THREADS; i++) {
     string channel("scheduler");
     channel.append(IntToString(i));
-    message_queues[i] = connection_->NewChannel(channel);
-    CHECK(message_queues[i] != NULL);
+    connection_->NewChannel(channel);
   }
 
   Spin(1);
@@ -84,7 +82,7 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
   // Begin main loop.
   MessageProto message;
   while (true) {
-    bool got_message = scheduler->message_queues[thread]->Pop(&message);
+    bool got_message = scheduler->connection_->GotMessage(channel, &message);
     if (got_message == true) {
       // Remote read result.
       assert(message.type() == MessageProto::READ_RESULT);
@@ -147,7 +145,7 @@ uint32 current_sequence_id_ = 0;
 uint32 current_sequence_batch_index_ = 0;;
 uint64 current_batch_id_ = 0;
 
-MessageProto* GetBatch(AtomicQueue<MessageProto>* batch_queue) {
+MessageProto* GetBatch(ConnectionMultiplexer* connection) {
    if (current_sequence_ == NULL) {
      if (global_batches_order.count(current_sequence_id_) > 0) {
        MessageProto* sequence_message = global_batches_order[current_sequence_id_];
@@ -159,7 +157,7 @@ MessageProto* GetBatch(AtomicQueue<MessageProto>* batch_queue) {
      } else {
        // Receive the batch data or global batch order
        MessageProto* message = new MessageProto();
-       while (batch_queue->Pop(message)) {
+       while (connection->GotMessage("scheduler_", message)) {
          if (message->type() == MessageProto::TXN_SUBBATCH) {
 //LOG(ERROR) << "In scheduler:  receive a subbatch: "<<message->batch_number();
            batches_data[message->batch_number()] = message;
@@ -204,7 +202,7 @@ MessageProto* GetBatch(AtomicQueue<MessageProto>* batch_queue) {
    } else {
      // Receive the batch data or global batch order
      MessageProto* message = new MessageProto();
-     while (batch_queue->Pop(message)) {
+     while (connection->GotMessage("scheduler_", message)) {
        if (message->type() == MessageProto::TXN_SUBBATCH) {
 //LOG(ERROR) << "In scheduler:  receive a subbatch: "<<message->batch_number();
          if ((uint64)(message->batch_number()) == current_batch_id_) {
@@ -253,12 +251,12 @@ void* DeterministicScheduler::LockManagerThread(void* arg) {
 
     // Have we run out of txns in our batch? Let's get some new ones.
     if (batch_message == NULL) {
-      batch_message = GetBatch(scheduler->batch_queue_);
+      batch_message = GetBatch(scheduler->connection_);
     // Done with current batch, get next.
     } else if (batch_offset >= batch_message->data_size()) {
         batch_offset = 0;
         delete batch_message;
-        batch_message = GetBatch(scheduler->batch_queue_);
+        batch_message = GetBatch(scheduler->connection_);
 
     // Current batch has remaining txns, grab up to 10.
     } else if (executing_txns + pending_txns < 2000) {
