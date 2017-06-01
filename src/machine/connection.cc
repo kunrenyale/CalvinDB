@@ -115,22 +115,7 @@ void ConnectionMultiplexer::Run() {
   string channel;
   bool got_request = false;
 
-  while (!deconstructor_invoked_) {
-    // Forward next message from a remote node (if any).
-    got_request = remote_in_->recv(&msg, ZMQ_NOBLOCK);
-    if (got_request == true) {
-      message.ParseFromArray(msg.data(), msg.size());
-        
-      if (channel_results_.count(message.destination_channel()) > 0) {
-        channel_results_[message.destination_channel()]->Push(message);
-LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage1, channel:"<<message.destination_channel();   
-      } else {
-        undelivered_messages_[message.destination_channel()].push_back(message);
-LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage(undeliver1), channel:"<<message.destination_channel();   
-      }
-      message.Clear();
-    }
-    
+  while (!deconstructor_invoked_) {    
     // Create new channel
     while (new_channel_queue_->Pop(&channel) == true) {
       if (channel_results_.count(channel) > 0) {
@@ -142,7 +127,7 @@ LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesag
   
       AtomicQueue<MessageProto>* channel_queue = new AtomicQueue<MessageProto>(); 
       channel_results_[channel] = channel_queue;
-
+LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), creat new channel--:"<<channel; 
       // Forward on any messages sent to this channel before it existed.
       vector<MessageProto>::iterator i;
       for (i = undelivered_messages_[channel].begin(); i != undelivered_messages_[channel].end(); ++i) {
@@ -160,6 +145,22 @@ LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), creat new channe
         delete channel_results_[channel];
         channel_results_.erase(channel);
       }
+    }
+
+
+    // Forward next message from a remote node (if any).
+    got_request = remote_in_->recv(&msg, ZMQ_NOBLOCK);
+    if (got_request == true) {
+      message.ParseFromArray(msg.data(), msg.size());
+        
+      if (channel_results_.count(message.destination_channel()) > 0) {
+        channel_results_[message.destination_channel()]->Push(message);
+LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage1, channel:"<<message.destination_channel();   
+      } else {
+        undelivered_messages_[message.destination_channel()].push_back(message);
+LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage(undeliver1), channel:"<<message.destination_channel();   
+      }
+      message.Clear();
     }
 
     // Send message
