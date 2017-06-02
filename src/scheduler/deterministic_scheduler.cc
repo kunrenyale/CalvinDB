@@ -77,6 +77,7 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
   string channel("scheduler");
   channel.append(IntToString(thread));
 
+Spin(1);
   // Begin main loop.
   MessageProto message;
   while (true) {
