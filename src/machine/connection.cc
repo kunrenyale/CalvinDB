@@ -96,7 +96,6 @@ void ConnectionMultiplexer::NewChannel(const string& channel) {
   }
 
   CHECK(channel_results_.Count(channel) > 0);
-LOG(ERROR) << local_node_id_ << ":Completing creating new channel--:"<<channel; 
 }
 
 
@@ -130,9 +129,7 @@ void ConnectionMultiplexer::Run() {
       // Forward on any messages sent to this channel before it existed.
       vector<MessageProto>::iterator i;
       for (i = undelivered_messages_[channel].begin(); i != undelivered_messages_[channel].end(); ++i) {
-        AtomicQueue<MessageProto>* queue = channel_results_.Lookup(channel);
-        CHECK(queue != NULL);
-        queue->Push(*i);
+        (channel_results_.Lookup(channel))->Push(*i);
 //LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), creat new channel get undelivered_messages, channel:"<<channel; 
       }
   
@@ -155,9 +152,7 @@ void ConnectionMultiplexer::Run() {
       message.ParseFromArray(msg.data(), msg.size());
         
       if (channel_results_.Count(message.destination_channel()) > 0) {
-        AtomicQueue<MessageProto>* queue = channel_results_.Lookup(message.destination_channel());
-        CHECK(queue != NULL);
-        queue->Push(message);
+        (channel_results_.Lookup(message.destination_channel()))->Push(message);
 //LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage1, channel:"<<message.destination_channel();   
       } else {
         undelivered_messages_[message.destination_channel()].push_back(message);
@@ -173,9 +168,7 @@ void ConnectionMultiplexer::Run() {
         // Message is addressed to a local channel. If channel is valid, send the
         // message on, else store it to be delivered if the channel is ever created.
         if (channel_results_.Count(message.destination_channel()) > 0) {
-          AtomicQueue<MessageProto>* queue = channel_results_.Lookup(message.destination_channel());
-          CHECK(queue != NULL);
-          queue->Push(message);
+          channel_results_.Lookup(message.destination_channel())->Push(message);
         } else {
           undelivered_messages_[message.destination_channel()].push_back(message);
         }
@@ -197,18 +190,13 @@ void ConnectionMultiplexer::Run() {
     got_request = link_unlink_queue_->Pop(&message);
     if (got_request == true) {
       if (message.type() == MessageProto::LINK_CHANNEL) {
-        AtomicQueue<MessageProto>* queue = channel_results_.Lookup(message.main_channel());
-//if (queue == NULL) {
-LOG(ERROR) << local_node_id_ << ":channel not exist, channel_request is:"<<message.channel_request()<<"  main channel is:"<<message.main_channel();  
-//}
-        CHECK(queue != NULL);
-        channel_results_.Put(message.channel_request(), queue);
+        channel_results_.Put(message.channel_request(), channel_results_.Lookup(message.main_channel()));
         // Forward on any messages sent to this channel before it existed.
         vector<MessageProto>::iterator i;
         for (i = undelivered_messages_[message.channel_request()].begin();
              i != undelivered_messages_[message.channel_request()].end();
              ++i) {
-          queue->Push(*i);
+          (channel_results_.Lookup(message.main_channel()))->Push(*i);
         }
         undelivered_messages_.erase(message.channel_request());
       } else if (message.type() == MessageProto::UNLINK_CHANNEL) {
@@ -241,7 +229,7 @@ void ConnectionMultiplexer::LinkChannel(const string& channel, const string& mai
 
 void ConnectionMultiplexer::UnlinkChannel(const string& channel) {
   MessageProto m;
-  m.set_type(MessageProto::LINK_CHANNEL);
+  m.set_type(MessageProto::UNLINK_CHANNEL);
   m.set_channel_request(channel);
   link_unlink_queue_->Push(m);
 }

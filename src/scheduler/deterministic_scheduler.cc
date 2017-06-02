@@ -243,7 +243,7 @@ void* DeterministicScheduler::LockManagerThread(void* arg) {
 
       if(done_txn->writers_size() == 0 || rand() % done_txn->writers_size() == 0)
         txns++;       
-LOG(ERROR) <<machine_id<< ":In LockManagerThread:  finish executing  txn: "<<done_txn->txn_id();
+//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  finish executing  txn: "<<done_txn->txn_id();
       delete done_txn;
     }
 
@@ -269,7 +269,7 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  finish executing  txn: "<<don
 
         scheduler->lock_manager_->Lock(txn);
         pending_txns++;
-LOG(ERROR) <<machine_id<< ":In LockManagerThread:  after lock txn: "<<txn->txn_id();
+//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  after lock txn: "<<txn->txn_id();
       }
     }
 
@@ -281,7 +281,7 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  after lock txn: "<<txn->txn_i
       executing_txns++;
 
       scheduler->txns_queue->Push(txn);
-LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id();
+//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id();
     }
 
     // Report throughput.
