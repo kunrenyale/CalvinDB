@@ -16,12 +16,14 @@
 #include <math.h>
 #include <string>
 #include <vector>
+#include <tr1/unordered_map>
 
 #include "common/types.h"
 #include "common/mutex.h"
 
 using std::string;
 using std::vector;
+using std::tr1::unordered_map;
 
 template<typename T> string TypeName();
 #define ADD_TYPE_NAME(T) \
@@ -157,6 +159,76 @@ class AtomicQueue {
   // DISALLOW_COPY_AND_ASSIGN
   AtomicQueue(const AtomicQueue<T>&);
   AtomicQueue& operator=(const AtomicQueue<T>&);
+};
+
+template<typename K, typename V>
+class AtomicMap {
+ public:
+  AtomicMap() {}
+  ~AtomicMap() {}
+
+  inline V Lookup(const K& k) {
+    ReadLock l(&mutex_);
+    CHECK(map_.count(k) > 0);
+    return map_[k];
+  }
+
+  inline void Put(const K& k, const V& v) {
+    WriteLock l(&mutex_);
+    map_[k] = v;
+  }
+
+  inline void EraseAndPut(const K& k, const V& v) {
+    WriteLock l(&mutex_);
+    map_.erase(k);
+    map_[k] = v;
+  }
+
+  inline void Erase(const K& k) {
+    WriteLock l(&mutex_);
+    map_.erase(k);
+  }
+
+  // Puts (k, v) if there is no record for k. Returns the value of v that is
+  // associated with k afterwards (either the inserted value or the one that
+  // was there already).
+  inline V PutNoClobber(const K& k, const V& v) {
+    WriteLock l(&mutex_);
+    if (map_.count(k) != 0) {
+      return map_[k];
+    } else {
+      map_[k] = v;
+      return v;
+    }
+  }
+
+  inline uint32 Size() {
+    ReadLock l(&mutex_);
+    return map_.size();
+  }
+
+  inline uint32 Count(const K& k) {
+    ReadLock l(&mutex_);
+    return map_.count(k);
+  }
+
+  inline void Destroy() {
+    WriteLock l(&mutex_);
+    for (auto it = map_.begin(); it != map_.end(); ++it) {
+      if (it->second == NULL) {
+        delete it->second;
+      }
+      Erase(it->first);
+    }
+  }
+
+ private:
+  unordered_map<K, V> map_;
+  MutexRW mutex_;
+
+  // DISALLOW_COPY_AND_ASSIGN
+  AtomicMap(const AtomicMap<K, V>&);
+  AtomicMap& operator=(const AtomicMap<K, V>&);
 };
 
 #endif  // CALVIN_COMMON_UTILS_H_
