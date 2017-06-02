@@ -96,6 +96,7 @@ void ConnectionMultiplexer::NewChannel(const string& channel) {
   }
 
   CHECK(channel_results_.Count(channel) > 0);
+LOG(ERROR) << local_node_id_ << "Completing creating new channel--:"<<channel; 
 }
 
 
@@ -197,6 +198,9 @@ void ConnectionMultiplexer::Run() {
     if (got_request == true) {
       if (message.type() == MessageProto::LINK_CHANNEL) {
         AtomicQueue<MessageProto>* queue = channel_results_.Lookup(message.main_channel());
+if (queue == NULL) {
+LOG(ERROR) << local_node_id_ << ":channel not exist:"<<message.main_channel();  
+}
         CHECK(queue != NULL);
         channel_results_.Put(message.channel_request(), queue);
         // Forward on any messages sent to this channel before it existed.
