@@ -101,7 +101,11 @@ LOG(ERROR) << local_node_id_ << ":channel is NULL--:"<<channel;
 void ConnectionMultiplexer::NewChannel(const string& channel) {
   // Disallow concurrent calls to NewConnection/~Connection.
   new_channel_queue_->Push(channel);
-  usleep(10000);
+  while (channel_results_.count(channel) == 0) {
+    usleep(100);
+  }
+
+  CHECK(channel_results_.count(channel) > 0);
 }
 
 
