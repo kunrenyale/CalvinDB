@@ -61,7 +61,6 @@ class ConnectionMultiplexer {
   uint64 Local_node_id() {return local_node_id_;}
 
  private:
-  friend class Connection;
 
   // Runs the Multiplexer's main loop. Run() is called in a new thread by the
   // constructor.
@@ -112,6 +111,8 @@ class ConnectionMultiplexer {
   bool deconstructor_invoked_;
 
   uint64 local_node_id_;
+ 
+  MutexRW mutex_;
 
   // DISALLOW_COPY_AND_ASSIGN
   ConnectionMultiplexer(const ConnectionMultiplexer&);

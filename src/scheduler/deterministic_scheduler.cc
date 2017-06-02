@@ -83,9 +83,10 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
     bool got_message = scheduler->connection_->GotMessage(channel, &message);
     if (got_message == true) {
       // Remote read result.
-      assert(message.type() == MessageProto::READ_RESULT);
+      CHECK(message.type() == MessageProto::READ_RESULT);
       StorageManager* manager = active_txns[message.destination_channel()];
       manager->HandleReadResult(message);
+LOG(ERROR) << thread<<":In RunWorkerThread:  receive a remote read_result";
       if (manager->ReadyToExecute()) {
         // Execute and clean up.
         TxnProto* txn = manager->txn_;
