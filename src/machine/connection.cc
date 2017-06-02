@@ -82,7 +82,7 @@ ConnectionMultiplexer::~ConnectionMultiplexer() {
 
 
 bool ConnectionMultiplexer::GotMessage(const string& channel, MessageProto* message) {
-  ReadLock l(&mutex_);
+//  ReadLock l(&mutex_);
 
   CHECK(channel_results_.count(channel) > 0);
   
@@ -130,7 +130,7 @@ void ConnectionMultiplexer::Run() {
   
       AtomicQueue<MessageProto>* channel_queue = new AtomicQueue<MessageProto>(); 
       {
-        WriteLock l(&mutex_);
+        //WriteLock l(&mutex_);
         channel_results_[channel] = channel_queue;
       }
 //LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), creat new channel--:"<<channel; 
@@ -199,7 +199,7 @@ void ConnectionMultiplexer::Run() {
     if (got_request == true) {
       if (message.type() == MessageProto::LINK_CHANNEL) {
         {
-          WriteLock l(&mutex_);
+          //WriteLock l(&mutex_);
           channel_results_[message.channel_request()] = channel_results_[message.main_channel()];
         }
         // Forward on any messages sent to this channel before it existed.
@@ -211,7 +211,7 @@ void ConnectionMultiplexer::Run() {
         }
         undelivered_messages_.erase(message.channel_request());
       } else if (message.type() == MessageProto::UNLINK_CHANNEL) {
-        WriteLock l(&mutex_);
+        //WriteLock l(&mutex_);
         channel_results_.erase(message.channel_request());
       }
       message.Clear();
