@@ -198,10 +198,10 @@ void ConnectionMultiplexer::Run() {
     if (got_request == true) {
       if (message.type() == MessageProto::LINK_CHANNEL) {
         AtomicQueue<MessageProto>* queue = channel_results_.Lookup(message.main_channel());
-if (queue == NULL) {
+//if (queue == NULL) {
 LOG(ERROR) << local_node_id_ << ":channel not exist, channel_request is:"<<message.channel_request()<<"  main channel is:"<<message.main_channel();  
-}
-        CHECK(queue != NULL);
+//}
+        //CHECK(queue != NULL);
         channel_results_.Put(message.channel_request(), queue);
         // Forward on any messages sent to this channel before it existed.
         vector<MessageProto>::iterator i;
@@ -237,7 +237,6 @@ void ConnectionMultiplexer::LinkChannel(const string& channel, const string& mai
   m.set_channel_request(channel);
   m.set_main_channel(main_channel);
   link_unlink_queue_->Push(m);
-LOG(ERROR) << local_node_id_ << ":LinkChannel request, channel_request is:"<<m.channel_request()<<"  main channel is:"<<m.main_channel(); 
 }
 
 void ConnectionMultiplexer::UnlinkChannel(const string& channel) {
