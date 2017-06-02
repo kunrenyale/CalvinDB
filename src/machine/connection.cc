@@ -201,7 +201,7 @@ void ConnectionMultiplexer::Run() {
 //if (queue == NULL) {
 LOG(ERROR) << local_node_id_ << ":channel not exist, channel_request is:"<<message.channel_request()<<"  main channel is:"<<message.main_channel();  
 //}
-        //CHECK(queue != NULL);
+        CHECK(queue != NULL);
         channel_results_.Put(message.channel_request(), queue);
         // Forward on any messages sent to this channel before it existed.
         vector<MessageProto>::iterator i;
