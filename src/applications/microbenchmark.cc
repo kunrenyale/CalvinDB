@@ -124,7 +124,7 @@ double execution_start = GetTime();
   }
 
   // The following code is for microbenchmark "long" transaction, uncomment it if for "long" transaction
-  while (GetTime() - execution_start < 0.0001) {
+  while (GetTime() - execution_start < 0.0002) {
     int x = 1;
     for(int i = 0; i < 10000; i++) {
       x = x*x+1;
