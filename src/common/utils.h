@@ -169,7 +169,7 @@ class AtomicMap {
 
   inline V Lookup(const K& k) {
     ReadLock l(&mutex_);
-    CHECK(map_.count(k) > 0);
+    //CHECK(map_.count(k) > 0);
     return map_[k];
   }
 
