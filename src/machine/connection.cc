@@ -96,8 +96,9 @@ bool ConnectionMultiplexer::GotMessage(const string& channel, MessageProto* mess
 void ConnectionMultiplexer::NewChannel(const string& channel) {
   // Disallow concurrent calls to NewConnection/~Connection.
   new_channel_queue_->Push(channel);
+  usleep(1000);
   while (channel_results_.count(channel) == 0) {
-    usleep(100);
+    usleep(200);
   }
 
   CHECK(channel_results_.count(channel) > 0);
