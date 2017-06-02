@@ -86,6 +86,9 @@ bool ConnectionMultiplexer::GotMessage(const string& channel, MessageProto* mess
     usleep(100);
   }
 
+if (channel_results_.count(channel) == 0) {
+LOG(ERROR) << local_node_id_ << ":channel is NULL--:"<<channel;   
+}
   CHECK(channel_results_.count(channel) > 0);
   
   if (channel_results_[channel]->Pop(message)) {
