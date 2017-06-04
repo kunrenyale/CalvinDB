@@ -71,8 +71,8 @@ void Paxos::Stop() {
 
 void Paxos::RunLeader() {
   uint64 next_version = 0;
-  uint64 quorum = static_cast<int>(participants_.size()) / 2 + 1;
-
+  //uint64 quorum = static_cast<int>(participants_.size()) / 2 + 1;
+uint64 quorum = 3;
   MessageProto sequence_message;
   
   uint64 machines_per_replica = configuration_->nodes_per_replica();
