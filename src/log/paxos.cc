@@ -71,8 +71,7 @@ void Paxos::Stop() {
 
 void Paxos::RunLeader() {
   uint64 next_version = 0;
-//  uint64 quorum = static_cast<int>(participants_.size()) / 2 + 1;
-uint64 quorum = 2;
+  uint64 quorum = static_cast<int>(participants_.size()) / 2 + 1;
   MessageProto sequence_message;
   
   uint64 machines_per_replica = configuration_->nodes_per_replica();
@@ -121,8 +120,10 @@ uint64 quorum = 2;
         }
       }
 
-      assert(message.type() == MessageProto::PAXOS_DATA_ACK);
-      acks++;
+      CHECK(message.type() == MessageProto::PAXOS_DATA_ACK);
+      if (message.misc_int(0) == version) {
+        acks++;
+      }
       message.Clear();
     }
 
@@ -178,7 +179,10 @@ void Paxos::RunFollower() {
       ack_message.set_destination_node(participants_[0]);
       ack_message.set_type(MessageProto::PAXOS_DATA_ACK);
       ack_message.set_destination_channel("paxos_log_");
+      ack_message.add_misc_int(message.misc_int(0));
       connection_->Send(ack_message);
+ 
+      ack_message.Clear();
 
     } else if (message.type() == MessageProto::PAXOS_COMMIT){
       // Commit message.
