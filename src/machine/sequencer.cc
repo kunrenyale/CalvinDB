@@ -209,9 +209,15 @@ void Sequencer::RunReader() {
       } else if (message.type() == MessageProto::BATCH_VOTE) {
 //LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie BATCH_VOTE message:"<<message.misc_int(0);
         uint64 batch_id = message.misc_int(0);
-        uint32 votes;
-
-        votes = ++batch_votes_[batch_id];
+        uint32 votes = 0;
+        
+        if (batch_votes_.count(batch_id) == 0) {
+          votes = 1;
+          batch_votes_[batch_id] = 1;
+        } else {
+          votes = batch_votes_[batch_id] + 1;
+          batch_votes_[batch_id] = votes;
+        }
 
         // Remove from map if all servers are accounted for.
         if (votes == configuration_->replicas_size()) {
