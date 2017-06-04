@@ -7,6 +7,13 @@
 
 #include "machine/sequencer.h"
 
+#ifdef LATENCY_TEST
+map<uint64, double> sequencer_recv;
+map<uint64, double> scheduler_unlock;
+std::atomic<uint64> latency_counter;
+vector<double> measured_latency;
+#endif
+
 void* Sequencer::RunSequencerWriter(void *arg) {
   reinterpret_cast<Sequencer*>(arg)->RunWriter();
   return NULL;
@@ -63,6 +70,13 @@ void Sequencer::RunWriter() {
   uint64 batch_number;
   uint32 txn_id_offset;
 
+  uint32 local_replica = configuration_->local_replica_id();
+  uint64 local_machine = configuration_->local_node_id();
+
+#ifdef LATENCY_TEST
+latency_counter = 0;
+#endif
+
   while (!deconstructor_invoked_) {
     // Begin epoch.
     batch_number = configuration_->GetGUID();
@@ -80,9 +94,18 @@ void Sequencer::RunWriter() {
         string txn_string;
         client_->GetTxn(&txn, batch_number * max_batch_size_ + txn_id_offset);
 
+        txn->set_origin_replica(local_replica);
+        txn->set_origin_machine(local_machine);
         txn->SerializeToString(&txn_string);
         batch_message.add_data(txn_string);
         txn_id_offset++;
+
+#ifdef LATENCY_TEST
+    if (txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES) {
+      sequencer_recv[txn->txn_id()] = GetTime();
+    }
+#endif
+
         delete txn;
       } else {
         usleep(50);

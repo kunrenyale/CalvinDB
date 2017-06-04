@@ -28,7 +28,6 @@
 #include "proto/message.pb.h"
 #include "proto/txn.pb.h"
 #include "scheduler/deterministic_lock_manager.h"
-#include "machine/sequencer.h"  //  LATENCY_TEST
 #include "scheduler/scheduler.h"
 #include "proto/scalar.pb.h"
 

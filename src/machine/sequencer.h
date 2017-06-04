@@ -20,18 +20,24 @@
 #include "applications/microbenchmark.h"
 #include "log/paxos.h"
 
-#define SAMPLES 100000
-#define SAMPLE_RATE 999
-
-//#define LATENCY_TEST
-
 using std::set;
 using std::string;
 using std::queue;
 using std::map;
 
+#define SAMPLES  2000
+#define SAMPLE_RATE 299
+
+#define LATENCY_TEST
+
+#ifdef LATENCY_TEST
+extern map<uint64, double> sequencer_recv;
+extern map<uint64, double> scheduler_unlock;
+extern vector<double> measured_latency;
+extern std::atomic<uint64> latency_counter;
+#endif
+
 class ClusterConfig;
-class Connection;
 class TxnProto;
 
 // Client

@@ -39,5 +39,8 @@ message TxnProto {
   // Node ids of nodes that participate as readers and writers in this txn.
   repeated uint64 readers = 40;
   repeated uint64 writers = 41;
+
+  optional uint32 origin_replica = 50;
+  optional uint64 origin_machine = 51;
 }
 

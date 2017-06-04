@@ -10,6 +10,9 @@
 //
 
 #include "scheduler/deterministic_scheduler.h"
+#include "machine/sequencer.h"  //  LATENCY_TEST
+#include <fstream>
+#include <iostream>
 
 using std::pair;
 using std::string;
@@ -243,7 +246,32 @@ void* DeterministicScheduler::LockManagerThread(void* arg) {
 
       if(done_txn->writers_size() == 0 || rand() % done_txn->writers_size() == 0)
         txns++;       
-//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  finish executing  txn: "<<done_txn->txn_id();
+
+#ifdef LATENCY_TEST
+    if (done_txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES && done_txn->origin_machine() == machine_id) {
+      scheduler_unlock[done_txn->txn_id()] = GetTime();
+      latency_counter++;
+      measured_latency.push_back(scheduler_unlock[done_txn->txn_id()] - sequencer_recv[done_txn->txn_id()]);
+    }
+
+    // Write out the latency results
+    if (latency_counter == SAMPLES) {
+      latency_counter++;
+      string report;
+      for (uint64 i = 100; i < measured_latency.size(); i++) {
+        report.append(DoubleToString(measured_latency[i]*1000) + "\n");
+      }
+
+      string filename = "/tmp/report." + UInt64ToString(machine_id);
+
+      std::ofstream file(filename);
+      file << report;
+
+LOG(ERROR) << machine_id<<": reporting latencies to " << filename;
+
+    }
+#endif
+
       delete done_txn;
     }
 
