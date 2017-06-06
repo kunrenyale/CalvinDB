@@ -316,7 +316,7 @@ LOG(ERROR) << machine_id<<": reporting latencies to " << filename;
     if (GetTime() > time + 1) {
       double total_time = GetTime() - time;
       LOG(ERROR) << "Machine: "<<machine_id<<" Completed "<< (static_cast<double>(txns) / total_time)
-                 << " txns/sec, "<< executing_txns << " executing, "<< pending_txns << " pending"<<"  . Reived:"<<scheduler->connection_->receive_remote_result<<"  .send:"<<scheduler->connection_->send_remote_result;
+                 << " txns/sec, "<< executing_txns << " executing, "<< pending_txns << " pending"<<"  . Reived(channel):"<<scheduler->connection_->receive_channel_remote_result<<"  . Received undeliver:"<<scheduler->connection_->receive_undeliver_remote_result<<"  .send:"<<scheduler->connection_->send_remote_result;
 
       // Reset txn count.
       time = GetTime();
