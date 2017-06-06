@@ -61,7 +61,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
 }
 
 void StorageManager::HandleReadResult(const MessageProto& message) {
-  assert(message.type() == MessageProto::READ_RESULT);
+  CHECK(message.type() == MessageProto::READ_RESULT);
   for (int i = 0; i < message.keys_size(); i++) {
     Record* val = new Record(message.values(i));
     objects_[message.keys(i)] = val;
