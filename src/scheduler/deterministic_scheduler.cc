@@ -87,6 +87,7 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
     if (got_message == true) {
       // Remote read result.
       CHECK(message.type() == MessageProto::READ_RESULT);
+      CHECK(active_txns.count(message.destination_channel()) > 0);
       StorageManager* manager = active_txns[message.destination_channel()];
       manager->HandleReadResult(message);
       if (manager->ReadyToExecute()) {
@@ -99,7 +100,7 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
         active_txns.erase(message.destination_channel());
         // Respond to scheduler;
         scheduler->done_queue->Push(txn);
-if (scheduler->configuration_->local_node_id() > 3)
+if (scheduler->configuration_->local_node_id() > 7)
 LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In RunWorkerThread: got the remote results: "<<txn->txn_id();
       }
     } else {
@@ -124,7 +125,7 @@ LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In RunWorkerThread: 
           scheduler->connection_->LinkChannel(IntToString(txn->txn_id()), channel);
           // There are outstanding remote reads.
           active_txns[IntToString(txn->txn_id())] = manager;
-if (scheduler->configuration_->local_node_id() > 3)
+if (scheduler->configuration_->local_node_id() > 7)
 LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In RunWorkerThread: need to wait for remote results: "<<txn->txn_id();
         }
       }
@@ -312,7 +313,7 @@ LOG(ERROR) << machine_id<<": reporting latencies to " << filename;
       executing_txns++;
 
       scheduler->txns_queue->Push(txn);
-if (machine_id > 3)
+if (machine_id > 7)
 LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id();
     }
 
