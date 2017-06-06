@@ -277,9 +277,13 @@ LOG(ERROR) << machine_id<<": reporting latencies to " << filename;
 
     // Have we run out of txns in our batch? Let's get some new ones.
     if (batch_message == NULL) {
+if (machine_id > 3)
+LOG(ERROR) <<machine_id<< "batch_message == NULL) ";
       batch_message = GetBatch(scheduler->connection_);
     // Done with current batch, get next.
     } else if (batch_offset >= batch_message->data_size()) {
+if (machine_id > 3)
+LOG(ERROR) <<machine_id<< "batch_offset >= batch_message->data_size() ";
         batch_offset = 0;
         delete batch_message;
         batch_message = GetBatch(scheduler->connection_);
