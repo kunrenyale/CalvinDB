@@ -31,6 +31,8 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
   txns_queue = new AtomicQueue<TxnProto*>();
   done_queue = new AtomicQueue<TxnProto*>();
 
+txns_counter = 0;
+remote_result_counter = 0;
 
   connection_->NewChannel("scheduler_");
 
@@ -100,9 +102,8 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
         active_txns.erase(message.destination_channel());
         // Respond to scheduler;
         scheduler->done_queue->Push(txn);
-//if (scheduler->configuration_->local_node_id() > 7)
-//LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In RunWorkerThread: got the remote results: "<<txn->txn_id();
       }
+scheduler->remote_result_counter++;
     } else {
       // No remote read result found, start on next txn if one is waiting.
       TxnProto* txn;
@@ -125,8 +126,7 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
           scheduler->connection_->LinkChannel(IntToString(txn->txn_id()), channel);
           // There are outstanding remote reads.
           active_txns[IntToString(txn->txn_id())] = manager;
-//if (scheduler->configuration_->local_node_id() > 7)
-//LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In RunWorkerThread: need to wait for remote results: "<<txn->txn_id();
+scheduler->txns_counter++;
         }
       }
     }
@@ -321,7 +321,7 @@ LOG(ERROR) << machine_id<<": reporting latencies to " << filename;
     if (GetTime() > time + 1) {
       double total_time = GetTime() - time;
       LOG(ERROR) << "Machine: "<<machine_id<<" Completed "<< (static_cast<double>(txns) / total_time)
-                 << " txns/sec, "<< executing_txns << " executing, "<< pending_txns << " pending\n" << std::flush;
+                 << " txns/sec, "<< executing_txns << " executing, "<< pending_txns << " pending\n" << "distributed_txns:"<<scheduler->txns_counter<<"  received remote result:"<<scheduler->remote_result_counter<<std::flush;
 
       // Reset txn count.
       time = GetTime();
