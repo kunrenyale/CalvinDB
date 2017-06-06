@@ -99,6 +99,8 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
         active_txns.erase(message.destination_channel());
         // Respond to scheduler;
         scheduler->done_queue->Push(txn);
+if (scheduler->configuration_->local_node_id() > 3)
+LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In RunWorkerThread: got the remote results: "<<txn->txn_id();
       }
     } else {
       // No remote read result found, start on next txn if one is waiting.
@@ -122,6 +124,8 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
           scheduler->connection_->LinkChannel(IntToString(txn->txn_id()), channel);
           // There are outstanding remote reads.
           active_txns[IntToString(txn->txn_id())] = manager;
+if (scheduler->configuration_->local_node_id() > 3)
+LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In RunWorkerThread: need to wait for remote results: "<<txn->txn_id();
         }
       }
     }
@@ -271,19 +275,14 @@ LOG(ERROR) << machine_id<<": reporting latencies to " << filename;
 
     }
 #endif
-
       delete done_txn;
     }
 
     // Have we run out of txns in our batch? Let's get some new ones.
     if (batch_message == NULL) {
-if (machine_id > 3)
-LOG(ERROR) <<machine_id<< "batch_message == NULL) ";
       batch_message = GetBatch(scheduler->connection_);
     // Done with current batch, get next.
     } else if (batch_offset >= batch_message->data_size()) {
-if (machine_id > 3)
-LOG(ERROR) <<machine_id<< "batch_offset >= batch_message->data_size() ";
         batch_offset = 0;
         delete batch_message;
         batch_message = GetBatch(scheduler->connection_);
@@ -313,7 +312,8 @@ LOG(ERROR) <<machine_id<< "batch_offset >= batch_message->data_size() ";
       executing_txns++;
 
       scheduler->txns_queue->Push(txn);
-//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id();
+if (machine_id > 3)
+LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id();
     }
 
     // Report throughput.
