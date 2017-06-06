@@ -87,9 +87,6 @@ class DeterministicScheduler : public Scheduler {
   
   // Connection for receiving txn batches from sequencer.
   ConnectionMultiplexer* connection_;
-
-std::atomic<uint64> txns_counter;
-std::atomic<uint64> remote_result_counter;
   
 };
 #endif  // _DB_SCHEDULER_DETERMINISTIC_SCHEDULER_H_

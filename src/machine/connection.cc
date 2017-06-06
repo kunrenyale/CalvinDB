@@ -112,6 +112,9 @@ void ConnectionMultiplexer::Run() {
   string channel;
   bool got_request = false;
 
+send_remote_result = 0;
+receive_remote_result = 0;
+
   while (!deconstructor_invoked_) {    
     // Create new channel
     while (new_channel_queue_->Pop(&channel) == true) {
@@ -150,7 +153,10 @@ void ConnectionMultiplexer::Run() {
     got_request = remote_in_->recv(&msg, ZMQ_NOBLOCK);
     if (got_request == true) {
       message.ParseFromArray(msg.data(), msg.size());
-        
+
+if (message.type() == MessageProto::READ_RESULT) {
+send_remote_result++;
+}  
       if (channel_results_.Count(message.destination_channel()) > 0) {
         (channel_results_.Lookup(message.destination_channel()))->Push(message);
 //LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage1, channel:"<<message.destination_channel();   
@@ -164,6 +170,9 @@ void ConnectionMultiplexer::Run() {
     // Send message
     got_request = send_message_queue_->Pop(&message);
     if (got_request == true) {
+if (message.type() == MessageProto::READ_RESULT) {
+receive_remote_result++;
+}
       if (message.destination_node() == local_node_id_) {
         // Message is addressed to a local channel. If channel is valid, send the
         // message on, else store it to be delivered if the channel is ever created.

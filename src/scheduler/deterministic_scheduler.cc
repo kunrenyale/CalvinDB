@@ -31,9 +31,6 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
   txns_queue = new AtomicQueue<TxnProto*>();
   done_queue = new AtomicQueue<TxnProto*>();
 
-txns_counter = 0;
-remote_result_counter = 0;
-
   connection_->NewChannel("scheduler_");
 
   for (int i = 0; i < NUM_THREADS; i++) {
@@ -103,7 +100,6 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
         // Respond to scheduler;
         scheduler->done_queue->Push(txn);
       }
-scheduler->remote_result_counter++;
     } else {
       // No remote read result found, start on next txn if one is waiting.
       TxnProto* txn;
@@ -126,7 +122,6 @@ scheduler->remote_result_counter++;
           scheduler->connection_->LinkChannel(IntToString(txn->txn_id()), channel);
           // There are outstanding remote reads.
           active_txns[IntToString(txn->txn_id())] = manager;
-scheduler->txns_counter++;
         }
       }
     }
@@ -321,7 +316,7 @@ LOG(ERROR) << machine_id<<": reporting latencies to " << filename;
     if (GetTime() > time + 1) {
       double total_time = GetTime() - time;
       LOG(ERROR) << "Machine: "<<machine_id<<" Completed "<< (static_cast<double>(txns) / total_time)
-                 << " txns/sec, "<< executing_txns << " executing, "<< pending_txns << " pending\n" << "distributed_txns:"<<scheduler->txns_counter<<"  received remote result:"<<scheduler->remote_result_counter<<std::flush;
+                 << " txns/sec, "<< executing_txns << " executing, "<< pending_txns << " pending"<<"  . Reived:"<<scheduler->connection_->receive_remote_result<<"  .send:"<<scheduler->connection_->send_remote_result;
 
       // Reset txn count.
       time = GetTime();

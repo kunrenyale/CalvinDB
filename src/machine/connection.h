@@ -60,6 +60,9 @@ class ConnectionMultiplexer {
 
   uint64 Local_node_id() {return local_node_id_;}
 
+uint32 send_remote_result;
+uint32 receive_remote_result;
+
  private:
 
   // Runs the Multiplexer's main loop. Run() is called in a new thread by the
