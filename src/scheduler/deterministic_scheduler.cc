@@ -100,8 +100,8 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
         active_txns.erase(message.destination_channel());
         // Respond to scheduler;
         scheduler->done_queue->Push(txn);
-if (scheduler->configuration_->local_node_id() > 7)
-LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In RunWorkerThread: got the remote results: "<<txn->txn_id();
+//if (scheduler->configuration_->local_node_id() > 7)
+//LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In RunWorkerThread: got the remote results: "<<txn->txn_id();
       }
     } else {
       // No remote read result found, start on next txn if one is waiting.
@@ -125,8 +125,8 @@ LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In RunWorkerThread: 
           scheduler->connection_->LinkChannel(IntToString(txn->txn_id()), channel);
           // There are outstanding remote reads.
           active_txns[IntToString(txn->txn_id())] = manager;
-if (scheduler->configuration_->local_node_id() > 7)
-LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In RunWorkerThread: need to wait for remote results: "<<txn->txn_id();
+//if (scheduler->configuration_->local_node_id() > 7)
+//LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In RunWorkerThread: need to wait for remote results: "<<txn->txn_id();
         }
       }
     }
@@ -289,7 +289,7 @@ LOG(ERROR) << machine_id<<": reporting latencies to " << filename;
         batch_message = GetBatch(scheduler->connection_);
 
     // Current batch has remaining txns, grab up to 10.
-    } else if (executing_txns + pending_txns < 2000) {
+    } else if (executing_txns + pending_txns < 200) {
       for (int i = 0; i < 100; i++) {
         if (batch_offset >= batch_message->data_size()) {
           // Oops we ran out of txns in this batch. Stop adding txns for now.
@@ -313,8 +313,8 @@ LOG(ERROR) << machine_id<<": reporting latencies to " << filename;
       executing_txns++;
 
       scheduler->txns_queue->Push(txn);
-if (machine_id > 7)
-LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id();
+//if (machine_id > 7)
+//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id();
     }
 
     // Report throughput.
