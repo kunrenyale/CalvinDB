@@ -77,7 +77,7 @@ void Sequencer::RunWriter() {
 latency_counter = 0;
 #endif
 
-if (configuration_->local_node_id() > 1)
+if (configuration_->local_node_id() > 3)
 epoch_duration_ = 0.01;
 else
 epoch_duration_ = 3;
