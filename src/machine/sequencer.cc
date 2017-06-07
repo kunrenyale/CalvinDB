@@ -73,7 +73,7 @@ void Sequencer::RunWriter() {
   uint32 local_replica = configuration_->local_replica_id();
   uint64 local_machine = configuration_->local_node_id();
 
-if (configuration_->local_node_id() == 2 || configuration_->local_node_id() == 3) {
+if (configuration_->local_node_id() == 4 || configuration_->local_node_id() == 5) {
 epoch_duration_ = 0.01;
 } else {
 epoch_duration_ = 100;
