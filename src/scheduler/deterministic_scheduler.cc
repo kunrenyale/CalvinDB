@@ -65,6 +65,8 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
                    reinterpret_cast<void*>(
                    new pair<int, DeterministicScheduler*>(i, this)));
   }
+
+  Spin(2);
 }
 
 

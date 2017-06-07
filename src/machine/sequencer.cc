@@ -62,7 +62,7 @@ Sequencer::~Sequencer() {
 void Sequencer::RunWriter() {
 
 //LOG(ERROR) << "In sequencer:  Starting sequencer writer.";
-
+Spin(1);
   // Set up batch messages for each system node.
   MessageProto batch_message;
   batch_message.set_destination_channel("sequencer_");
@@ -77,10 +77,10 @@ void Sequencer::RunWriter() {
 latency_counter = 0;
 #endif
 
-if (configuration_->local_node_id() < 2)
+/**if (configuration_->local_node_id() < 2)
 epoch_duration_ = 0.01;
 else
-epoch_duration_ = 3;
+epoch_duration_ = 3;**/
   while (!deconstructor_invoked_) {
     // Begin epoch.
     batch_number = configuration_->GetGUID();
@@ -130,6 +130,8 @@ epoch_duration_ = 3;
 }
 
 void Sequencer::RunReader() {
+
+Spin(1);
 
 //LOG(ERROR) << "In sequencer:  Starting sequencer reader.";
   // Set up batch messages for each system node.
