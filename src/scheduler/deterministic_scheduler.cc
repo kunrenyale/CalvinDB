@@ -99,6 +99,8 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
         active_txns.erase(message.destination_channel());
         // Respond to scheduler;
         scheduler->done_queue->Push(txn);
+if (scheduler->configuration_->local_node_id() == 2 || scheduler->configuration_->local_node_id() == 3)
+LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: finish "<<txn->txn_id();
       }
     } else {
       // No remote read result found, start on next txn if one is waiting.
@@ -122,6 +124,8 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
           scheduler->connection_->LinkChannel(IntToString(txn->txn_id()), channel);
           // There are outstanding remote reads.
           active_txns[IntToString(txn->txn_id())] = manager;
+if (scheduler->configuration_->local_node_id() == 2 || scheduler->configuration_->local_node_id() == 3)
+LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: find "<<txn->txn_id();
         }
       }
     }
