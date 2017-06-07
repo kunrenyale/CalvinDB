@@ -107,6 +107,8 @@ LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: finish "<
       TxnProto* txn;
       bool got_it = scheduler->txns_queue->Pop(&txn);
       if (got_it == true) {
+if (txn->txn_type() == 2 && (scheduler->configuration_->local_node_id() == 2 || scheduler->configuration_->local_node_id() == 3))
+LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":----In worker: find "<<txn->txn_id();
         // Create manager.
         StorageManager* manager = new StorageManager(scheduler->configuration_,
                                       scheduler->connection_,
@@ -124,8 +126,6 @@ LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: finish "<
           scheduler->connection_->LinkChannel(IntToString(txn->txn_id()), channel);
           // There are outstanding remote reads.
           active_txns[IntToString(txn->txn_id())] = manager;
-if (scheduler->configuration_->local_node_id() == 2 || scheduler->configuration_->local_node_id() == 3)
-LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":----In worker: find "<<txn->txn_id();
         }
       }
     }
