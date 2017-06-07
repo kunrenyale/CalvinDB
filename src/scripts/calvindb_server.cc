@@ -43,13 +43,13 @@ int main(int argc, char** argv) {
 
 
   // Build this node's configuration object.
-  ClusterConfig config(FLAGS_machine_id);
-  config.FromFile(FLAGS_config);
+  ClusterConfig* config = new ClusterConfig(FLAGS_machine_id);
+  config->FromFile(FLAGS_config);
 
   LOG(ERROR)<<FLAGS_machine_id <<":Created config ";
 
   // Build connection context and start multiplexer thread running.
-  ConnectionMultiplexer* multiplexer = new ConnectionMultiplexer(&config);
+  ConnectionMultiplexer* multiplexer = new ConnectionMultiplexer(config);
 
   Spin(1);
 
@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
   Client* client = NULL;
   // Artificial loadgen clients. Right now only microbenchmark
   if (FLAGS_experiment == 0) {
-    client = reinterpret_cast<Client*>(new MClient(&config, FLAGS_percent_mp, FLAGS_hot_records));
+    client = reinterpret_cast<Client*>(new MClient(config, FLAGS_percent_mp, FLAGS_hot_records));
   }
 
   Storage* storage;
@@ -68,8 +68,8 @@ int main(int argc, char** argv) {
   
   Application* application = NULL; 
   if (FLAGS_experiment == 0) {
-    application = new Microbenchmark(config.nodes_per_replica(), FLAGS_hot_records);
-    application->InitializeStorage(storage, &config);
+    application = new Microbenchmark(config->nodes_per_replica(), FLAGS_hot_records);
+    application->InitializeStorage(storage, config);
   } else {
     // Other benchmark
   }
@@ -82,15 +82,15 @@ int main(int argc, char** argv) {
   MessageProto synchronization_message;
   synchronization_message.set_type(MessageProto::EMPTY);
   synchronization_message.set_destination_channel("synchronization_channel");
-  for (uint64 i = 0; i < (uint64)(config.all_nodes_size()); i++) {
+  for (uint64 i = 0; i < (uint64)(config->all_nodes_size()); i++) {
     synchronization_message.set_destination_node(i);
-    if (i != static_cast<uint64>(config.local_node_id())) {
+    if (i != static_cast<uint64>(config->local_node_id())) {
       multiplexer->Send(synchronization_message);
     }
   }
 
   uint32 synchronization_counter = 1;
-  while (synchronization_counter < (uint64)(config.all_nodes_size())) {
+  while (synchronization_counter < (uint64)(config->all_nodes_size())) {
     synchronization_message.Clear();
     if (multiplexer->GotMessage("synchronization_channel", &synchronization_message)) {
       CHECK(synchronization_message.type() == MessageProto::EMPTY);
@@ -103,20 +103,20 @@ int main(int argc, char** argv) {
 
   // Create Paxos
   Paxos* paxos = NULL;
-  if (FLAGS_machine_id % config.nodes_per_replica() == 0) {
-    paxos = new Paxos(new LocalMemLog(), &config, multiplexer);
+  if (FLAGS_machine_id % config->nodes_per_replica() == 0) {
+    paxos = new Paxos(new LocalMemLog(), config, multiplexer);
   }
 
   LOG(ERROR) << FLAGS_machine_id << ":Created paxos log "; 
 
   // Initialize sequencer component and start sequencer thread running.
-  Sequencer sequencer(&config, multiplexer, client, paxos, FLAGS_max_batch_size);
+  Sequencer sequencer(config, multiplexer, client, paxos, FLAGS_max_batch_size);
 
   LOG(ERROR) << FLAGS_machine_id << ":Created sequencer ";
 
    // Run scheduler in main thread.
   if (FLAGS_experiment == 0) {
-    DeterministicScheduler scheduler(&config,
+    DeterministicScheduler scheduler(config,
                                      storage,
                                      application,
                                      multiplexer);
@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
 
   LOG(ERROR) << FLAGS_machine_id << ":Created scheduler "; 
 
-  while (!config.Stopped()) {
+  while (!config->Stopped()) {
     usleep(1000000);
   }
 

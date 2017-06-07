@@ -16,8 +16,9 @@ DeterministicLockManager::DeterministicLockManager(
     ClusterConfig* config)
   : configuration_(config),
     ready_txns_(ready_txns) {
-  for (int i = 0; i < TABLE_SIZE; i++)
+  for (int i = 0; i < TABLE_SIZE; i++) {
     lock_table_[i] = new deque<KeysList>();
+  }
 }
 
 int DeterministicLockManager::Lock(TxnProto* txn) {
@@ -86,30 +87,33 @@ int DeterministicLockManager::Lock(TxnProto* txn) {
   }
 
   // Record and return the number of locks that the txn is blocked on.
-  if (not_acquired > 0)
+  if (not_acquired > 0) {
     txn_waits_[txn] = not_acquired;
-  else
+  } else {
     ready_txns_->push_back(txn);
+  }
   return not_acquired;
 }
 
 void DeterministicLockManager::Release(TxnProto* txn) {
   for (int i = 0; i < txn->read_set_size(); i++)
-    if (IsLocal(txn->read_set(i)))
+    if (IsLocal(txn->read_set(i))) {
       Release(txn->read_set(i), txn);
+    }
   // Currently commented out because nothing in any write set can conflict
   // in TPCC or Microbenchmark.
 //  for (int i = 0; i < txn->write_set_size(); i++)
 //    if (IsLocal(txn->write_set(i)))
 //      Release(txn->write_set(i), txn);
   for (int i = 0; i < txn->read_write_set_size(); i++)
-    if (IsLocal(txn->read_write_set(i)))
+    if (IsLocal(txn->read_write_set(i))) {
       Release(txn->read_write_set(i), txn);
+    }
 }
 
 void DeterministicLockManager::Release(const Key& key, TxnProto* txn) {
   // Avoid repeatedly looking up key in the unordered_map.
-      deque<KeysList>* key_requests = lock_table_[Hash(key)];
+  deque<KeysList>* key_requests = lock_table_[Hash(key)];
       
   deque<KeysList>::iterator it1;
   for(it1 = key_requests->begin();
