@@ -39,6 +39,8 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
     connection_->NewChannel(channel);
   }
 
+  start_working_ = false;
+
   // start lock manager thread
   cpu_set_t cpuset;
   pthread_attr_t attr1;
@@ -78,6 +80,10 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
 
   string channel("scheduler");
   channel.append(IntToString(thread));
+
+  while (scheduler->start_working_ != true) {
+    usleep(100);
+  }
 
   // Begin main loop.
   MessageProto message;
@@ -256,6 +262,8 @@ void* DeterministicScheduler::LockManagerThread(void* arg) {
 
   scheduler->connection_->DeleteChannel("synchronization_scheduler_channel");
 LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler thread.";
+
+  scheduler->start_working_ = true;
 
   // Run main loop.
   MessageProto message;

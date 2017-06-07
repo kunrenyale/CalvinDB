@@ -87,6 +87,8 @@ class DeterministicScheduler : public Scheduler {
   
   // Connection for receiving txn batches from sequencer.
   ConnectionMultiplexer* connection_;
+
+  bool start_working_;
   
 };
 #endif  // _DB_SCHEDULER_DETERMINISTIC_SCHEDULER_H_
