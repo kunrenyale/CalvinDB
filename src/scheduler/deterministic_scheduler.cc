@@ -65,12 +65,11 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
                    reinterpret_cast<void*>(
                    new pair<int, DeterministicScheduler*>(i, this)));
   }
-
-  Spin(2);
 }
 
 
 void* DeterministicScheduler::RunWorkerThread(void* arg) {
+  Spin(1);
   int thread =
       reinterpret_cast<pair<int, DeterministicScheduler*>*>(arg)->first;
   DeterministicScheduler* scheduler =
@@ -232,6 +231,7 @@ MessageProto* GetBatch(ConnectionMultiplexer* connection) {
 }
 
 void* DeterministicScheduler::LockManagerThread(void* arg) {
+  Spin(1);
   DeterministicScheduler* scheduler = reinterpret_cast<DeterministicScheduler*>(arg);
 
   // Run main loop.
