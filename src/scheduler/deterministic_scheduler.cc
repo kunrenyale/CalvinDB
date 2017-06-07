@@ -69,7 +69,6 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
 
 
 void* DeterministicScheduler::RunWorkerThread(void* arg) {
-  Spin(1);
   int thread =
       reinterpret_cast<pair<int, DeterministicScheduler*>*>(arg)->first;
   DeterministicScheduler* scheduler =
@@ -231,8 +230,29 @@ MessageProto* GetBatch(ConnectionMultiplexer* connection) {
 }
 
 void* DeterministicScheduler::LockManagerThread(void* arg) {
-  Spin(1);
+
   DeterministicScheduler* scheduler = reinterpret_cast<DeterministicScheduler*>(arg);
+
+  MessageProto synchronization_message;
+  synchronization_message.set_type(MessageProto::EMPTY);
+  synchronization_message.set_destination_channel("scheduler_");
+  for (uint64 i = 0; i < (uint64)(scheduler->configuration_->all_nodes_size()); i++) {
+    synchronization_message.set_destination_node(i);
+    if (i != static_cast<uint64>(scheduler->configuration_->local_node_id())) {
+      scheduler->connection_->Send(synchronization_message);
+    }
+  }
+
+  uint32 synchronization_counter = 1;
+  while (synchronization_counter < (uint64)(scheduler->configuration_->all_nodes_size())) {
+    synchronization_message.Clear();
+    if (scheduler->connection_->GotMessage("scheduler_", &synchronization_message)) {
+      CHECK(synchronization_message.type() == MessageProto::EMPTY);
+      synchronization_counter++;
+    }
+  }
+
+LOG(ERROR) << "In LockManagerThread:  Starting scheduler thread.";
 
   // Run main loop.
   MessageProto message;

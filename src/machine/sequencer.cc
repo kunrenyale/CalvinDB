@@ -32,6 +32,8 @@ Sequencer::Sequencer(ClusterConfig* conf, ConnectionMultiplexer* connection, Cli
 
   connection_->NewChannel("sequencer_");
 
+  start_working_ = false;
+
   cpu_set_t cpuset;
   pthread_attr_t attr_writer;
   pthread_attr_init(&attr_writer);
@@ -61,8 +63,6 @@ Sequencer::~Sequencer() {
 
 void Sequencer::RunWriter() {
 
-//LOG(ERROR) << "In sequencer:  Starting sequencer writer.";
-Spin(1);
   // Set up batch messages for each system node.
   MessageProto batch_message;
   batch_message.set_destination_channel("sequencer_");
@@ -77,10 +77,28 @@ Spin(1);
 latency_counter = 0;
 #endif
 
-/**if (configuration_->local_node_id() < 2)
-epoch_duration_ = 0.01;
-else
-epoch_duration_ = 3;**/
+  MessageProto synchronization_message;
+  synchronization_message.set_type(MessageProto::EMPTY);
+  synchronization_message.set_destination_channel("sequencer_");
+  for (uint64 i = 0; i < (uint64)(configuration_->all_nodes_size()); i++) {
+    synchronization_message.set_destination_node(i);
+    if (i != static_cast<uint64>(configuration_->local_node_id())) {
+      connection_->Send(synchronization_message);
+    }
+  }
+
+  uint32 synchronization_counter = 1;
+  while (synchronization_counter < (uint64)(configuration_->all_nodes_size())) {
+    synchronization_message.Clear();
+    if (connection_->GotMessage("sequencer_", &synchronization_message)) {
+      CHECK(synchronization_message.type() == MessageProto::EMPTY);
+      synchronization_counter++;
+    }
+  }
+
+LOG(ERROR) << "In sequencer:  Starting sequencer writer.";
+  start_working_ = true;
+
   while (!deconstructor_invoked_) {
     // Begin epoch.
     batch_number = configuration_->GetGUID();
@@ -131,8 +149,6 @@ epoch_duration_ = 3;**/
 
 void Sequencer::RunReader() {
 
-Spin(1);
-
 //LOG(ERROR) << "In sequencer:  Starting sequencer reader.";
   // Set up batch messages for each system node.
   map<uint64, MessageProto> batches;
@@ -146,6 +162,10 @@ Spin(1);
   
   MessageProto message;
   uint64 batch_number;
+
+  while (start_working_ != true) {
+    usleep(100);
+  }
 
   while (!deconstructor_invoked_) {
 

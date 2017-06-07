@@ -127,17 +127,17 @@ receive_undeliver_remote_result = 0;
       }
   
       AtomicQueue<MessageProto>* channel_queue = new AtomicQueue<MessageProto>(); 
-      channel_results_.Put(channel, channel_queue);
 
 //LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), creat new channel--:"<<channel; 
       // Forward on any messages sent to this channel before it existed.
       vector<MessageProto>::iterator i;
       for (i = undelivered_messages_[channel].begin(); i != undelivered_messages_[channel].end(); ++i) {
-        (channel_results_.Lookup(channel))->Push(*i);
+        channel_queue->Push(*i);
 //LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), creat new channel get undelivered_messages, channel:"<<channel; 
       }
   
       undelivered_messages_.erase(channel);
+      channel_results_.Put(channel, channel_queue);
     }
 
     // Delete channel

@@ -138,5 +138,7 @@ class Sequencer {
 
   // Number of votes for each batch (used only by machine 0).
   map<uint64, uint32> batch_votes_;
+
+  bool start_working_;
 };
 #endif  // _DB_MACHINE_SEQUENCER_H_
