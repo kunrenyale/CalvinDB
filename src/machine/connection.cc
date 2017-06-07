@@ -102,7 +102,12 @@ void ConnectionMultiplexer::NewChannel(const string& channel) {
 void ConnectionMultiplexer::DeleteChannel(const string& channel) {
   // Serve any pending (valid) connection deletion request.
   delete_channel_queue_->Push(channel);
-  usleep(10000);
+  usleep(1000);
+  while (channel_results_.Count(channel) > 0) {
+    usleep(200);
+  }
+
+  CHECK(channel_results_.Count(channel) == 0);
 }
 
 
