@@ -294,7 +294,7 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch: "<<batch_message
 LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch: "<<batch_message->batch_number();
 }**/
     // Current batch has remaining txns, grab up to 10.
-    } else if (executing_txns + pending_txns < 200) {
+    } else if (executing_txns + pending_txns < 5000) {
       for (int i = 0; i < 100; i++) {
         if (batch_offset >= batch_message->data_size()) {
           // Oops we ran out of txns in this batch. Stop adding txns for now.
@@ -306,8 +306,6 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch: "<<batch_message
 
         scheduler->lock_manager_->Lock(txn);
         pending_txns++;
-if (txn->txn_type() == 2 && (machine_id == 2 || machine_id == 3))
-LOG(ERROR) <<machine_id<< ":In LockManagerThread:  after lock txn: "<<txn->txn_id();
       }
     }
 
