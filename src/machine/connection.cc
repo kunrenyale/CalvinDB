@@ -165,8 +165,10 @@ receive_channel_remote_result++;
         undelivered_messages_[message.destination_channel()].push_back(message);
 if (message.type() == MessageProto::READ_RESULT) {
 receive_undeliver_remote_result++;
+if (local_node_id_ == 2 || local_node_id_ == 3)
+LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage(undeliver1), channel:"<<message.destination_channel(); 
 }
-//LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage(undeliver1), channel:"<<message.destination_channel();   
+  
       }
       message.Clear();
     }
@@ -203,13 +205,17 @@ send_remote_result++;
     got_request = link_unlink_queue_->Pop(&message);
     if (got_request == true) {
       if (message.type() == MessageProto::LINK_CHANNEL) {
-        channel_results_.Put(message.channel_request(), channel_results_.Lookup(message.main_channel()));
+        AtomicQueue<MessageProto>* main_queue = channel_results_.Lookup(message.main_channel());
+        CHECK(main_queue != NULL);
+        channel_results_.Put(message.channel_request(), main_queue);
         // Forward on any messages sent to this channel before it existed.
         vector<MessageProto>::iterator i;
         for (i = undelivered_messages_[message.channel_request()].begin();
              i != undelivered_messages_[message.channel_request()].end();
              ++i) {
-          (channel_results_.Lookup(message.main_channel()))->Push(*i);
+          main_queue->Push(*i);
+if (local_node_id_ == 2 || local_node_id_ == 3)
+LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), accepte a meesage(undeliver1), channel:"<<message.channel_request(); 
         }
         undelivered_messages_.erase(message.channel_request());
       } else if (message.type() == MessageProto::UNLINK_CHANNEL) {
