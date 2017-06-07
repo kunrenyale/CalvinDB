@@ -60,7 +60,7 @@ TxnProto* Microbenchmark::MicroTxnSP(int64 txn_id, int part) {
 
 // Create a non-dependent multi-partition transaction
 TxnProto* Microbenchmark::MicroTxnMP(int64 txn_id, int part1, int part2) {
-  assert(part1 != part2 || nparts == 1);
+  CHECK(part1 != part2 || nparts == 1);
   // Create the new transaction object
   TxnProto* txn = new TxnProto();
 

@@ -40,7 +40,7 @@ class Microbenchmark : public Application {
 
   int nparts;
   int hot_records;
-  static const int kRWSetSize = 10;  // MUST BE EVEN
+  static const int kRWSetSize = 2;  // MUST BE EVEN
   static const int kDBSize = 10000000;
   static const int kRecordSize = 100;
 

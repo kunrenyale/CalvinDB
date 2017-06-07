@@ -157,17 +157,17 @@ receive_undeliver_remote_result = 0;
  
       if (channel_results_.Count(message.destination_channel()) > 0) {
         (channel_results_.Lookup(message.destination_channel()))->Push(message);
-/**if (message.type() == MessageProto::READ_RESULT) {
+if (message.type() == MessageProto::READ_RESULT) {
 receive_channel_remote_result++;
-} **/
+} 
 //LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage1, channel:"<<message.destination_channel();   
       } else {
         undelivered_messages_[message.destination_channel()].push_back(message);
-/**if (message.type() == MessageProto::READ_RESULT) {
+if (message.type() == MessageProto::READ_RESULT) {
 receive_undeliver_remote_result++;
-if (local_node_id_ == 2 || local_node_id_ == 3)
-LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage(undeliver1), channel:"<<message.destination_channel(); 
-}**/
+//if (local_node_id_ == 2 || local_node_id_ == 3)
+//LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage(undeliver1), channel:"<<message.destination_channel(); 
+}
   
       }
       message.Clear();
