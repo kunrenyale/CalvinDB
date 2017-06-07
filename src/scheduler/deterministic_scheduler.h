@@ -45,7 +45,7 @@ class DeterministicLockManager;
 class Storage;
 class TxnProto;
 
-#define NUM_THREADS 4
+#define NUM_THREADS 1
 
 class DeterministicScheduler : public Scheduler {
  public:

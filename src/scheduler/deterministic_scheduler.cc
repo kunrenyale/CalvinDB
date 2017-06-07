@@ -99,16 +99,16 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
         active_txns.erase(message.destination_channel());
         // Respond to scheduler;
         scheduler->done_queue->Push(txn);
-//if (scheduler->configuration_->local_node_id() == 2 || scheduler->configuration_->local_node_id() == 3)
-//LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: finish "<<txn->txn_id();
+if (scheduler->configuration_->local_node_id() == 2 || scheduler->configuration_->local_node_id() == 3)
+LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: finish "<<txn->txn_id();
       }
     } else {
       // No remote read result found, start on next txn if one is waiting.
       TxnProto* txn;
       bool got_it = scheduler->txns_queue->Pop(&txn);
       if (got_it == true) {
-//if (txn->txn_type() == 2 && (scheduler->configuration_->local_node_id() == 2 || scheduler->configuration_->local_node_id() == 3))
-//LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":----In worker: find "<<txn->txn_id();
+if (txn->txn_type() == 2 && (scheduler->configuration_->local_node_id() == 2 || scheduler->configuration_->local_node_id() == 3))
+LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":----In worker: find "<<txn->txn_id();
         // Create manager.
         StorageManager* manager = new StorageManager(scheduler->configuration_,
                                       scheduler->connection_,
@@ -282,17 +282,17 @@ LOG(ERROR) << machine_id<<": reporting latencies to " << filename;
     // Have we run out of txns in our batch? Let's get some new ones.
     if (batch_message == NULL) {
       batch_message = GetBatch(scheduler->connection_);
-if (batch_message != NULL && (machine_id == 2 || machine_id == 3)) {
+/**if (batch_message != NULL && (machine_id == 2 || machine_id == 3)) {
 LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch: "<<batch_message->batch_number();
-}
+}**/
     // Done with current batch, get next.
     } else if (batch_offset >= batch_message->data_size()) {
         batch_offset = 0;
         delete batch_message;
         batch_message = GetBatch(scheduler->connection_);
-if (batch_message != NULL && (machine_id == 2 || machine_id == 3)) {
+/**if (batch_message != NULL && (machine_id == 2 || machine_id == 3)) {
 LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch: "<<batch_message->batch_number();
-}
+}**/
     // Current batch has remaining txns, grab up to 10.
     } else if (executing_txns + pending_txns < 200) {
       for (int i = 0; i < 100; i++) {
