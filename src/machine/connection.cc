@@ -96,6 +96,7 @@ void ConnectionMultiplexer::NewChannel(const string& channel) {
   }
 
   CHECK(channel_results_.Count(channel) > 0);
+  usleep(1000);
 }
 
 
@@ -108,6 +109,7 @@ void ConnectionMultiplexer::DeleteChannel(const string& channel) {
   }
 
   CHECK(channel_results_.Count(channel) == 0);
+  usleep(1000);
 }
 
 

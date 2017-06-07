@@ -98,7 +98,7 @@ latency_counter = 0;
   }
 
   connection_->DeleteChannel("synchronization_sequencer_channel");
-LOG(ERROR) << "In sequencer:  Starting sequencer writer.";
+LOG(ERROR) << "In sequencer:  After synchronization. Starting sequencer writer.";
   start_working_ = true;
 
   while (!deconstructor_invoked_) {
