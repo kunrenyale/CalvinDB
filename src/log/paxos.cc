@@ -202,6 +202,7 @@ void Paxos::RunFollower() {
 //LOG(ERROR) <<this_machine_id_<< ":In paxos log:  send PAXOS_BATCH_ORDER: "<<version<<"  to node:"<<i;
       }
 
+      append_message.Clear();
 
       log_->Append(version, data);
     }

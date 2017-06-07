@@ -30,8 +30,6 @@ using std::tr1::unordered_map;
 
 class ClusterConfig;
 
-
-class Connection;
 class ConnectionMultiplexer {
  public:
   // Create a ConnectionMultiplexer that establishes two-way communication with

@@ -153,6 +153,7 @@ MessageProto* GetBatch(ConnectionMultiplexer* connection) {
        current_sequence_ = new Sequence();
        current_sequence_->ParseFromString(sequence_message->data(0));
        current_sequence_batch_index_ = 0;
+LOG(ERROR) << sequence_message->destination_node()<< ":In scheduler:  find the sequence: "<<current_sequence_id_;
        delete sequence_message;
        global_batches_order.erase(current_sequence_id_);
      } else {
@@ -164,8 +165,8 @@ MessageProto* GetBatch(ConnectionMultiplexer* connection) {
            batches_data[message->batch_number()] = message;
            message = new MessageProto();
          } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
-//LOG(ERROR) << message->destination_node()<< ":In scheduler:  receive a sequence: "<<message->misc_int(0);
            if (message->misc_int(0) == current_sequence_id_) {
+LOG(ERROR) << message->destination_node()<< ":In scheduler:  find the sequence: "<<message->misc_int(0);
              current_sequence_ = new Sequence();
              current_sequence_->ParseFromString(message->data(0));
              current_sequence_batch_index_ = 0;
@@ -316,7 +317,7 @@ LOG(ERROR) << machine_id<<": reporting latencies to " << filename;
     if (GetTime() > time + 1) {
       double total_time = GetTime() - time;
       LOG(ERROR) << "Machine: "<<machine_id<<" Completed "<< (static_cast<double>(txns) / total_time)
-                 << " txns/sec, "<< executing_txns << " executing, "<< pending_txns << " pending"<<"  . Reived(channel):"<<scheduler->connection_->receive_channel_remote_result<<"  . Received undeliver:"<<scheduler->connection_->receive_undeliver_remote_result<<"  .send:"<<scheduler->connection_->send_remote_result;
+                 << " txns/sec, "<< executing_txns << " executing, "<< pending_txns << " pending"<<"  . Reived(chan):"<<scheduler->connection_->receive_channel_remote_result<<"  . Received(un):"<<scheduler->connection_->receive_undeliver_remote_result<<"  .send:"<<scheduler->connection_->send_remote_result;
 
       // Reset txn count.
       time = GetTime();
