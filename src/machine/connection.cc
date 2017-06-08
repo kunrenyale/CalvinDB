@@ -241,7 +241,9 @@ void* ConnectionMultiplexer::RunMultiplexer(void *multiplexer) {
 }
 
 void ConnectionMultiplexer::Send(const MessageProto& message) {
-  send_message_queue_->Push(message);
+  MessageProto m;
+  m.CopyFrom(message);
+  send_message_queue_->Push(m);
 }
 
 
