@@ -119,10 +119,6 @@ void ConnectionMultiplexer::Run() {
   string channel;
   bool got_request = false;
 
-send_remote_result = 0;
-receive_channel_remote_result = 0;
-receive_undeliver_remote_result = 0;
-
   while (!deconstructor_invoked_) {    
     // Create new channel
     while (new_channel_queue_->Pop(&channel) == true) {
@@ -164,18 +160,9 @@ receive_undeliver_remote_result = 0;
  
       if (channel_results_.Count(message.destination_channel()) > 0) {
         (channel_results_.Lookup(message.destination_channel()))->Push(message);
-if (message.type() == MessageProto::READ_RESULT) {
-receive_channel_remote_result++;
-} 
 //LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage1, channel:"<<message.destination_channel();   
       } else {
-        undelivered_messages_[message.destination_channel()].push_back(message);
-if (message.type() == MessageProto::READ_RESULT) {
-receive_undeliver_remote_result++;
-//if (local_node_id_ == 2 || local_node_id_ == 3)
-//LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage(undeliver1), channel:"<<message.destination_channel(); 
-}
-  
+        undelivered_messages_[message.destination_channel()].push_back(message);  
       }
       message.Clear();
     }
@@ -183,9 +170,7 @@ receive_undeliver_remote_result++;
     // Send message
     got_request = send_message_queue_->Pop(&message);
     if (got_request == true) {
-if (message.type() == MessageProto::READ_RESULT) {
-send_remote_result++;
-}
+
       if (message.destination_node() == local_node_id_) {
         // Message is addressed to a local channel. If channel is valid, send the
         // message on, else store it to be delivered if the channel is ever created.
@@ -221,8 +206,6 @@ send_remote_result++;
              i != undelivered_messages_[message.channel_request()].end();
              ++i) {
           main_queue->Push(*i);
-/**if (local_node_id_ == 2 || local_node_id_ == 3)
-LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), accepte a meesage(undeliver1), channel:"<<message.channel_request();**/ 
         }
         undelivered_messages_.erase(message.channel_request());
       } else if (message.type() == MessageProto::UNLINK_CHANNEL) {
