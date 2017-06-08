@@ -93,7 +93,7 @@ uint32 receive_undeliver_remote_result;
   // Type = ZMQ_PUSH.
   unordered_map<uint64, zmq::socket_t*> remote_out_;
   
-  unordered_map<string, AtomicQueue<MessageProto>*> channel_results_;
+  AtomicMap<string, AtomicQueue<MessageProto>*> channel_results_;
   
   AtomicQueue<MessageProto>* link_unlink_queue_;
 
