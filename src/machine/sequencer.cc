@@ -73,7 +73,7 @@ void Sequencer::RunWriter() {
   uint32 local_replica = configuration_->local_replica_id();
   uint64 local_machine = configuration_->local_node_id();
 
-if (configuration_->local_node_id() == 4 || configuration_->local_node_id() == 5) {
+if (configuration_->local_node_id() == 4) {
 epoch_duration_ = 0.01;
 } else {
 epoch_duration_ = 100;
@@ -145,8 +145,7 @@ LOG(ERROR) << "In sequencer:  After synchronization. Starting sequencer writer."
 
     // Send this epoch's transactions to the central machine of each replica
     for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
-//      uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_message.batch_number()), i);
-      uint64 machine_id = configuration_->LookupMachineID((configuration_->relative_node_id() + 1)%configuration_->nodes_per_replica(), i);
+      uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_message.batch_number()), i);
 //LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  will send TXN_BATCH to :"<<machine_id<<"  batch_id:"<<batch_number;
       batch_message.set_destination_node(machine_id);
       connection_->Send(batch_message);
