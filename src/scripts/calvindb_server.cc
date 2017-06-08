@@ -58,6 +58,9 @@ int main(int argc, char** argv) {
   Client* client = NULL;
   // Artificial loadgen clients. Right now only microbenchmark
   if (FLAGS_experiment == 0) {
+if (FLAGS_machine_id == 5)
+    client = reinterpret_cast<Client*>(new MClient(config, 0, FLAGS_hot_records));
+else
     client = reinterpret_cast<Client*>(new MClient(config, FLAGS_percent_mp, FLAGS_hot_records));
   }
 
