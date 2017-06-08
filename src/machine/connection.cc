@@ -72,15 +72,19 @@ ConnectionMultiplexer::~ConnectionMultiplexer() {
     delete it->second;
   }
 
-  channel_results_.Destroy();
+  for (unordered_map<string, AtomicQueue<MessageProto>*>::iterator it = channel_results_.begin();
+       it != channel_results_.end(); ++it) {
+    delete it->second;
+  }
+
   delete link_unlink_queue_;
 }
 
 
 bool ConnectionMultiplexer::GotMessage(const string& channel, MessageProto* message) {
-  CHECK(channel_results_.Count(channel) > 0);
+  CHECK(channel_results_.count(channel) > 0);
   
-  if ((channel_results_.Lookup(channel))->Pop(message)) {
+  if (channel_results_[channel]->Pop(message)) {
     return true;
   } else {
     return false;
@@ -91,11 +95,11 @@ void ConnectionMultiplexer::NewChannel(const string& channel) {
   // Disallow concurrent calls to NewConnection/~Connection.
   new_channel_queue_->Push(channel);
   usleep(1000);
-  while (channel_results_.Count(channel) == 0) {
+  while (channel_results_.count(channel) == 0) {
     usleep(200);
   }
 
-  CHECK(channel_results_.Count(channel) > 0);
+  CHECK(channel_results_.count(channel) > 0);
   usleep(1000);
 }
 
@@ -104,11 +108,11 @@ void ConnectionMultiplexer::DeleteChannel(const string& channel) {
   // Serve any pending (valid) connection deletion request.
   delete_channel_queue_->Push(channel);
   usleep(1000);
-  while (channel_results_.Count(channel) > 0) {
+  while (channel_results_.count(channel) > 0) {
     usleep(200);
   }
 
-  CHECK(channel_results_.Count(channel) == 0);
+  CHECK(channel_results_.count(channel) == 0);
   usleep(1000);
 }
 
@@ -126,7 +130,7 @@ receive_undeliver_remote_result = 0;
   while (!deconstructor_invoked_) {    
     // Create new channel
     while (new_channel_queue_->Pop(&channel) == true) {
-      if (channel_results_.Count(channel) > 0) {
+      if (channel_results_.count(channel) > 0) {
         // Channel name already in use. Report an error and set new_connection_
         // (which NewConnection() will return) to NULL.
         LOG(ERROR) << "Attempt to create channel that already exists: "<< channel;
@@ -144,15 +148,15 @@ receive_undeliver_remote_result = 0;
       }
   
       undelivered_messages_.erase(channel);
-      channel_results_.Put(channel, channel_queue);
+      channel_results_[channel] = channel_queue;
     }
 
     // Delete channel
     got_request = delete_channel_queue_->Pop(&channel);
     if (got_request == true) {
-      if (channel_results_.Count(channel) > 0) {
-        delete channel_results_.Lookup(channel);
-        channel_results_.Erase(channel);
+      if (channel_results_.count(channel) > 0) {
+        delete channel_results_[channel];
+        channel_results_.erase(channel);
       }
     }
 
@@ -162,8 +166,8 @@ receive_undeliver_remote_result = 0;
     if (got_request == true) {
       message.ParseFromArray(msg.data(), msg.size());
  
-      if (channel_results_.Count(message.destination_channel()) > 0) {
-        (channel_results_.Lookup(message.destination_channel()))->Push(message);
+      if (channel_results_.count(message.destination_channel()) > 0) {
+        channel_results_[message.destination_channel()]->Push(message);
 if (message.type() == MessageProto::READ_RESULT) {
 receive_channel_remote_result++;
 } 
@@ -189,8 +193,8 @@ send_remote_result++;
       if (message.destination_node() == local_node_id_) {
         // Message is addressed to a local channel. If channel is valid, send the
         // message on, else store it to be delivered if the channel is ever created.
-        if (channel_results_.Count(message.destination_channel()) > 0) {
-          channel_results_.Lookup(message.destination_channel())->Push(message);
+        if (channel_results_.count(message.destination_channel()) > 0) {
+          channel_results_[message.destination_channel()]->Push(message);
         } else {
           undelivered_messages_[message.destination_channel()].push_back(message);
         }
@@ -208,13 +212,13 @@ send_remote_result++;
       }
     }
 
-    // Handel link_unlink request
+    // Handle link_unlink request
     got_request = link_unlink_queue_->Pop(&message);
     if (got_request == true) {
       if (message.type() == MessageProto::LINK_CHANNEL) {
-        AtomicQueue<MessageProto>* main_queue = channel_results_.Lookup(message.main_channel());
+        AtomicQueue<MessageProto>* main_queue = channel_results_[message.main_channel()];
         CHECK(main_queue != NULL);
-        channel_results_.Put(message.channel_request(), main_queue);
+        channel_results_[message.channel_request()] = main_queue;
         // Forward on any messages sent to this channel before it existed.
         vector<MessageProto>::iterator i;
         for (i = undelivered_messages_[message.channel_request()].begin();
@@ -227,7 +231,7 @@ LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), accepte a meesag
         undelivered_messages_.erase(message.channel_request());
       } else if (message.type() == MessageProto::UNLINK_CHANNEL) {
         //WriteLock l(&mutex_);
-        channel_results_.Erase(message.channel_request());
+        channel_results_.erase(message.channel_request());
       }
       message.Clear();
     }  
