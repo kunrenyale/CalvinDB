@@ -57,6 +57,8 @@ class ClusterConfig {
 
   uint64 LookupPartition(const Key& key);
 
+  uint32 LookupMaster(const Key& key);
+
   // Returns the number of machines that appear in the config.
   inline int all_nodes_size() const {
     return static_cast<int>(machines_.size());

@@ -87,6 +87,8 @@ class StorageManager {
 
   uint64 relative_node_id_;
 
+  uint32 local_replica_id_;
+
 };
 
 #endif  // _DB_BACKEND_STORAGE_MANAGER_H_

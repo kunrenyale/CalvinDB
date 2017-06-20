@@ -146,7 +146,8 @@ void Microbenchmark::InitializeStorage(Storage* storage, ClusterConfig* conf) co
   for (int i = 0; i < nparts*kDBSize; i++) {
     if (conf->LookupPartition(IntToString(i)) == conf->relative_node_id()) {
       string value(int_buffer);
-      storage->PutObject(IntToString(i), new Record(value));
+      uint32 master = conf->LookupMaster(IntToString(i));
+      storage->PutObject(IntToString(i), new Record(value, master));
     }
   }
 }

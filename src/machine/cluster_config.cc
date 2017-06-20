@@ -32,6 +32,11 @@ uint64 ClusterConfig::LookupPartition(const Key& key) {
   return StringToInt(key) % nodes_per_replica();
 }
 
+uint32 ClusterConfig::LookupMaster(const Key& key) {
+  // For microbenchmark
+  return (StringToInt(key) / nodes_per_replica()) % replicas_size_;
+}
+
 // Checks to see if a config string appears to be a valid cluster config repr.
 void CheckString(const string& config) {
   // Track machine ids and host-port pairs that we have already seen to ensure

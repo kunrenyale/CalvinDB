@@ -9,6 +9,8 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
       actual_storage_(actual_storage), txn_(txn), relative_node_id_(config->relative_node_id()) {
   MessageProto message;
 
+  local_replica_id_ = config->local_replica_id();
+
   // If reads are performed at this node, execute local reads and broadcast
   // results to all (other) writers.
   bool reader = false;
@@ -63,7 +65,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
 void StorageManager::HandleReadResult(const MessageProto& message) {
   CHECK(message.type() == MessageProto::READ_RESULT);
   for (int i = 0; i < message.keys_size(); i++) {
-    Record* val = new Record(message.values(i));
+    Record* val = new Record(message.values(i), local_replica_id_);
     objects_[message.keys(i)] = val;
     remote_reads_.push_back(val);
   }

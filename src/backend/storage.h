@@ -13,9 +13,12 @@
 using std::vector;
 
 struct Record {
-  Record(Value v) : value(v){}
+  Record(Value v, uint32 m) : value(v), master(m), counter(0) {}
+
   // The actual value
   Value value;
+  uint32 master;
+  uint32 counter;
 };
 
 
