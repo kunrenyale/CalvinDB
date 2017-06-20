@@ -1,7 +1,7 @@
 // Author: Kun Ren <renkun.nwpu@gmail.com>
 //
-#ifndef CALVIN_LOG_PAXOS_H_
-#define CALVIN_LOG_PAXOS_H_
+#ifndef CALVIN_LOG_LOCALPAXOS_H_
+#define CALVIN_LOG_LOCALPAXOS_H_
 
 #include <atomic>
 #include <glog/logging.h>
@@ -25,11 +25,11 @@ using std::queue;
 using std::set;
 
 
-class Paxos {
+class LocalPaxos {
  public:
-  Paxos(Log* log, ClusterConfig* config, ConnectionMultiplexer* connection);
+  LocalPaxos(Log* log, ClusterConfig* config, ConnectionMultiplexer* connection);
 
-  ~Paxos();
+  ~LocalPaxos();
 
   void Stop();
   void Append(uint64 blockid);
@@ -64,6 +64,7 @@ class Paxos {
   Log* log_;
   ClusterConfig* configuration_;
   uint64 this_machine_id_;
+  uint64 this_replica_id_;
 
   ConnectionMultiplexer* connection_;
 
@@ -73,4 +74,4 @@ class Paxos {
 
 };
 
-#endif  // CALVIN_LOG_PAXOS_H_
+#endif  // CALVIN_LOG_LOCALPAXOS_H_
