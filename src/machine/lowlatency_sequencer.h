@@ -2,13 +2,80 @@
 //
 
 
-#ifndef _DB_MACHINE_SEQUENCER_H_
-#define _DB_MACHINE_SEQUENCER_H_
+#ifndef _DB_MACHINE_LOWLATENCY_SEQUENCER_H_
+#define _DB_MACHINE_LOWLATENCY_SEQUENCER_H_
 
+#include <set>
+#include <string>
+#include <queue>
+#include <iostream>
+#include <map>
+#include <utility>
+
+#include "machine/cluster_config.h"
 #include "machine/connection.h"
+#include "common/utils.h"
 #include "proto/message.pb.h"
+#include "proto/txn.pb.h"
+#include "applications/microbenchmark.h"
 #include "log/paxos.h"
-#include "machine/client.h"
+
+using std::set;
+using std::string;
+using std::queue;
+using std::map;
+
+#define SAMPLES  2000
+#define SAMPLE_RATE 199
+
+//#define LATENCY_TEST
+
+#ifdef LATENCY_TEST
+extern map<uint64, double> sequencer_recv;
+extern map<uint64, double> scheduler_unlock;
+extern vector<double> measured_latency;
+extern std::atomic<uint64> latency_counter;
+#endif
+
+class ClusterConfig;
+class TxnProto;
+
+// Client
+class Client {
+ public:
+  virtual ~Client() {}
+  virtual void GetTxn(TxnProto** txn, int txn_id) = 0;
+};
+
+// Microbenchmark load generation client.
+class MClient : public Client {
+ public:
+  MClient(ClusterConfig* config, int mp, int hot_records)
+      : microbenchmark(config->nodes_per_replica(), hot_records), config_(config), percent_mp_(mp),
+        nodes_per_replica_(config->nodes_per_replica()), replative_node_id_(config->relative_node_id()) {
+  }
+  virtual ~MClient() {}
+  virtual void GetTxn(TxnProto** txn, int txn_id) {
+    if (nodes_per_replica_ > 1 && rand() % 100 < percent_mp_) {
+      // Multipartition txn.
+      uint64 other;
+      do {
+        other = (uint64)(rand() % nodes_per_replica_);
+      } while (other == replative_node_id_);
+      *txn = microbenchmark.MicroTxnMP(txn_id, replative_node_id_, other);
+    } else {
+      // Single-partition txn.
+      *txn = microbenchmark.MicroTxnSP(txn_id, replative_node_id_);
+    }
+  }
+
+ private:
+  Microbenchmark microbenchmark;
+  ClusterConfig* config_;
+  int percent_mp_;
+  uint64 nodes_per_replica_;
+  uint64 replative_node_id_;
+};
 
 class Sequencer {
  public:
@@ -74,4 +141,4 @@ class Sequencer {
 
   bool start_working_;
 };
-#endif  // _DB_MACHINE_SEQUENCER_H_
+#endif  // _DB_MACHINE_LOWLATENCY_SEQUENCER_H_

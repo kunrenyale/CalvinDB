@@ -95,6 +95,27 @@ TxnProto* Microbenchmark::MicroTxnMP(int64 txn_id, int part1, int part2) {
   return txn;
 }
 
+// Create a single-replica single-partition transaction
+TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, int part, uint32 replica) {
+
+}
+
+// Create a single-replica multi-partition transaction
+TxnProto* Microbenchmark::MicroTxnSRMP(int64 txn_id, int part1, int part2, uint32 replica) {
+
+}
+
+// Create a multi-replica single-partition transaction
+TxnProto* Microbenchmark::MicroTxnMRSP(int64 txn_id, int part, uint32 replica1, uint32 replica2) {
+
+}
+
+// Create a multi-replica multi-partition transaction
+TxnProto* Microbenchmark::MicroTxnMRSP(int64 txn_id, int part1, int part2, uint32 replica1, uint32 replica2) {
+
+}
+
+
 // The load generator can be called externally to return a transaction proto
 // containing a new type of transaction.
 TxnProto* Microbenchmark::NewTxn(int64 txn_id, int txn_type,
