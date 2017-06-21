@@ -40,7 +40,11 @@ message TxnProto {
   repeated uint64 readers = 40;
   repeated uint64 writers = 41;
 
-  optional uint32 origin_replica = 50;
-  optional uint64 origin_machine = 51;
+//-------  Below is for low latency CalvinDB
+  optional uint32 origin_replica = 50 [default = 0];
+  // whether the action is the new_generated cross-replica action
+  optional bool new_generated = 51 [default = false];
+  repeated uint32 involved_replicas = 52;
+  optional bool fake_txn = 53 [default = false];
 }
 

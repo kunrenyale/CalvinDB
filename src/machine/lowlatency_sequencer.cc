@@ -5,26 +5,20 @@
 // serial order of transactions to which execution must maintain equivalence.
 //
 
-#include "machine/sequencer.h"
+#include "machine/lowlatency_sequencer.h"
 
-#ifdef LATENCY_TEST
-map<uint64, double> sequencer_recv;
-map<uint64, double> scheduler_unlock;
-std::atomic<uint64> latency_counter;
-vector<double> measured_latency;
-#endif
 
-void* Sequencer::RunSequencerWriter(void *arg) {
+void* LowlatencySequencer::RunSequencerWriter(void *arg) {
   reinterpret_cast<Sequencer*>(arg)->RunWriter();
   return NULL;
 }
 
-void* Sequencer::RunSequencerReader(void *arg) {
+void* LowlatencySequencer::RunSequencerReader(void *arg) {
   reinterpret_cast<Sequencer*>(arg)->RunReader();
   return NULL;
 }
 
-Sequencer::Sequencer(ClusterConfig* conf, ConnectionMultiplexer* connection, Client* client, Paxos* paxos, uint32 max_batch_size)
+LowlatencySequencer::Sequencer(ClusterConfig* conf, ConnectionMultiplexer* connection, Client* client, Paxos* paxos, uint32 max_batch_size)
           : epoch_duration_(0.01), configuration_(conf), connection_(connection),
           client_(client), deconstructor_invoked_(false), paxos_log_(paxos), max_batch_size_(max_batch_size) {
   // Start Sequencer main loops running in background thread.
@@ -54,14 +48,14 @@ Sequencer::Sequencer(ClusterConfig* conf, ConnectionMultiplexer* connection, Cli
   pthread_create(&reader_thread_, &attr_reader, RunSequencerReader, reinterpret_cast<void*>(this));
 }
 
-Sequencer::~Sequencer() {
+LowlatencySequencer::~LowlatencySequencer() {
   deconstructor_invoked_ = true;
   pthread_join(writer_thread_, NULL);
   pthread_join(reader_thread_, NULL);
 }
 
 
-void Sequencer::RunWriter() {
+void LowlatencySequencer::RunWriter() {
 
   // Set up batch messages for each system node.
   MessageProto batch_message;
@@ -72,6 +66,11 @@ void Sequencer::RunWriter() {
 
   uint32 local_replica = configuration_->local_replica_id();
   uint64 local_machine = configuration_->local_node_id();
+  uint64 nodes_per_replica = configuration_->nodes_per_replica();
+
+  MessageProto txn_message;
+  txn_message.set_destination_channel("sequencer_");
+  txn_message.set_type(MessageProto::TXN_FORWORD);
 
 /**if (configuration_->local_node_id() == 2 || configuration_->local_node_id() == 3) {
 epoch_duration_ = 0.01;
@@ -120,23 +119,42 @@ LOG(ERROR) << "In sequencer:  After synchronization. Starting sequencer writer."
            GetTime() < epoch_start + epoch_duration_) {
       // Add next txn request to batch.
       if ((uint32)(batch_message.data_size()) < max_batch_size_) {
-        TxnProto* txn;
-        string txn_string;
-        client_->GetTxn(&txn, batch_number * max_batch_size_ + txn_id_offset);
+        bool got_message = connection_->GotMessage("sequencer_receive_", &message);
+        if (got_message == true) {
+        
+        } else {
+          TxnProto* txn;
+          string txn_string;
+          client_->GetTxn(&txn, batch_number * max_batch_size_ + txn_id_offset);
 
-        txn->set_origin_replica(local_replica);
-        txn->set_origin_machine(local_machine);
-        txn->SerializeToString(&txn_string);
-        batch_message.add_data(txn_string);
-        txn_id_offset++;
+          txn->SerializeToString(&txn_string);
+
+          if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) == local_replica) {
+            txn->set_origin_replica(local_replica);
+            batch_message.add_data(txn_string);
+            txn_id_offset++;
 
 #ifdef LATENCY_TEST
     if (txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES) {
       sequencer_recv[txn->txn_id()] = GetTime();
     }
 #endif
+          } else if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) != local_replica) {
+            uint64 machine_sent = txn->involved_replicas(0) * nodes_per_replica + rand() % nodes_per_replica;
+            txn_message.clear_data();
+            txn_message.add_data(txn_string);
+            txn_message.set_destination_node(machine_sent);
+            connection_->Send(txn_message);
+          } else {
+            uint64 machine_sent = rand() % nodes_per_replica;
+            txn_message.clear_data();
+            txn_message.add_data(txn_string);
+            txn_message.set_destination_node(machine_sent);
+            connection_->Send(txn_message);     
+          }
 
-        delete txn;
+          delete txn;
+        }
       } else {
         usleep(50);
       }
@@ -155,7 +173,7 @@ LOG(ERROR) << "In sequencer:  After synchronization. Starting sequencer writer."
 
 }
 
-void Sequencer::RunReader() {
+void LowlatencySequencer::RunReader() {
 
 //LOG(ERROR) << "In sequencer:  Starting sequencer reader.";
   // Set up batch messages for each system node.

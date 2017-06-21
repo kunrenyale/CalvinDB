@@ -20,6 +20,7 @@ DEFINE_string(config, "calvin.conf", "conf file of Calvin cluster");
 DEFINE_int32(machine_id, 0, "machine id");
 DEFINE_int32(experiment, 0, "the experiment that you want to run, default is microbenchmark");
 DEFINE_int32(percent_mp, 0, "percent of distributed txns");
+DEFINE_int32(percent_mr, 0, "percent of multi-replica txns");
 DEFINE_int32(hot_records, 10000, "number of hot records--to control contention");
 DEFINE_int32(max_batch_size, 100, "max batch size of txns per epoch");
 
@@ -58,7 +59,7 @@ int main(int argc, char** argv) {
   Client* client = NULL;
   // Artificial loadgen clients. Right now only microbenchmark
   if (FLAGS_experiment == 0) {
-    client = reinterpret_cast<Client*>(new MClient(config, FLAGS_percent_mp, FLAGS_hot_records));
+    client = reinterpret_cast<Client*>(new Lowlatency_MClient(config, FLAGS_percent_mp, FLAGS_percent_mr, FLAGS_hot_records));
   }
 
   Storage* storage;

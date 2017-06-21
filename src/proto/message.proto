@@ -32,6 +32,7 @@ message MessageProto {
     PAXOS_DATA = 11;
     PAXOS_DATA_ACK = 12;
     BATCH_VOTE = 13;
+    TXN_FORWORD = 14;
   };
   required MessageType type = 9;
 
