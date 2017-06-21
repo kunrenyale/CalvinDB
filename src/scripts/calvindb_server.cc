@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
   
   Application* application = NULL; 
   if (FLAGS_experiment == 0) {
-    application = new Microbenchmark(config->nodes_per_replica(), FLAGS_hot_records);
+    application = new Microbenchmark(config->nodes_per_replica(), FLAGS_hot_records, config->replicas_size());
     application->InitializeStorage(storage, config);
   } else {
     // Other benchmark

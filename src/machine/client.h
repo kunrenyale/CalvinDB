@@ -47,13 +47,13 @@ class Client {
 // Microbenchmark load generation client.
 class MClient : public Client {
  public:
-  MClient(ClusterConfig* config, int mp, int hot_records)
-      : microbenchmark(config->nodes_per_replica(), hot_records), config_(config), percent_mp_(mp),
+  MClient(ClusterConfig* config, uint32 mp, uint32 hot_records)
+      : microbenchmark(config->nodes_per_replica(), hot_records, config->replicas_size()), config_(config), percent_mp_(mp),
         nodes_per_replica_(config->nodes_per_replica()), replative_node_id_(config->relative_node_id()) {
   }
   virtual ~MClient() {}
   virtual void GetTxn(TxnProto** txn, int txn_id) {
-    if (nodes_per_replica_ > 1 && rand() % 100 < percent_mp_) {
+    if (nodes_per_replica_ > 1 && (uint32)(rand() % 100) < percent_mp_) {
       // Multipartition txn.
       uint64 other;
       do {
@@ -69,7 +69,7 @@ class MClient : public Client {
  private:
   Microbenchmark microbenchmark;
   ClusterConfig* config_;
-  int percent_mp_;
+  uint32 percent_mp_;
   uint64 nodes_per_replica_;
   uint64 replative_node_id_;
 };
@@ -77,36 +77,36 @@ class MClient : public Client {
 // Microbenchmark load generation client.
 class Lowlatency_MClient : public Client {
  public:
-  Lowlatency_MClient(ClusterConfig* config, int mp, int mr, int hot_records)
-      : microbenchmark(config->nodes_per_replica(), hot_records), config_(config), percent_mp_(mp), percent_mr_(mr),
+  Lowlatency_MClient(ClusterConfig* config, uint32 mp, uint32 mr, uint32 hot_records)
+      : microbenchmark(config->nodes_per_replica(), hot_records, config->replicas_size()), config_(config), percent_mp_(mp), percent_mr_(mr),
         nodes_per_replica_(config->nodes_per_replica()), replative_node_id_(config->relative_node_id()) {
     local_replica_ = config_->local_replica_id();
     num_replicas_ = config_->replicas_size();
   }
-  virtual ~MClient() {}
+  virtual ~Lowlatency_MClient() {}
   virtual void GetTxn(TxnProto** txn, int txn_id) {
-    if (rand() % 100 < percent_mr_) {
+    if ((uint32)(rand() % 100) < percent_mr_) {
       // Multi-replica txn.
       uint32 other_replica;
       do {
         other_replica = (uint32)(rand() % num_replicas_);
       } while (other_replica == local_replica_);
 
-      if (nodes_per_replica_ > 1 && rand() % 100 < percent_mp_) {
+      if (nodes_per_replica_ > 1 && uint32(rand() % 100) < percent_mp_) {
         // Multi-replica multi-partition txn
         uint64 other_node;
         do {
           other_node = (uint64)(rand() % nodes_per_replica_);
         } while (other_node == replative_node_id_);
 
-        *txn = microbenchmark.MicroTxnMRMP(txn_id, replative_node_id_, other_node, local_replica_, other_relica);
+        *txn = microbenchmark.MicroTxnMRMP(txn_id, replative_node_id_, other_node, local_replica_, other_replica);
       } else {
         // Multi-replica single-partition txn
-        *txn = microbenchmark.MicroTxnMRSP(txn_id, replative_node_id_, local_replica_, other_relica);   
+        *txn = microbenchmark.MicroTxnMRSP(txn_id, replative_node_id_, local_replica_, other_replica);   
       }
     } else {
       // Single-replica txn.
-      if (nodes_per_replica_ > 1 && rand() % 100 < percent_mp_) {
+      if (nodes_per_replica_ > 1 && (uint32)(rand() % 100) < percent_mp_) {
         // Single-replica multi-partition txn
         uint64 other_node;
         do {
@@ -118,13 +118,14 @@ class Lowlatency_MClient : public Client {
         // Single-replica single-partition txn
         *txn = microbenchmark.MicroTxnSRSP(txn_id, replative_node_id_, local_replica_);         
       }
+    }
   }
 
  private:
   Microbenchmark microbenchmark;
   ClusterConfig* config_;
-  int percent_mp_;
-  int percent_mr_;
+  uint32 percent_mp_;
+  uint32 percent_mr_;
   uint32 local_replica_;
   uint32 num_replicas_;
   uint64 nodes_per_replica_;
