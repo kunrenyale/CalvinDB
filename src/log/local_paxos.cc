@@ -4,12 +4,15 @@
 #include "log/local_paxos.h"
 
 
-LocalPaxos::LocalPaxos(Log* log, ClusterConfig* config, ConnectionMultiplexer* connection)
-    : log_(log), configuration_(config), connection_(connection) {
+LocalPaxos::LocalPaxos(ClusterConfig* config, ConnectionMultiplexer* connection)
+    : configuration_(config), connection_(connection) {
   // Init participants_
   participants_.push_back(0);
   go_ = true;
-  count_ = 0;
+  local_count_ = 0;
+  
+  local_log_ = new LocalMemLog();
+  global_log_ = new LocalMemLog();
 
   this_machine_id_ = configuration_->local_node_id();
   this_replica_id_ = configuration_->local_replica_id();
@@ -62,7 +65,7 @@ void LocalPaxos::Append(uint64 blockid) {
 //LOG(ERROR) << "In paxos log:  append a batch: "<<blockid;
     Lock l(&mutex_);
     sequence_.add_batch_ids(blockid);
-    count_ += 1;
+    local_count_ += 1;
 }
 
 void LocalPaxos::Stop() {
@@ -71,20 +74,21 @@ void LocalPaxos::Stop() {
 
 
 void LocalPaxos::RunLeader() {
-  uint64 next_version = 0;
+  uint64 local_next_version = 0;
+  uint64 global_next_version = 0;
   uint64 quorum = static_cast<int>(participants_.size()) / 2 + 1;
   MessageProto sequence_message;
   
   uint64 machines_per_replica = configuration_->nodes_per_replica();
   uint32 local_replica = configuration_->local_replica_id(); 
+  MessageProto message;
 
   while (go_) {
-    // Sleep while there are NO requests.
-    while (count_.load() == 0) {
-      usleep(20);
-      if (!go_) {
-        return;
-      }
+    
+    if (local_count_.load() >  0) {
+    
+    } else if (sequences_other_replicas.Size() > 0) {
+    
     }
 
     // Propose a new sequence.
@@ -96,7 +100,7 @@ void LocalPaxos::RunLeader() {
       next_version ++;
       sequence_.SerializeToString(&encoded);
       sequence_.Clear();
-      count_ = 0;
+      local_count_ = 0;
     }
 
     sequence_message.add_data(encoded);
@@ -151,6 +155,20 @@ void LocalPaxos::RunLeader() {
 //LOG(ERROR) << "In paxos log:  append a sequence: "<<version;
     log_->Append(version, encoded);
 
+
+    // Receive the messages.
+    while (connection_->GotMessage("paxos_log_", &message) == true) {
+      if (message.type() == MessageProto::MR_TXNS_BATCH) {
+        MessageProto* mr_message = new MessageProto();
+        mr_message->CopyFrom(message);
+        mr_txn_batches_[message.misc_int(0)] = mr_message;
+      } else if (message.type() == NEW_SEQUENCE) {
+        MessageProto* mr_message = new MessageProto();
+        mr_message->CopyFrom(message);
+      } else if (message.type() == NEW_SEQUENCE_ACK) {
+      
+      }
+    }
   }
 }
 

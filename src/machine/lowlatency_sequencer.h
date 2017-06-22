@@ -69,9 +69,6 @@ class LowlatencySequencer {
 
   uint32 max_batch_size_;
 
-  // Number of votes for each batch (used only by machine 0).
-  map<uint64, uint32> batch_votes_;
-
   bool start_working_;
 };
 #endif  // _DB_MACHINE_LOWLATENCY_SEQUENCER_H_

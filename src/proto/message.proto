@@ -33,6 +33,10 @@ message MessageProto {
     PAXOS_DATA_ACK = 12;
     BATCH_VOTE = 13;
     TXN_FORWORD = 14;
+    BATCH_SUBMIT = 15;
+    MR_TXNS_BATCH = 16;
+    NEW_SEQUENCE = 17;
+    NEW_SEQUENCE_ACK = 18;
   };
   required MessageType type = 9;
 

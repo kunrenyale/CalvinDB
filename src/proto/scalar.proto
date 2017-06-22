@@ -43,3 +43,7 @@ message Sequence {
   repeated uint64 batch_ids = 1;
 }
 
+message SequenceBatch {
+  repeated Sequence sequence_batch = 1;
+}
+

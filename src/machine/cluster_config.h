@@ -84,6 +84,10 @@ class ClusterConfig {
     return local_replica_;
   }
 
+  inline uint32 LookupReplica(uint64 machine_id) const {
+    return machine_id / nodes_per_replica();
+  }
+
   bool Stopped() {
     return stop_;
   }

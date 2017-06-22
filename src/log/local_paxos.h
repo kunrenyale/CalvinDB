@@ -27,7 +27,7 @@ using std::set;
 
 class LocalPaxos {
  public:
-  LocalPaxos(Log* log, ClusterConfig* config, ConnectionMultiplexer* connection);
+  LocalPaxos(ClusterConfig* config, ConnectionMultiplexer* connection);
 
   ~LocalPaxos();
 
@@ -58,10 +58,11 @@ class LocalPaxos {
 
   // Current request sequence that will get replicated.
   Sequence sequence_;
-  std::atomic<uint64> count_;
+  std::atomic<uint64> local_count_;
   Mutex mutex_;
 
-  Log* log_;
+  Log* local_log_;
+  Log* global_log_;
   ClusterConfig* configuration_;
   uint64 this_machine_id_;
   uint64 this_replica_id_;
@@ -72,6 +73,8 @@ class LocalPaxos {
   pthread_t leader_thread_;
   pthread_t follower_thread_;
 
+  map<uint64, MessageProto*> mr_txn_batches_;
+  AtomicQueue<MessageProto*> sequences_other_replicas;
 };
 
 #endif  // CALVIN_LOG_LOCALPAXOS_H_

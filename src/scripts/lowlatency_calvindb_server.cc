@@ -5,7 +5,6 @@
 #include <glog/logging.h>
 
 #include "machine/cluster_config.h"
-#include "log/local_mem_log.h"
 #include "log/paxos.h"
 #include "backend/simple_storage.h"
 #include "machine/connection.h"
@@ -80,7 +79,7 @@ int main(int argc, char** argv) {
   // Create Paxos
   LocalPaxos* paxos = NULL;
   if (FLAGS_machine_id % config->nodes_per_replica() < 3) {
-    paxos = new LocalPaxos(new LocalMemLog(), config, multiplexer);
+    paxos = new LocalPaxos(config, multiplexer);
   }
 
   LOG(ERROR) << FLAGS_machine_id << ":Created paxos log "; 

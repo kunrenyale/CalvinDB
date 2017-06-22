@@ -194,6 +194,8 @@ void LowlatencySequencer::RunReader() {
   
   MessageProto message;
   uint64 batch_number;
+  uint32 local_replica = configuration_->local_replica_id();
+  uint64 local_paxos_leader_ = local_replica * configuration_->nodes_per_replica();
 
   while (start_working_ != true) {
     usleep(100);
@@ -206,11 +208,26 @@ void LowlatencySequencer::RunReader() {
       if (message.type() == MessageProto::TXN_BATCH) {
 //LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie TXN_BATCH message:"<<message.batch_number();
         batch_number = message.batch_number();
+
+        //  If (This batch come from this replica) → send BATCH_SUBMIT to the the master node of the local paxos participants
+        if (configuration_->LookupReplica(message.source_node()) == local_replica) {
+          // Send “BATCH_SUBMIT” to the head machines;
+          MessageProto batch_submit_message;
+          batch_submit_message.set_destination_channel("sequencer_");
+          batch_submit_message.set_destination_node(local_paxos_leader_);
+          batch_submit_message.set_type(MessageProto::BATCH_SUBMIT);
+          batch_submit_message.add_misc_int(message.batch_number());
+          connection_->Send(batch_submit_message);        
+        }
+
         // If received TXN_BATCH: Parse batch and forward sub-batches to relevant readers (same replica only).
         for (int i = 0; i < message.data_size(); i++) {
           TxnProto txn;
           txn.ParseFromString(message.data(i));
 
+          if (txn->fake_txn() == true) {
+            continue;
+          }
           // Compute readers & writers; store in txn proto.
           set<uint64> readers;
           set<uint64> writers;
@@ -256,38 +273,33 @@ void LowlatencySequencer::RunReader() {
           it->second.clear_data();
         }
 
-        // Send “vote” to the head machines;
-        MessageProto vote_message;
-        vote_message.set_destination_channel("sequencer_");
-        vote_message.set_destination_node(0);
-        vote_message.set_type(MessageProto::BATCH_VOTE);
-        vote_message.add_misc_int(message.batch_number());
-        connection_->Send(vote_message);
+        // Forward "relevant multi-replica action" to the head node
+        if (configuration_->LookupReplica(message.source_node()) == 0) {
+          MessageProto mr_message;
+          for (int i = 0; i < message.data_size(); i++) {
+            TxnProto txn;
+            txn.ParseFromString(message.data(i));
+            if (txn.involved_replicas_size() > 1 && txn.new_generated() == false) {
+              for (int j = 0; j < txn.involved_replicas_size(); j++) {
+                if (txn.involved_replicas(j) == local_replica) {
+                  string txn_data;
+                  txn.SerializeToString(&txn_data);
+                  mr_message.add_data(txn_data);
+                }
+              }
+            }
+          }
 
-      } else if (message.type() == MessageProto::BATCH_VOTE) {
-//LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie BATCH_VOTE message:"<<message.misc_int(0);
+          mr_message.set_destination_channel("paxos_log_");
+          mr_message.set_destination_node(local_paxos_leader_);
+          mr_message.set_type(MessageProto::MR_TXNS_BATCH);
+          mr_message.add_misc_int(message.batch_number());
+          connection_->Send(mr_message);    
+        }
+
+      } else if (message.type() == MessageProto::BATCH_SUBMIT) {
         uint64 batch_id = message.misc_int(0);
-        uint32 votes = 0;
-        
-        if (batch_votes_.count(batch_id) == 0) {
-          votes = 1;
-          batch_votes_[batch_id] = 1;
-        } else {
-          votes = batch_votes_[batch_id] + 1;
-          batch_votes_[batch_id] = votes;
-        }
-
-        // Remove from map if all servers are accounted for.
-        if (votes == configuration_->replicas_size()) {
-          batch_votes_.erase(batch_id);
-        }
-
-        // If block is now written to (exactly) a majority of replicas, submit
-        // to paxos leader.
-        if (votes == configuration_->replicas_size() / 2 + 1) {
-//LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie BATCH_VOTE message, will append:"<<batch_id;
-          paxos_log_->Append(batch_id);
-        }        
+        paxos_log_->Append(batch_id);  
       }
     }
 
