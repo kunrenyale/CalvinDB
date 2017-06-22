@@ -25,6 +25,7 @@ LowlatencySequencer::Sequencer(ClusterConfig* conf, ConnectionMultiplexer* conne
 
 
   connection_->NewChannel("sequencer_");
+  connection_->NewChannel("sequencer_txn_receive_");
 
   start_working_ = false;
 
@@ -57,19 +58,20 @@ LowlatencySequencer::~LowlatencySequencer() {
 
 void LowlatencySequencer::RunWriter() {
 
-  // Set up batch messages for each system node.
-  MessageProto batch_message;
-  batch_message.set_destination_channel("sequencer_");
-  batch_message.set_type(MessageProto::TXN_BATCH);
-  uint64 batch_number;
-  uint32 txn_id_offset;
-
   uint32 local_replica = configuration_->local_replica_id();
   uint64 local_machine = configuration_->local_node_id();
   uint64 nodes_per_replica = configuration_->nodes_per_replica();
 
+  // Set up batch messages for each system node.
+  MessageProto batch_message;
+  batch_message.set_destination_channel("sequencer_");
+  batch_message.set_type(MessageProto::TXN_BATCH);
+  batch_message.set_source_node(local_machine);
+  uint64 batch_number;
+  uint32 txn_id_offset;
+
   MessageProto txn_message;
-  txn_message.set_destination_channel("sequencer_");
+  txn_message.set_destination_channel("sequencer_txn_receive_");
   txn_message.set_type(MessageProto::TXN_FORWORD);
 
 /**if (configuration_->local_node_id() == 2 || configuration_->local_node_id() == 3) {
@@ -105,7 +107,7 @@ latency_counter = 0;
   connection_->DeleteChannel("synchronization_sequencer_channel");
 LOG(ERROR) << "In sequencer:  After synchronization. Starting sequencer writer.";
   start_working_ = true;
-
+  MessageProto message;
   while (!deconstructor_invoked_) {
     // Begin epoch.
     batch_number = configuration_->GetGUID();
@@ -119,9 +121,13 @@ LOG(ERROR) << "In sequencer:  After synchronization. Starting sequencer writer."
            GetTime() < epoch_start + epoch_duration_) {
       // Add next txn request to batch.
       if ((uint32)(batch_message.data_size()) < max_batch_size_) {
-        bool got_message = connection_->GotMessage("sequencer_receive_", &message);
+        bool got_message = connection_->GotMessage("sequencer_txn_receive_", &message);
         if (got_message == true) {
-        
+          TxnProto txn;
+          txn.ParseFromString(message.data(i));
+          txn.set_origin_replica(local_replica);
+          batch_message.add_data(message.data(i));
+          txn_id_offset++; 
         } else {
           TxnProto* txn;
           string txn_string;
