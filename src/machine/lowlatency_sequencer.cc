@@ -294,7 +294,7 @@ void LowlatencySequencer::RunReader() {
           mr_message.set_destination_node(local_paxos_leader_);
           mr_message.set_type(MessageProto::MR_TXNS_BATCH);
           mr_message.add_misc_int(message.batch_number());
-          connection_->Send(mr_message);    
+          connection_->Send(mr_message);
         }
 
       } else if (message.type() == MessageProto::BATCH_SUBMIT) {

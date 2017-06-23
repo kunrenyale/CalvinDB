@@ -74,20 +74,26 @@ void LocalPaxos::Stop() {
 
 
 void LocalPaxos::RunLeader() {
-  uint64 local_next_version = 0;
-  uint64 global_next_version = 0;
+  local_next_version = 0;
+  global_next_version = 0;
+
+  for (uint64 i = 0; i < replica_count; i++) {
+    readers_for_local_log_[i] = local_log_->GetReader();
+  }
+
   uint64 quorum = static_cast<int>(participants_.size()) / 2 + 1;
   MessageProto sequence_message;
   
   uint64 machines_per_replica = configuration_->nodes_per_replica();
-  uint32 local_replica = configuration_->local_replica_id(); 
+  uint32 local_replica = configuration_->local_replica_id();
+
   MessageProto message;
 
   while (go_) {
     
     if (local_count_.load() >  0) {
     
-    } else if (sequences_other_replicas.Size() > 0) {
+    } else if (sequences_other_replicas_.Size() > 0) {
     
     }
 
@@ -162,11 +168,44 @@ void LocalPaxos::RunLeader() {
         MessageProto* mr_message = new MessageProto();
         mr_message->CopyFrom(message);
         mr_txn_batches_[message.misc_int(0)] = mr_message;
-      } else if (message.type() == NEW_SEQUENCE) {
-        MessageProto* mr_message = new MessageProto();
-        mr_message->CopyFrom(message);
-      } else if (message.type() == NEW_SEQUENCE_ACK) {
-      
+      } else if (message.type() == MessageProto::NEW_SEQUENCE) {
+        uint32 from_replica = message.misc_int(0);
+        uint64 latest_version = message.misc_int(1);
+
+        latest_version_for_replicas_[from_replica] = latest_version;
+        SequenceBatch sequence_batch;
+        sequence_batch.ParseFromString(message.data(0));
+        
+        for (int i = 0; i < sequence_batch.size(); i++) {
+          sequences_other_replicas_.Push(sequence_batch.sequence_batch(i));
+        }
+
+      } else if (message.type() == MessageProto::NEW_SEQUENCE_ACK) {
+        SequenceBatch sequence_batch;
+        uint32 from_replica = message.misc_int(0);
+        Sequence current_sequence_;
+        Log::Reader* r = readers_for_local_log_[from_replica];
+        uint64 latest_version;
+
+        bool find = r->Next();
+        while (find == true) {
+          latest_version = r->Version();
+          current_sequence_.ParseFromString(r->Entry());
+          sequence_batch.add_sequence_batch(current_sequence_);
+          find = r->Next();
+        }
+
+        string sequence_batch_string;
+        sequence_batch.SerializeToString(&sequence_batch_string);
+
+        MessageProto sequence_batch_message;
+        sequence_batch_message.add_data(sequence_batch_string);
+        sequence_batch_message.set_destination_channel("paxos_log_");
+        sequence_batch_message.set_destination_node(from_replica * machines_per_replica);
+        sequence_batch_message.set_type(MessageProto::NEW_SEQUENCE);
+        sequence_batch_message.add_misc_int(local_replica);
+        sequence_batch_message.add_misc_int(latest_version);
+        connection_->Send(sequence_batch_message);        
       }
     }
   }
