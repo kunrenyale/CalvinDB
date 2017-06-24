@@ -88,29 +88,75 @@ void LocalPaxos::RunLeader() {
   uint32 local_replica = configuration_->local_replica_id();
 
   MessageProto message;
+  string encoded;
+  bool isLocal = false;
+  Sequence remote_sequence;
+
+  MessageProto batch_message;
+  batch_message.set_destination_channel("sequencer_");
+  batch_message.set_type(MessageProto::TXN_BATCH);
+  batch_message.set_source_node(local_machine);
 
   while (go_) {
     
     if (local_count_.load() >  0) {
-    
-    } else if (sequences_other_replicas_.Size() > 0) {
-    
-    }
-
-    // Propose a new sequence.
-    uint64 version;
-    string encoded;
-    {
+      // Propose a new sequence.
       Lock l(&mutex_);
-      version = next_version;
-      next_version ++;
+      local_next_version ++;
+      global_next_version ++;
       sequence_.SerializeToString(&encoded);
       sequence_.Clear();
       local_count_ = 0;
+      isLocal = true;
+    } else if (sequences_other_replicas_.Size() > 0) {
+      isLocal = false;
+      global_next_version ++;
+      sequences_other_replicas_.Pop(&remote_sequence);
+
+      // Generate new txns for multi-replica txns.
+      for (int i = 0; i < remote_sequence.batch_ids_size(); i++) {
+        uint64 batch_id = remote_sequence.batch_ids(i);
+        while (mr_txn_batches_.find(batch_id) == mr_txn_batches_.end()) {
+          usleep(20);
+        };
+
+        MessageProto* mr_message = mr_txn_batches_[batch_id];
+
+        if (configuration_->LookupReplica(mr_message.source_node()) != 0 || mr_message.data_size() == 0) {
+          continue;
+        }
+
+        for (int i = 0; i < mr_message.data_size(); i++) {
+          TxnProto txn;
+          txn.ParseFromString(mr_message.data(i));
+       
+          if (txn->fake_txn() == true) {
+            txn->set_fake_txn(false);
+          }
+
+          txn->set_new_generated(true);
+          txn->set_origin_replica(local_replica);
+
+          string txn_string;
+          txn->SerializeToString(&txn_string);
+          batch_message.add_data(txn_string);
+        }
+      }
+
+      if (batch_message.data_size() > 0) {
+        uint64 batch_number = configuration_->GetGUID();
+        batch_message.set_batch_number(batch_number);
+        Append(batch_number);
+      }
+
     }
 
+
     sequence_message.add_data(encoded);
-    sequence_message.add_misc_int(version);
+    sequence_message.add_misc_int(global_next_version);
+    if (isLocal == true) {
+      sequence_message.add_misc_int(local_next_version);
+    }
     sequence_message.set_type(MessageProto::PAXOS_DATA);
     sequence_message.set_destination_channel("paxos_log_");
 
@@ -132,7 +178,7 @@ void LocalPaxos::RunLeader() {
       }
 
       CHECK(message.type() == MessageProto::PAXOS_DATA_ACK);
-      if (message.misc_int(0) == version) {
+      if (message.misc_int(0) == global_next_version) {
         acks++;
       }
       message.Clear();
@@ -142,7 +188,6 @@ void LocalPaxos::RunLeader() {
     sequence_message.set_type(MessageProto::PAXOS_BATCH_ORDER);
     sequence_message.set_destination_channel("scheduler_");
     for (uint64 i = local_replica * machines_per_replica; i < (local_replica + 1)*machines_per_replica ;i++) {
-//LOG(ERROR) <<this_machine_id_<< ":In paxos log:  send PAXOS_BATCH_ORDER: "<<version<<"  to node:"<<i;
       sequence_message.set_destination_node(i);
       connection_->Send(sequence_message);
     }
@@ -158,8 +203,12 @@ void LocalPaxos::RunLeader() {
     }
    
     sequence_message.Clear();
-//LOG(ERROR) << "In paxos log:  append a sequence: "<<version;
-    log_->Append(version, encoded);
+
+    // Actually append the request into the log
+    if (isLocal == true) {
+      local_log_->Append(local_next_version, encoded);
+    }
+    global_log_->Append(global_next_version, encoded);
 
 
     // Receive the messages.

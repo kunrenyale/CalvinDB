@@ -274,7 +274,7 @@ void LowlatencySequencer::RunReader() {
         }
 
         // Forward "relevant multi-replica action" to the head node
-        if (configuration_->LookupReplica(message.source_node()) == 0) {
+        if (configuration_->LookupReplica(message.source_node()) == 0 && local_replica != 0) {
           MessageProto mr_message;
           for (int i = 0; i < message.data_size(); i++) {
             TxnProto txn;
@@ -293,6 +293,7 @@ void LowlatencySequencer::RunReader() {
           mr_message.set_destination_channel("paxos_log_");
           mr_message.set_destination_node(local_paxos_leader_);
           mr_message.set_type(MessageProto::MR_TXNS_BATCH);
+          mr_message.set_source_node(message.source_node());
           mr_message.add_misc_int(message.batch_number());
           connection_->Send(mr_message);
         }

@@ -74,7 +74,7 @@ class LocalPaxos {
   pthread_t follower_thread_;
 
   map<uint64, MessageProto*> mr_txn_batches_;
-  AtomicQueue<MessageProto*> sequences_other_replicas_;
+  AtomicQueue<Sequence> sequences_other_replicas_;
 
   map<uint32, Log::Reader*> readers_for_local_log_;
   map<uint32, uint64> latest_version_for_replicas_;
