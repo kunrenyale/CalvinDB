@@ -67,6 +67,8 @@ void LowlatencySequencer::RunWriter() {
   batch_message.set_destination_channel("sequencer_");
   batch_message.set_type(MessageProto::TXN_BATCH);
   batch_message.set_source_node(local_machine);
+  batch_message.add_misc_bool(true);
+
   uint64 batch_number;
   uint32 txn_id_offset;
 
@@ -210,7 +212,7 @@ void LowlatencySequencer::RunReader() {
         batch_number = message.batch_number();
 
         //  If (This batch come from this replica) → send BATCH_SUBMIT to the the master node of the local paxos participants
-        if (configuration_->LookupReplica(message.source_node()) == local_replica) {
+        if (configuration_->LookupReplica(message.source_node()) == local_replica && message.misc_bool(0) == true) {
           // Send “BATCH_SUBMIT” to the head machines;
           MessageProto batch_submit_message;
           batch_submit_message.set_destination_channel("sequencer_");
@@ -232,17 +234,23 @@ void LowlatencySequencer::RunReader() {
           set<uint64> readers;
           set<uint64> writers;
           for (uint32 i = 0; i < (uint32)(txn.read_set_size()); i++) {
-            uint64 mds = configuration_->LookupPartition(txn.read_set(i));
-            readers.insert(mds);
+            if (configuration_->LookupMaster(txn.read_set(i)) == txn.origin_replica()) {
+              uint64 mds = configuration_->LookupPartition(txn.read_set(i));
+              readers.insert(mds);
+            }
           }
           for (uint32 i = 0; i < (uint32)(txn.write_set_size()); i++) {
-            uint64 mds = configuration_->LookupPartition(txn.write_set(i));
-            writers.insert(mds);
+            if (configuration_->LookupMaster(txn.write_set(i)) == txn.origin_replica()) {
+              uint64 mds = configuration_->LookupPartition(txn.write_set(i));
+              writers.insert(mds);
+            }
           }
           for (uint32 i = 0; i < (uint32)(txn.read_write_set_size()); i++) {
-            uint64 mds = configuration_->LookupPartition(txn.read_write_set(i));
-            writers.insert(mds);
-            readers.insert(mds);
+            if (configuration_->LookupMaster(txn.read_write_set(i)) == txn.origin_replica()) {
+              uint64 mds = configuration_->LookupPartition(txn.read_write_set(i));
+              writers.insert(mds);
+              readers.insert(mds);
+            }
           }
 
           for (set<uint64>::iterator it = readers.begin(); it != readers.end(); ++it) {
