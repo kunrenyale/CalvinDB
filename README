@@ -1,6 +1,8 @@
 ------------This is the Geo-replicated CalvinDB codebase (under development)------------
 
-This version supports general CavlinDB and low-latency version of CalvinDB.
+CalvinDB is a scalable transactional database system that leverages determinism to guarantee active replication and full ACID-compliance of distributed transactions without two-phase commit. 
+
+This codebase supports original CavlinDB and low-latency version of CalvinDB.
 
 Installation(This is for Ubuntu 14.04, it should be similar with other Linux distribution):
 1. You should install the following softwares:
