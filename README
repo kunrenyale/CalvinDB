@@ -1,5 +1,7 @@
 ------------This is the Geo-replicated CalvinDB codebase (under development)------------
 
+This version supports general CavlinDB and low-latency version of CalvinDB.
+
 Installation(This is for Ubuntu 14.04, it should be similar with other Linux distribution):
 1. You should install the following softwares:
    Git
