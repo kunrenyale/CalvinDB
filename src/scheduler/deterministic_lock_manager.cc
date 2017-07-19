@@ -13,9 +13,8 @@ using std::vector;
 
 DeterministicLockManager::DeterministicLockManager(
     deque<TxnProto*>* ready_txns,
-    ClusterConfig* config)
-  : configuration_(config),
-    ready_txns_(ready_txns) {
+    ClusterConfig* config, uint32 mode)
+  : ready_txns_(ready_txns), configuration_(config), mode_(mode) {
   for (int i = 0; i < TABLE_SIZE; i++) {
     lock_table_[i] = new deque<KeysList>();
   }
@@ -23,9 +22,14 @@ DeterministicLockManager::DeterministicLockManager(
 
 int DeterministicLockManager::Lock(TxnProto* txn) {
   int not_acquired = 0;
+  uint32 origin = txn->origin_replica();
 
   // Handle read/write lock requests.
   for (int i = 0; i < txn->read_write_set_size(); i++) {
+    if (mode_ == 1 && config->LookupMaster(txn->read_write_set(i)) != origin) {
+      continue;
+    }
+
     // Only lock local keys.
     if (IsLocal(txn->read_write_set(i))) {
       deque<KeysList>* key_requests = lock_table_[Hash(txn->read_write_set(i))];
@@ -55,6 +59,11 @@ int DeterministicLockManager::Lock(TxnProto* txn) {
   // Handle read lock requests. This is last so that we don't have to deal with
   // upgrading lock requests from read to write on hash collisions.
   for (int i = 0; i < txn->read_set_size(); i++) {
+
+    if (mode_ == 1 && config->LookupMaster(txn->read_set(i)) != origin) {
+      continue;
+    }
+
     // Only lock local keys.
     if (IsLocal(txn->read_set(i))) {
       deque<KeysList>* key_requests = lock_table_[Hash(txn->read_set(i))];
@@ -96,19 +105,31 @@ int DeterministicLockManager::Lock(TxnProto* txn) {
 }
 
 void DeterministicLockManager::Release(TxnProto* txn) {
-  for (int i = 0; i < txn->read_set_size(); i++)
+  uint32 origin = txn->origin_replica();
+
+  for (int i = 0; i < txn->read_set_size(); i++) {
+    if (mode_ == 1 && config->LookupMaster(txn->read_set(i)) != origin) {
+      continue;
+    }
+
     if (IsLocal(txn->read_set(i))) {
       Release(txn->read_set(i), txn);
     }
+  }
   // Currently commented out because nothing in any write set can conflict
   // in TPCC or Microbenchmark.
 //  for (int i = 0; i < txn->write_set_size(); i++)
 //    if (IsLocal(txn->write_set(i)))
 //      Release(txn->write_set(i), txn);
-  for (int i = 0; i < txn->read_write_set_size(); i++)
+  for (int i = 0; i < txn->read_write_set_size(); i++) {
+    if (mode_ == 1 && config->LookupMaster(txn->read_write_set(i)) != origin) {
+      continue;
+    }
+
     if (IsLocal(txn->read_write_set(i))) {
       Release(txn->read_write_set(i), txn);
     }
+  }
 }
 
 void DeterministicLockManager::Release(const Key& key, TxnProto* txn) {

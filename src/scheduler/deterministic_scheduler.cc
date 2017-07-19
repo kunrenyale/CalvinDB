@@ -23,11 +23,12 @@ using std::map;
 DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
                                                Storage* storage,
                                                const Application* application,
-                                               ConnectionMultiplexer* connection)
+                                               ConnectionMultiplexer* connection,
+                                               uint32 mode)
     : configuration_(conf), storage_(storage), application_(application),connection_(connection) {
   
   ready_txns_ = new std::deque<TxnProto*>();
-  lock_manager_ = new DeterministicLockManager(ready_txns_, configuration_);
+  lock_manager_ = new DeterministicLockManager(ready_txns_, configuration_, mode);
   txns_queue = new AtomicQueue<TxnProto*>();
   done_queue = new AtomicQueue<TxnProto*>();
 

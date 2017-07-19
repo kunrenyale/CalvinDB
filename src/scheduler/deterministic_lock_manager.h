@@ -23,7 +23,7 @@ class TxnProto;
 class DeterministicLockManager {
  public:
   DeterministicLockManager(deque<TxnProto*>* ready_txns,
-                           ClusterConfig* config);
+                           ClusterConfig* config, uint32 mode);
   virtual ~DeterministicLockManager() {}
   virtual int Lock(TxnProto* txn);
   virtual void Release(const Key& key, TxnProto* txn);
@@ -80,5 +80,8 @@ class DeterministicLockManager {
   // 'txn_waits_' are invalided by any call to Release() with the entry's
   // txn.
   unordered_map<TxnProto*, int> txn_waits_;
+
+  // mode_ == 0: origin CalvinDB; mode_ == 1: lowlatency CalvinDB
+  uint32 mode_;
 };
 #endif  // _DB_SCHEDULER_DETERMINISTIC_LOCK_MANAGER_H_

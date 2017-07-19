@@ -49,7 +49,7 @@ class TxnProto;
 
 class DeterministicScheduler : public Scheduler {
  public:
-  DeterministicScheduler(ClusterConfig* conf, Storage* storage, const Application* application,ConnectionMultiplexer* connection);
+  DeterministicScheduler(ClusterConfig* conf, Storage* storage, const Application* application,ConnectionMultiplexer* connection, uint32 mode);
   virtual ~DeterministicScheduler();
 
  private:

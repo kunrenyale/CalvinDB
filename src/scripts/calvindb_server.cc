@@ -94,7 +94,8 @@ int main(int argc, char** argv) {
     DeterministicScheduler scheduler(config,
                                      storage,
                                      application,
-                                     multiplexer);
+                                     multiplexer,
+                                     0);
   } else {
     // Other benchmark
   }
