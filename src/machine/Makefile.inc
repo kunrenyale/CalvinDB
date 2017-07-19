@@ -5,7 +5,8 @@ LC_DIR := machine
 SRCS := machine/cluster_config.cc \
                 machine/cluster_manager.cc \
                 machine/connection.cc \
-                machine/sequencer.cc
+                machine/sequencer.cc \
+                machinie/lowlatency_sequencer.cc 
 
 EXES := 
 

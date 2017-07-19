@@ -89,6 +89,8 @@ class DeterministicScheduler : public Scheduler {
   ConnectionMultiplexer* connection_;
 
   bool start_working_;
+
+  uint32 mode_;
   
 };
 #endif  // _DB_SCHEDULER_DETERMINISTIC_SCHEDULER_H_

@@ -4,15 +4,18 @@
 #include "backend/storage_manager.h"
 
 StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* connection,
-                               Storage* actual_storage, TxnProto* txn)
+                               Storage* actual_storage, TxnProto* txn, uint32 mode)
     : configuration_(config), connection_(connection),
-      actual_storage_(actual_storage), txn_(txn), relative_node_id_(config->relative_node_id()) {
+      actual_storage_(actual_storage), txn_(txn), relative_node_id_(config->relative_node_id()), mode_(mode) {
   MessageProto message;
 
   local_replica_id_ = config->local_replica_id();
 
   // If reads are performed at this node, execute local reads and broadcast
   // results to all (other) writers.
+  set<uint64> writers;
+  uint32 origin = txn->origin_replica();
+
   bool reader = false;
   for (int i = 0; i < txn->readers_size(); i++) {
     if (txn->readers(i) == relative_node_id_)
@@ -26,16 +29,30 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
     // Execute local reads.
     for (int i = 0; i < txn->read_set_size(); i++) {
       const Key& key = txn->read_set(i);
-      if (configuration_->LookupPartition(key) == relative_node_id_) {
+      uint64 mds = configuration_->LookupPartition(key);
+
+      if (mode_ == 1 && configuration_->LookupMaster(key) != origin) {
+        continue;
+      }
+
+      if (mds == relative_node_id_) {
         Record* val = actual_storage_->ReadObject(key);
         objects_[key] = val;
         message.add_keys(key);
         message.add_values(val == NULL ? "" : val->value);
       }
     }
+
     for (int i = 0; i < txn->read_write_set_size(); i++) {
       const Key& key = txn->read_write_set(i);
-      if (configuration_->LookupPartition(key) == relative_node_id_) {
+      uint64 mds = configuration_->LookupPartition(key);
+      writers.insert(mds);
+
+      if (mode_ == 1 && configuration_->LookupMaster(key) != origin) {
+        continue;
+      }
+
+      if (mds == relative_node_id_) {
         Record* val = actual_storage_->ReadObject(key);
         objects_[key] = val;
         message.add_keys(key);
@@ -44,12 +61,13 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
     }
 
     // Broadcast local reads to (other) writers.
-    for (int i = 0; i < txn->writers_size(); i++) {
-      if (txn->writers(i) != relative_node_id_) {
-        message.set_destination_node(configuration_->LookupMachineID(txn->writers(i), configuration_->local_replica_id()));
+    for (set<uint64>::iterator it = writers.begin(); it != writers.end(); ++it) {
+      if (*it != relative_node_id_) {
+        message.set_destination_node(configuration_->LookupMachineID(*it, configuration_->local_replica_id()));
         connection_->Send(message);
       }
     }
+
   }
 
   // Note whether this node is a writer. If not, no need to do anything further.

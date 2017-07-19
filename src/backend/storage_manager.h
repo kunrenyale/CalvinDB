@@ -46,7 +46,7 @@ class TxnProto;
 class StorageManager {
  public:
   StorageManager(ClusterConfig* config, ConnectionMultiplexer* connection,
-                 Storage* actual_storage, TxnProto* txn);
+                 Storage* actual_storage, TxnProto* txn, uint32 mode);
 
   ~StorageManager();
 
@@ -88,6 +88,8 @@ class StorageManager {
   uint64 relative_node_id_;
 
   uint32 local_replica_id_;
+
+  uint32 mode_;
 
 };
 

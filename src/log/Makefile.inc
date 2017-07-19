@@ -3,7 +3,8 @@ UC_DIR := LOG
 LC_DIR := log
 
 SRCS := log/paxos.cc \
-         log/local_mem_log.cc
+        log/local_mem_log.cc \
+        log/local_paxos.cc
 
 EXES := 
 

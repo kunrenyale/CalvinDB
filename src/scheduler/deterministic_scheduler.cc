@@ -25,10 +25,10 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
                                                const Application* application,
                                                ConnectionMultiplexer* connection,
                                                uint32 mode)
-    : configuration_(conf), storage_(storage), application_(application),connection_(connection) {
+    : configuration_(conf), storage_(storage), application_(application),connection_(connection), mode_(mode) {
   
   ready_txns_ = new std::deque<TxnProto*>();
-  lock_manager_ = new DeterministicLockManager(ready_txns_, configuration_, mode);
+  lock_manager_ = new DeterministicLockManager(ready_txns_, configuration_, mode_);
   txns_queue = new AtomicQueue<TxnProto*>();
   done_queue = new AtomicQueue<TxnProto*>();
 
@@ -82,6 +82,8 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
   string channel("scheduler");
   channel.append(IntToString(thread));
 
+  uint32 mode = scheduler->mode_;
+
   while (scheduler->start_working_ != true) {
     usleep(100);
   }
@@ -119,7 +121,7 @@ LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":----In worker: find 
         // Create manager.
         StorageManager* manager = new StorageManager(scheduler->configuration_,
                                       scheduler->connection_,
-                                      scheduler->storage_, txn);
+                                      scheduler->storage_, txn, mode);
 
         // Writes occur at this node.
         if (manager->ReadyToExecute()) {
