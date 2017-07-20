@@ -6,8 +6,6 @@
 
 LocalPaxos::LocalPaxos(ClusterConfig* config, ConnectionMultiplexer* connection)
     : configuration_(config), connection_(connection) {
-  // Init participants_
-  participants_.push_back(0);
   go_ = true;
   local_count_ = 0;
   
@@ -18,7 +16,10 @@ LocalPaxos::LocalPaxos(ClusterConfig* config, ConnectionMultiplexer* connection)
   this_replica_id_ = configuration_->local_replica_id();
 
   for (uint32 i = 0; i < 3; i++) {
-    participants_.push_back(this_replica_id_ * configuration_->nodes_per_replica() + i);
+    uint64 id = this_replica_id_ * configuration_->nodes_per_replica() + i;
+    if (id < (this_replica_id_ + 1) * configuration_->nodes_per_replica()) {
+      participants_.push_back(this_replica_id_ * configuration_->nodes_per_replica() + i);
+    }
   }
   
   connection_->NewChannel("paxos_log_");
