@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
     if (is_process_exist((char *)FLAGS_binary.c_str()) == true) {
       return -2;
     } else {
-      printf("Machine %d: (Geo-replicated CalvinDB) 0.1 (c) Yale University 2017.\n",
+      printf("Machine %d: (Geo-replicated CalvinDB) 0.1 (c) UMD 2017.\n",
              (int)FLAGS_machine_id);
       return 0;
     }

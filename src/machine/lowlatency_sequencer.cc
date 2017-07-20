@@ -211,7 +211,7 @@ void LowlatencySequencer::RunReader() {
 //LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie TXN_BATCH message:"<<message.batch_number();
         batch_number = message.batch_number();
 
-        //  If (This batch come from this replica) → send BATCH_SUBMIT to the the master node of the local paxos participants
+        //  If (This batch come from this replica) → send BATCH_SUBMIT to the the master node of the local paxos participants; Ignore the new_generated txns
         if (configuration_->LookupReplica(message.source_node()) == local_replica && message.misc_bool(0) == true) {
           // Send “BATCH_SUBMIT” to the head machines;
           MessageProto batch_submit_message;

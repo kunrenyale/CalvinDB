@@ -27,6 +27,39 @@ export LD_LIBRARY_PATH=~/CalvinDB/ext/zeromq/src/.libs:~/CalvinDB/ext/protobuf/s
 
 Then run source ~/.bashrc.
 
+
+4. Now you can compile the code:
+
+$ cd ~/CalvinDB/src
+$ make -j
+
+Then all the binaries will be created at ~/CalvinFS/bin/
+
+5. You can change the config file(calvin.conf) to include all machines in the cluster. 
+One example config file is below:
+0:0:192.168.122.1:10001
+1:0:192.168.122.2:10001
+2:1:192.168.122.3:10001
+3:1:192.168.122.4:10001
+4:2:192.168.122.5:10001
+5:2:192.168.122.6:10001
+
+First column:   global machine ID;
+Second column:  replica ID;
+Third column: IP address;
+Fourth column: port
+
+This means that we have 3 replicas, and each replica has 2 machines.
+
+6. Now you can run CalvinDB:
+
+$ cd ~/CalvinDB
+$ bin/scripts/cluster --command="status"  // Check the status of the cluster
+$ bin/scripts/cluster --command="update"  // Use git to get the latest code, and compile it on each machine 
+$ bin/scripts/cluster --command="put-config" // Send the config file to all the machines in the cluster
+$ bin/scripts/cluster --command="start" --lowlatency=0 --experiment=0  --percent_mp=0  --percent_mr=0  --hot_records=10000 --max_batch_size=100  // Run Original CalvinDB
+$ bin/scripts/cluster --command="start" --lowlatency=1 --experiment=0  --percent_mp=0  --percent_mr=0  --hot_records=10000 --max_batch_size=100  // Run Lowlatency CalvinDB
+
 Will be continued.
 
 

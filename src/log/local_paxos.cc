@@ -139,7 +139,7 @@ void LocalPaxos::RunLeader() {
 
         MessageProto* mr_message = mr_txn_batches_[batch_id];
 
-        if (configuration_->LookupReplica(mr_message->source_node()) != 0 || mr_message->data_size() == 0) {
+        if (mr_message->data_size() == 0) {
           continue;
         }
 
