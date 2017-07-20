@@ -9,16 +9,16 @@
 
 
 void* LowlatencySequencer::RunSequencerWriter(void *arg) {
-  reinterpret_cast<Sequencer*>(arg)->RunWriter();
+  reinterpret_cast<LowlatencySequencer*>(arg)->RunWriter();
   return NULL;
 }
 
 void* LowlatencySequencer::RunSequencerReader(void *arg) {
-  reinterpret_cast<Sequencer*>(arg)->RunReader();
+  reinterpret_cast<LowlatencySequencer*>(arg)->RunReader();
   return NULL;
 }
 
-LowlatencySequencer::Sequencer(ClusterConfig* conf, ConnectionMultiplexer* connection, Client* client, Paxos* paxos, uint32 max_batch_size)
+LowlatencySequencer::LowlatencySequencer(ClusterConfig* conf, ConnectionMultiplexer* connection, Client* client, LocalPaxos* paxos, uint32 max_batch_size)
           : epoch_duration_(0.01), configuration_(conf), connection_(connection),
           client_(client), deconstructor_invoked_(false), paxos_log_(paxos), max_batch_size_(max_batch_size) {
   // Start Sequencer main loops running in background thread.
@@ -126,9 +126,9 @@ LOG(ERROR) << "In sequencer:  After synchronization. Starting sequencer writer."
         bool got_message = connection_->GotMessage("sequencer_txn_receive_", &message);
         if (got_message == true) {
           TxnProto txn;
-          txn.ParseFromString(message.data(i));
+          txn.ParseFromString(message.data(0));
           txn.set_origin_replica(local_replica);
-          batch_message.add_data(message.data(i));
+          batch_message.add_data(message.data(0));
           txn_id_offset++; 
         } else {
           TxnProto* txn;
@@ -196,7 +196,7 @@ void LowlatencySequencer::RunReader() {
   
   MessageProto message;
   uint64 batch_number;
-  uint32 local_replica = configuration_->local_replica_id();
+
   uint64 local_paxos_leader_ = local_replica * configuration_->nodes_per_replica();
 
   while (start_working_ != true) {
@@ -227,7 +227,7 @@ void LowlatencySequencer::RunReader() {
           TxnProto txn;
           txn.ParseFromString(message.data(i));
 
-          if (txn->fake_txn() == true) {
+          if (txn.fake_txn() == true) {
             continue;
           }
           // Compute readers & writers; store in txn proto.

@@ -26,7 +26,7 @@ int DeterministicLockManager::Lock(TxnProto* txn) {
 
   // Handle read/write lock requests.
   for (int i = 0; i < txn->read_write_set_size(); i++) {
-    if (mode_ == 1 && config->LookupMaster(txn->read_write_set(i)) != origin) {
+    if (mode_ == 1 && configuration_->LookupMaster(txn->read_write_set(i)) != origin) {
       continue;
     }
 
@@ -60,7 +60,7 @@ int DeterministicLockManager::Lock(TxnProto* txn) {
   // upgrading lock requests from read to write on hash collisions.
   for (int i = 0; i < txn->read_set_size(); i++) {
 
-    if (mode_ == 1 && config->LookupMaster(txn->read_set(i)) != origin) {
+    if (mode_ == 1 && configuration_->LookupMaster(txn->read_set(i)) != origin) {
       continue;
     }
 
@@ -108,7 +108,7 @@ void DeterministicLockManager::Release(TxnProto* txn) {
   uint32 origin = txn->origin_replica();
 
   for (int i = 0; i < txn->read_set_size(); i++) {
-    if (mode_ == 1 && config->LookupMaster(txn->read_set(i)) != origin) {
+    if (mode_ == 1 && configuration_->LookupMaster(txn->read_set(i)) != origin) {
       continue;
     }
 
@@ -122,7 +122,7 @@ void DeterministicLockManager::Release(TxnProto* txn) {
 //    if (IsLocal(txn->write_set(i)))
 //      Release(txn->write_set(i), txn);
   for (int i = 0; i < txn->read_write_set_size(); i++) {
-    if (mode_ == 1 && config->LookupMaster(txn->read_write_set(i)) != origin) {
+    if (mode_ == 1 && configuration_->LookupMaster(txn->read_write_set(i)) != origin) {
       continue;
     }
 

@@ -43,9 +43,6 @@ class DeterministicLockManager {
     return configuration_->LookupPartition(key) == configuration_->relative_node_id();
   }
 
-  // Configuration object (needed to avoid locking non-local keys).
-  ClusterConfig* configuration_;
-
   // The DeterministicLockManager's lock table tracks all lock requests. For a
   // given key, if 'lock_table_' contains a nonempty queue, then the item with
   // that key is locked and either:
@@ -75,6 +72,9 @@ class DeterministicLockManager {
   //
   // Owned by the DeterministicScheduler.
   deque<TxnProto*>* ready_txns_;
+
+  // Configuration object (needed to avoid locking non-local keys).
+  ClusterConfig* configuration_;
 
   // Tracks all txns still waiting on acquiring at least one lock. Entries in
   // 'txn_waits_' are invalided by any call to Release() with the entry's

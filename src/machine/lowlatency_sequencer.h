@@ -7,14 +7,14 @@
 
 #include "machine/connection.h"
 #include "proto/message.pb.h"
-#include "log/paxos.h"
+#include "log/local_paxos.h"
 #include "machine/client.h"
 
 class LowlatencySequencer {
  public:
   // The constructor creates background threads and starts the Sequencer's main
   // loops running.
-  LowlatencySequencer(ClusterConfig* conf, ConnectionMultiplexer* connection, Client* client, Paxos* paxos, uint32 max_batch_size);
+  LowlatencySequencer(ClusterConfig* conf, ConnectionMultiplexer* connection, Client* client, LocalPaxos* paxos, uint32 max_batch_size);
 
   // Halts the main loops.
   ~LowlatencySequencer();
@@ -65,7 +65,7 @@ class LowlatencySequencer {
   // main loop sees it and stops.
   bool deconstructor_invoked_;
 
-  Paxos* paxos_log_;
+  LocalPaxos* paxos_log_;
 
   uint32 max_batch_size_;
 

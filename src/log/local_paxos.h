@@ -16,6 +16,7 @@
 #include "log/local_mem_log.h"
 #include "proto/scalar.pb.h"
 #include "machine/connection.h"
+#include "proto/txn.pb.h"
 
 using std::vector;
 using std::atomic;

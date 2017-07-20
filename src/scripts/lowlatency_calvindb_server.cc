@@ -8,7 +8,7 @@
 #include "log/paxos.h"
 #include "backend/simple_storage.h"
 #include "machine/connection.h"
-#include "machine/sequencer.h"
+#include "machine/lowlatency_sequencer.h"
 #include "applications/microbenchmark.h"
 #include "scheduler/deterministic_scheduler.h"
 #include "scripts/script_utils.h"
@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
   LOG(ERROR) << FLAGS_machine_id << ":Created paxos log "; 
 
   // Initialize sequencer component and start sequencer thread running.
-  Sequencer sequencer(config, multiplexer, client, paxos, FLAGS_max_batch_size);
+  LowlatencySequencer sequencer(config, multiplexer, client, paxos, FLAGS_max_batch_size);
 
   LOG(ERROR) << FLAGS_machine_id << ":Created sequencer ";
 
