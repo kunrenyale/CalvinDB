@@ -77,7 +77,7 @@ void LocalPaxos::Stop() {
 void LocalPaxos::RunLeader() {
   local_next_version = 1;
   global_next_version = 1;
-
+LOG(ERROR) << "---In log: RunLeader() 1:  .";
   for (uint64 i = 0; i < configuration_->replicas_size(); i++) {
     readers_for_local_log_[i] = local_log_->GetReader();
   }
@@ -111,6 +111,7 @@ void LocalPaxos::RunLeader() {
     latest_received_version_for_replicas_[i] = 0;
     latest_processed_version_for_replicas_[i] = 0;
   }
+LOG(ERROR) << "---In log: RunLeader() 2:  .";
 
   while (go_) {
     
