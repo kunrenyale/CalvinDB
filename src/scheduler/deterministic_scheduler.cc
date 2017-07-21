@@ -342,6 +342,7 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch: "<<batch_message
 
         scheduler->lock_manager_->Lock(txn);
         pending_txns++;
+LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a txn: "<<txn->txn_id();
       }
     }
 
@@ -354,7 +355,7 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch: "<<batch_message
 
       scheduler->txns_queue->Push(txn);
 //if (machine_id > 7)
-//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id();
+LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id();
     }
 
     // Report throughput.
