@@ -155,8 +155,8 @@ unordered_map<uint64, MessageProto*> batches_data;
 unordered_map<uint64, MessageProto*> global_batches_order;
 
 Sequence* current_sequence_ = NULL;
-uint32 current_sequence_id_ = 0;
-uint32 current_sequence_batch_index_ = 0;;
+uint32 current_sequence_id_ = 1;
+uint32 current_sequence_batch_index_ = 0;
 uint64 current_batch_id_ = 0;
 
 MessageProto* GetBatch(ConnectionMultiplexer* connection) {

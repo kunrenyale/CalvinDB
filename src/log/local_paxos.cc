@@ -75,8 +75,8 @@ void LocalPaxos::Stop() {
 
 
 void LocalPaxos::RunLeader() {
-  local_next_version = 1;
-  global_next_version = 1;
+  local_next_version = 0;
+  global_next_version = 0;
 
   for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
     readers_for_local_log_[i] = local_log_->GetReader();
@@ -284,6 +284,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to global 
         new_sequence_ack_message.set_destination_node(remote_replica * machines_per_replica);
         new_sequence_ack_message.set_type(MessageProto::NEW_SEQUENCE_ACK);
         new_sequence_ack_message.add_misc_int(local_replica);
+        new_sequence_ack_message.add_misc_int(latest_received_version_for_replicas_[remote_replica]);
         connection_->Send(new_sequence_ack_message);
       }
     }
@@ -312,7 +313,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to global 
         uint32 from_replica = message.misc_int(0);
         Sequence current_sequence_;
         Log::Reader* r = readers_for_local_log_[from_replica];
-        uint64 latest_version = 0;
+        uint64 latest_version = message.misc_int(1);
 
         bool find = r->Next();
         while (find == true) {
