@@ -79,8 +79,9 @@ void LocalPaxos::RunLeader() {
   global_next_version = 1;
 LOG(ERROR) << "---In log: RunLeader() 1:  .";
   for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
+LOG(ERROR) << "---In log: RunLeader() 1.01:  :"<<i;
     readers_for_local_log_[i] = local_log_->GetReader();
-LOG(ERROR) << "---In log: RunLeader() 1.02:  .";
+LOG(ERROR) << "---In log: RunLeader() 1.02:  :"<<i;
   }
 LOG(ERROR) << "---In log: RunLeader() 1.1:  .";
   uint64 quorum = static_cast<int>(participants_.size()) / 2 + 1;
