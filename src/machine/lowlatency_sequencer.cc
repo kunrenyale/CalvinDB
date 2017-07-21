@@ -85,7 +85,7 @@ epoch_duration_ = 100;
 #ifdef LATENCY_TEST
 latency_counter = 0;
 #endif
-
+LOG(ERROR) << "---In sequencer:  before synchronization. Starting sequencer writer.";
   connection_->NewChannel("synchronization_sequencer_channel");
   MessageProto synchronization_message;
   synchronization_message.set_type(MessageProto::EMPTY);
@@ -107,7 +107,8 @@ latency_counter = 0;
   }
 
   connection_->DeleteChannel("synchronization_sequencer_channel");
-LOG(ERROR) << "In sequencer:  After synchronization. Starting sequencer writer.";
+LOG(ERROR) << "---In sequencer:  After synchronization. Starting sequencer writer.";
+
   start_working_ = true;
   MessageProto message;
   while (!deconstructor_invoked_) {
