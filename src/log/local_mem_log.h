@@ -43,11 +43,11 @@ class LocalMemLog : public Log {
   struct Entry {
     Entry() : version(0), entry(NULL) {}
     Entry(uint64 v, const string e)
-        : version(v), entry(e) {
+        : version(v), entry(new string(e)) {
     }
 
     uint64 version;
-    string entry;
+    string* entry;
   };
   Entry* entries_;
   atomic<uint64> size_;

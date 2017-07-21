@@ -172,6 +172,6 @@ uint64 LocalMemLogReader::Version() {
 
 string LocalMemLogReader::Entry() {
   CHECK(Valid()) << "entry called on invalid LogReader";
-  return entry_.entry;
+  return *(entry_.entry);
 }
 
