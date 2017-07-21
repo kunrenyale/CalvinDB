@@ -107,7 +107,7 @@ latency_counter = 0;
   }
 
   connection_->DeleteChannel("synchronization_sequencer_channel");
-LOG(ERROR) << "---In sequencer:  After synchronization. Starting sequencer writer.";
+LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchronization. Starting sequencer writer.";
 
   start_working_ = true;
   MessageProto message;
@@ -187,7 +187,7 @@ void LowlatencySequencer::RunReader() {
 //LOG(ERROR) << "In sequencer:  Starting sequencer reader.";
   // Set up batch messages for each system node.
   map<uint64, MessageProto> batches;
-LOG(ERROR) << "---In RunReader 0:  before synchronization. Starting sequencer writer.";
+
   uint32 local_replica = configuration_->local_replica_id();
   for (uint64 i = 0; i < configuration_->nodes_per_replica();i++) {
     batches[i].set_destination_channel("scheduler_");
