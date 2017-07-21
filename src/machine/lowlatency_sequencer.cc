@@ -61,7 +61,7 @@ void LowlatencySequencer::RunWriter() {
   uint32 local_replica = configuration_->local_replica_id();
   uint64 local_machine = configuration_->local_node_id();
   uint64 nodes_per_replica = configuration_->nodes_per_replica();
-
+LOG(ERROR) << "---In RunWriter 1:  before synchronization. Starting sequencer writer.";
   // Set up batch messages for each system node.
   MessageProto batch_message;
   batch_message.set_destination_channel("sequencer_");
@@ -187,7 +187,7 @@ void LowlatencySequencer::RunReader() {
 //LOG(ERROR) << "In sequencer:  Starting sequencer reader.";
   // Set up batch messages for each system node.
   map<uint64, MessageProto> batches;
-
+LOG(ERROR) << "---In RunReader 0:  before synchronization. Starting sequencer writer.";
   uint32 local_replica = configuration_->local_replica_id();
   for (uint64 i = 0; i < configuration_->nodes_per_replica();i++) {
     batches[i].set_destination_channel("scheduler_");
@@ -199,7 +199,7 @@ void LowlatencySequencer::RunReader() {
   uint64 batch_number;
 
   uint64 local_paxos_leader_ = local_replica * configuration_->nodes_per_replica();
-
+LOG(ERROR) << "---In RunReader 1:  before synchronization. Starting sequencer writer.";
   while (start_working_ != true) {
     usleep(100);
   }
