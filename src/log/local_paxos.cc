@@ -81,7 +81,7 @@ LOG(ERROR) << "---In log: RunLeader() 1:  .";
   for (uint64 i = 0; i < configuration_->replicas_size(); i++) {
     readers_for_local_log_[i] = local_log_->GetReader();
   }
-
+LOG(ERROR) << "---In log: RunLeader() 1.1:  .";
   uint64 quorum = static_cast<int>(participants_.size()) / 2 + 1;
   MessageProto sequence_message;
   
@@ -94,7 +94,7 @@ LOG(ERROR) << "---In log: RunLeader() 1:  .";
   pair<Sequence, uint32> remote_sequence_pair;
   Sequence remote_sequence;
   uint32 remote_replica;
-
+LOG(ERROR) << "---In log: RunLeader() 1.2:  .";
   MessageProto batch_message;
   batch_message.set_destination_channel("sequencer_");
   batch_message.set_type(MessageProto::TXN_BATCH);
