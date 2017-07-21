@@ -114,6 +114,11 @@ void LocalPaxos::RunLeader() {
 
   while (go_) {
     
+    // Sleep while there are NO requests.
+    while (local_count_.load() == 0 && sequences_other_replicas_.Size() == 0) {
+      usleep(20);
+    }
+
     if (local_count_.load() >  0) {
       // Propose a new sequence.
       Lock l(&mutex_);

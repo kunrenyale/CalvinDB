@@ -81,9 +81,6 @@ void Paxos::RunLeader() {
     // Sleep while there are NO requests.
     while (count_.load() == 0) {
       usleep(20);
-      if (!go_) {
-        return;
-      }
     }
 
     // Propose a new sequence.
