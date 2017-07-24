@@ -315,7 +315,8 @@ LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  wrong3, 
       } else if (message.type() == MessageProto::BATCH_SUBMIT) {
         uint64 batch_id = message.misc_int(0);
         paxos_log_->Append(batch_id);
-//LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader: append batch_id:"<<batch_id;
+if (configuration_->local_node_id() == 0)
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader: append batch_id:"<<batch_id;
       }
     }
 
