@@ -17,7 +17,7 @@
 // Requires: key_start % nparts == 0
 void Microbenchmark::GetRandomKeys(set<uint64>* keys, uint32 num_keys, uint64 key_start,
                                    uint64 key_limit, uint32 part) {
-  assert(key_start % nparts == 0);
+  CHECK(key_start % nparts == 0);
   keys->clear();
   for (uint32 i = 0; i < num_keys; i++) {
     // Find a key not already in '*keys'.
@@ -34,18 +34,19 @@ void Microbenchmark::GetRandomKeys(set<uint64>* keys, uint32 num_keys, uint64 ke
 // Requires: key_start % nparts == 0
 void Microbenchmark::GetRandomKeysReplica(set<uint64>* keys, uint32 num_keys, uint64 key_start,
                                           uint64 key_limit, uint32 part, uint32 replica) {
-  assert(key_start % nparts == 0);
+  CHECK(key_start % nparts == 0);
   keys->clear();
   for (uint32 i = 0; i < num_keys; i++) {
     // Find a key not already in '*keys'.
     uint64 key;
+    uint64 order = rand() % ((key_limit - key_start)/nparts);
+    key = key_start + part + nparts * order;
     do {
-      uint64 order = rand() % ((key_limit - key_start)/nparts);
-      while (order % replica_size != replica) {
-        order = rand() % ((key_limit - key_start)/nparts);      
+      while ((key/nparts) % replica_size != replica) {
+        order = rand() % ((key_limit - key_start)/nparts);
+        key = key_start + part + nparts * order; 
       };
 
-      key = key_start + part + nparts * order;
     } while (keys->count(key));
     keys->insert(key);
   }
