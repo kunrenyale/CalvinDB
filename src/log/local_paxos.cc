@@ -130,7 +130,7 @@ void LocalPaxos::RunLeader() {
       isLocal = true;
 if (configuration_->local_node_id() == 0)
 LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  will handle local version: "<<local_next_version;
-    } else if (sequences_other_replicas_.Size() > 0) {
+    } else if (sequences_other_replicas_.Size() > 0) {/**
       isLocal = false;
       global_next_version ++;
       sequences_other_replicas_.Pop(&remote_sequence_pair);
@@ -234,7 +234,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  will handle local
           }
         }
 
-      }
+      }**/
 
     }
 
