@@ -222,7 +222,8 @@ void LowlatencySequencer::RunReader() {
           batch_submit_message.set_destination_node(local_paxos_leader_);
           batch_submit_message.set_type(MessageProto::BATCH_SUBMIT);
           batch_submit_message.add_misc_int(message.batch_number());
-          connection_->Send(batch_submit_message);        
+          connection_->Send(batch_submit_message); 
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader: send BATCH_SUBMIT, id:"<<message.batch_number();    
         }
 
         // If received TXN_BATCH: Parse batch and forward sub-batches to relevant readers (same replica only).
@@ -313,7 +314,8 @@ LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  wrong3, 
 
       } else if (message.type() == MessageProto::BATCH_SUBMIT) {
         uint64 batch_id = message.misc_int(0);
-        paxos_log_->Append(batch_id);  
+        paxos_log_->Append(batch_id);
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader: append batch_id:"<<batch_id;
       }
     }
 
