@@ -32,6 +32,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
       uint64 mds = configuration_->LookupPartition(key);
 
       if (mode_ == 1 && configuration_->LookupMaster(key) != origin) {
+LOG(ERROR) <<configuration_->local_node_id()<< ":!!!!!! In StorageManager: wrong  "<<txn->txn_id();
         continue;
       }
 
