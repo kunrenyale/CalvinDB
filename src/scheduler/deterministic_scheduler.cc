@@ -174,7 +174,8 @@ LOG(ERROR) << sequence_message->destination_node()<< ":In scheduler:  find the s
        MessageProto* message = new MessageProto();
        while (connection->GotMessage("scheduler_", message)) {
          if (message->type() == MessageProto::TXN_SUBBATCH) {
-//LOG(ERROR) << "In scheduler:  receive a subbatch: "<<message->batch_number();
+LOG(ERROR) << "In scheduler:  receive a subbatch: "<<message->batch_number();
+CHECK(message->data_size() > 0);
            batches_data[message->batch_number()] = message;
            message = new MessageProto();
          } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
@@ -219,7 +220,8 @@ LOG(ERROR) <<batch->destination_node()<< ": ^^^^^In scheduler:  got the batch_id
      MessageProto* message = new MessageProto();
      while (connection->GotMessage("scheduler_", message)) {
        if (message->type() == MessageProto::TXN_SUBBATCH) {
-//LOG(ERROR) << "In scheduler:  receive a subbatch: "<<message->batch_number();
+LOG(ERROR) << "In scheduler:  receive a subbatch: "<<message->batch_number();
+CHECK(message->data_size() > 0);
          if ((uint64)(message->batch_number()) == current_batch_id_) {
 LOG(ERROR) << message->destination_node()<<": ^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
            return message;
