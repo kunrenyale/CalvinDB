@@ -50,6 +50,7 @@ LOG(ERROR) <<configuration_->local_node_id()<< ":!!!!!! In StorageManager: wrong
       writers.insert(mds);
 
       if (mode_ == 1 && configuration_->LookupMaster(key) != origin) {
+LOG(ERROR) <<configuration_->local_node_id()<< ":!!!!!! In StorageManager: wrong  "<<txn->txn_id();
         continue;
       }
 
@@ -58,7 +59,9 @@ LOG(ERROR) <<configuration_->local_node_id()<< ":!!!!!! In StorageManager: wrong
         objects_[key] = val;
         message.add_keys(key);
         message.add_values(val == NULL ? "" : val->value);
-      }
+      } else {
+LOG(ERROR) <<configuration_->local_node_id()<< ":!!!!!! In StorageManager: wrong  "<<key;
+}
     }
 
     // Broadcast local reads to (other) writers.
@@ -91,6 +94,7 @@ void StorageManager::HandleReadResult(const MessageProto& message) {
 }
 
 bool StorageManager::ReadyToExecute() {
+LOG(ERROR) <<configuration_->local_node_id()<< ":^^^^^^^^^ In StorageManager: bojects size is:  "<<static_cast<int>(objects_.size());
   return static_cast<int>(objects_.size()) ==
          txn_->read_set_size() + txn_->read_write_set_size();
 }
