@@ -61,7 +61,7 @@ void LowlatencySequencer::RunWriter() {
   uint32 local_replica = configuration_->local_replica_id();
   uint64 local_machine = configuration_->local_node_id();
   uint64 nodes_per_replica = configuration_->nodes_per_replica();
-
+LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  local replica is: "<<local_replica;
   // Set up batch messages for each system node.
   MessageProto batch_message;
   batch_message.set_destination_channel("sequencer_");
@@ -254,7 +254,7 @@ void LowlatencySequencer::RunReader() {
               writers.insert(mds);
               readers.insert(mds);
             } else {
-LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  wrong3, LookupMaster:"<< configuration_->LookupMaster(txn.read_write_set(i)) << "  txn.origin: "<<txn.origin_replica();
+//LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  wrong3, LookupMaster:"<< configuration_->LookupMaster(txn.read_write_set(i)) << "  txn.origin: "<<txn.origin_replica();
 }
           }
 
