@@ -154,12 +154,14 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
             txn_message.add_data(txn_string);
             txn_message.set_destination_node(machine_sent);
             connection_->Send(txn_message);
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer writer:  wrong1";
           } else {
             uint64 machine_sent = rand() % nodes_per_replica;
             txn_message.clear_data();
             txn_message.add_data(txn_string);
             txn_message.set_destination_node(machine_sent);
-            connection_->Send(txn_message);     
+            connection_->Send(txn_message); 
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer writer:  wrong2";
           }
 
           delete txn;
@@ -251,7 +253,9 @@ void LowlatencySequencer::RunReader() {
               uint64 mds = configuration_->LookupPartition(txn.read_write_set(i));
               writers.insert(mds);
               readers.insert(mds);
-            }
+            } else {
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  wrong3";
+}
           }
 
           for (set<uint64>::iterator it = readers.begin(); it != readers.end(); ++it) {
