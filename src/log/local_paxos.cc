@@ -293,10 +293,12 @@ void LocalPaxos::RunLeader() {
     // Actually append the request into the log
     if (isLocal == true) {
       local_log_->Append(local_next_version, encoded);
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to local log. version: "<<local_next_version;
+if (configuration_->local_node_id() == 0)
+LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to local log. version: "<<local_next_version;
     }
     global_log_->Append(global_next_version, encoded);
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to global log. version: "<<global_next_version;
+if (configuration_->local_node_id() == 0)
+LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to global log. version: "<<global_next_version;
 
     // Send its local sequences to other replicas for the first time.
     if (isLocal == true && isFirst == true) {
