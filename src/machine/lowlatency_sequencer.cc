@@ -136,10 +136,10 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
           string txn_string;
           client_->GetTxn(&txn, batch_number * max_batch_size_ + txn_id_offset);
 
+          txn->set_origin_replica(local_replica);
           txn->SerializeToString(&txn_string);
 
           if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) == local_replica) {
-            txn->set_origin_replica(local_replica);
             batch_message.add_data(txn_string);
             txn_id_offset++;
 
@@ -254,7 +254,7 @@ void LowlatencySequencer::RunReader() {
               writers.insert(mds);
               readers.insert(mds);
             } else {
-//LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  wrong3, LookupMaster:"<< configuration_->LookupMaster(txn.read_write_set(i)) << "  txn.origin: "<<txn.origin_replica();
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  wrong3, LookupMaster:"<< configuration_->LookupMaster(txn.read_write_set(i)) << "  txn.origin: "<<txn.origin_replica();
 }
           }
 
