@@ -254,7 +254,7 @@ void LowlatencySequencer::RunReader() {
               writers.insert(mds);
               readers.insert(mds);
             } else {
-LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  wrong3, LookupMaster:"<< configuration_->LookupMaster(txn.read_write_set(i) << "  txn.origin: "<<txn.origin_replica();
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  wrong3, LookupMaster:"<< configuration_->LookupMaster(txn.read_write_set(i)) << "  txn.origin: "<<txn.origin_replica();
 }
           }
 
