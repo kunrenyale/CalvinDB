@@ -116,7 +116,7 @@ LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: finish "<
       TxnProto* txn;
       bool got_it = scheduler->txns_queue->Pop(&txn);
       if (got_it == true) {
-LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":----In worker: find "<<txn->txn_id();
+//LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":----In worker: find "<<txn->txn_id();
         // Create manager.
         StorageManager* manager = new StorageManager(scheduler->configuration_,
                                       scheduler->connection_,
@@ -131,7 +131,7 @@ LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":----In worker: find 
           // Respond to scheduler;
           scheduler->done_queue->Push(txn);
         } else {
-LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":~~~~~~~~~~~~~~~In worker: not ready  "<<txn->txn_id();
+//LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":~~~~~~~~~~~~~~~In worker: not ready  "<<txn->txn_id();
           scheduler->connection_->LinkChannel(IntToString(txn->txn_id()), channel);
           // There are outstanding remote reads.
           active_txns[IntToString(txn->txn_id())] = manager;
@@ -212,7 +212,7 @@ LOG(ERROR) << "^^^^^In scheduler:  will work on next sequence: "<<current_sequen
      // Requested batch has already been received.
      MessageProto* batch = batches_data[current_batch_id_];
      batches_data.erase(current_batch_id_);
-LOG(ERROR) << "^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
+LOG(ERROR) <<batch->destination_node()<< ": ^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
      return batch; 
    } else {
      // Receive the batch data or global batch order
@@ -221,7 +221,7 @@ LOG(ERROR) << "^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_
        if (message->type() == MessageProto::TXN_SUBBATCH) {
 //LOG(ERROR) << "In scheduler:  receive a subbatch: "<<message->batch_number();
          if ((uint64)(message->batch_number()) == current_batch_id_) {
-LOG(ERROR) << "^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
+LOG(ERROR) << message->destination_node()<<": ^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
            return message;
          } else {
            batches_data[message->batch_number()] = message;
