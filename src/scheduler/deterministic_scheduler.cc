@@ -166,7 +166,7 @@ MessageProto* GetBatch(ConnectionMultiplexer* connection) {
        current_sequence_ = new Sequence();
        current_sequence_->ParseFromString(sequence_message->data(0));
        current_sequence_batch_index_ = 0;
-LOG(ERROR) << sequence_message->destination_node()<< ":In scheduler:  find the sequence: "<<current_sequence_id_;
+//LOG(ERROR) << sequence_message->destination_node()<< ":In scheduler:  find the sequence: "<<current_sequence_id_;
        delete sequence_message;
        global_batches_order.erase(current_sequence_id_);
      } else {
@@ -180,7 +180,7 @@ CHECK(message->data_size() > 0);
            message = new MessageProto();
          } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
            if (message->misc_int(0) == current_sequence_id_) {
-LOG(ERROR) << message->destination_node()<< ":In scheduler:  find the sequence: "<<message->misc_int(0);
+//LOG(ERROR) << message->destination_node()<< ":In scheduler:  find the sequence: "<<message->misc_int(0);
              current_sequence_ = new Sequence();
              current_sequence_->ParseFromString(message->data(0));
              current_sequence_batch_index_ = 0;
@@ -205,7 +205,7 @@ LOG(ERROR) << message->destination_node()<< ":In scheduler:  find the sequence: 
      delete current_sequence_;
      current_sequence_ = NULL;
      current_sequence_id_++;
-LOG(ERROR) << "^^^^^In scheduler:  will work on next sequence: "<<current_sequence_id_;
+//LOG(ERROR) << "^^^^^In scheduler:  will work on next sequence: "<<current_sequence_id_;
    }
 
 
@@ -213,7 +213,7 @@ LOG(ERROR) << "^^^^^In scheduler:  will work on next sequence: "<<current_sequen
      // Requested batch has already been received.
      MessageProto* batch = batches_data[current_batch_id_];
      batches_data.erase(current_batch_id_);
-LOG(ERROR) <<batch->destination_node()<< ": ^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
+//LOG(ERROR) <<batch->destination_node()<< ": ^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
      return batch; 
    } else {
      // Receive the batch data or global batch order
@@ -223,14 +223,14 @@ LOG(ERROR) <<batch->destination_node()<< ": ^^^^^In scheduler:  got the batch_id
 //LOG(ERROR) << message->destination_node()<<"In scheduler:  receive a subbatch: "<<message->batch_number();
 CHECK(message->data_size() > 0);
          if ((uint64)(message->batch_number()) == current_batch_id_) {
-LOG(ERROR) << message->destination_node()<<": ^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
+//LOG(ERROR) << message->destination_node()<<": ^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
            return message;
          } else {
            batches_data[message->batch_number()] = message;
            message = new MessageProto();
          }
        } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
-LOG(ERROR)<< message->destination_node()<< ":In scheduler:  receive a sequence: "<<message->misc_int(0);
+//LOG(ERROR)<< message->destination_node()<< ":In scheduler:  receive a sequence: "<<message->misc_int(0);
          global_batches_order[message->misc_int(0)] = message;
          message = new MessageProto();
        }
@@ -289,7 +289,7 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
 
       if(done_txn->writers_size() == 0 || rand() % done_txn->writers_size() == 0)
         txns++;       
-LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id();
+//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id();
 #ifdef LATENCY_TEST
     if (done_txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES && done_txn->origin_machine() == machine_id) {
       scheduler_unlock[done_txn->txn_id()] = GetTime();
@@ -320,21 +320,17 @@ LOG(ERROR) << machine_id<<": reporting latencies to " << filename;
     // Have we run out of txns in our batch? Let's get some new ones.
     if (batch_message == NULL) {
       batch_message = GetBatch(scheduler->connection_);
-if (batch_message != NULL) {
+/**if (batch_message != NULL) {
 LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(1): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
-} else {
-//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a NULL batch ";
-}
+} **/
     // Done with current batch, get next.
     } else if (batch_offset >= batch_message->data_size()) {
         batch_offset = 0;
         delete batch_message;
         batch_message = GetBatch(scheduler->connection_);
-if (batch_message != NULL) {
+/**if (batch_message != NULL) {
 LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(1): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
-} else {
-//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a NULL batch ";
-}
+} **/
     // Current batch has remaining txns, grab up to 10.
     } else if (executing_txns + pending_txns < 2000) {
       for (int i = 0; i < 100; i++) {
@@ -348,7 +344,7 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(1): "<<batch_mess
 
         scheduler->lock_manager_->Lock(txn);
         pending_txns++;
-LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a txn: "<<txn->txn_id();
+//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a txn: "<<txn->txn_id();
       }
     }
 

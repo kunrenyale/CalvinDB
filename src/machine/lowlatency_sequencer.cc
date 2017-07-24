@@ -19,7 +19,7 @@ void* LowlatencySequencer::RunSequencerReader(void *arg) {
 }
 
 LowlatencySequencer::LowlatencySequencer(ClusterConfig* conf, ConnectionMultiplexer* connection, Client* client, LocalPaxos* paxos, uint32 max_batch_size)
-          : epoch_duration_(0.1), configuration_(conf), connection_(connection),
+          : epoch_duration_(0.01), configuration_(conf), connection_(connection),
           client_(client), deconstructor_invoked_(false), paxos_log_(paxos), max_batch_size_(max_batch_size) {
   // Start Sequencer main loops running in background thread.
 
@@ -61,7 +61,7 @@ void LowlatencySequencer::RunWriter() {
   uint32 local_replica = configuration_->local_replica_id();
   uint64 local_machine = configuration_->local_node_id();
   uint64 nodes_per_replica = configuration_->nodes_per_replica();
-LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  local replica is: "<<local_replica;
+
   // Set up batch messages for each system node.
   MessageProto batch_message;
   batch_message.set_destination_channel("sequencer_");
