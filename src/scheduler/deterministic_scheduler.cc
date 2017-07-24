@@ -318,17 +318,21 @@ LOG(ERROR) << machine_id<<": reporting latencies to " << filename;
     // Have we run out of txns in our batch? Let's get some new ones.
     if (batch_message == NULL) {
       batch_message = GetBatch(scheduler->connection_);
-/**if (batch_message != NULL && (machine_id == 2 || machine_id == 3)) {
-LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch: "<<batch_message->batch_number();
-}**/
+if (batch_message != NULL) {
+LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(1): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
+} else {
+LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a NULL batch ";
+}
     // Done with current batch, get next.
     } else if (batch_offset >= batch_message->data_size()) {
         batch_offset = 0;
         delete batch_message;
         batch_message = GetBatch(scheduler->connection_);
-/**if (batch_message != NULL && (machine_id == 2 || machine_id == 3)) {
-LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch: "<<batch_message->batch_number();
-}**/
+if (batch_message != NULL) {
+LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(1): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
+} else {
+LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a NULL batch ";
+}
     // Current batch has remaining txns, grab up to 10.
     } else if (executing_txns + pending_txns < 2000) {
       for (int i = 0; i < 100; i++) {
@@ -342,7 +346,7 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch: "<<batch_message
 
         scheduler->lock_manager_->Lock(txn);
         pending_txns++;
-//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a txn: "<<txn->txn_id();
+LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a txn: "<<txn->txn_id();
       }
     }
 
