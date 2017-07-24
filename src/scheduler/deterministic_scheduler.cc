@@ -166,8 +166,8 @@ MessageProto* GetBatch(ConnectionMultiplexer* connection) {
        current_sequence_ = new Sequence();
        current_sequence_->ParseFromString(sequence_message->data(0));
        current_sequence_batch_index_ = 0;
-if (sequence_message->destination_node() == 0)
-LOG(ERROR) << sequence_message->destination_node()<< ":In scheduler:  find the sequence: "<<current_sequence_id_;
+//if (sequence_message->destination_node() == 0)
+//LOG(ERROR) << sequence_message->destination_node()<< ":In scheduler:  find the sequence: "<<current_sequence_id_;
        delete sequence_message;
        global_batches_order.erase(current_sequence_id_);
      } else {
@@ -181,8 +181,8 @@ CHECK(message->data_size() > 0);
            message = new MessageProto();
          } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
            if (message->misc_int(0) == current_sequence_id_) {
-if (message->destination_node() == 0)
-LOG(ERROR) << message->destination_node()<< ":In scheduler:  find the sequence: "<<message->misc_int(0);
+//if (message->destination_node() == 0)
+//LOG(ERROR) << message->destination_node()<< ":In scheduler:  find the sequence: "<<message->misc_int(0);
              current_sequence_ = new Sequence();
              current_sequence_->ParseFromString(message->data(0));
              current_sequence_batch_index_ = 0;
