@@ -118,9 +118,6 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
     batch_message.set_batch_number(batch_number);
     batch_message.clear_data();
 
-if (configuration_->local_node_id() == 0)
-LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  will generate a new batch"<<batch_number;
-
     // Collect txn requests for this epoch.
     txn_id_offset = 0;
     while (!deconstructor_invoked_ &&
@@ -139,10 +136,10 @@ LOG(ERROR) << configuration_->local_node_id()<<": In sequencer writer:  wrong3";
           TxnProto* txn;
           string txn_string;
 if (configuration_->local_node_id() == 0)
-LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  before generate a new txn"<<batch_number * max_batch_size_ + txn_id_offset;
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  before generate a new txn:"<<batch_number * max_batch_size_ + txn_id_offset;
           client_->GetTxn(&txn, batch_number * max_batch_size_ + txn_id_offset);
 if (configuration_->local_node_id() == 0)
-LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  after generate a new txn"<<batch_number * max_batch_size_ + txn_id_offset;
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  after generate a new txn:"<<batch_number * max_batch_size_ + txn_id_offset;
           txn->set_origin_replica(local_replica);
           txn->SerializeToString(&txn_string);
 
@@ -177,10 +174,6 @@ LOG(ERROR) << configuration_->local_node_id()<<": In sequencer writer:  wrong2";
         usleep(50);
       }
     }
-
-
-if (configuration_->local_node_id() == 0)
-LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  after generate a new batch"<<batch_number;
 
     // Send this epoch's transactions to the central machine of each replica
     for (uint32 i = 0; i < configuration_->replicas_size(); i++) {

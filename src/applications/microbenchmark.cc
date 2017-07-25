@@ -136,6 +136,9 @@ TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint32 part, uint32 replica
   txn->set_txn_type(MICROTXN_SRSP);
   txn->add_involved_replicas(replica);
 
+if (replica == 0)
+LOG(ERROR) << ": In Microbenchmark::MicroTxnSRSP:  1";
+
   // Add two hot keys to read/write set.
   uint64 hotkey_order1 = rand() % hot_records;
   while (hotkey_order1 % replica_size != replica) {
@@ -147,6 +150,9 @@ TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint32 part, uint32 replica
     hotkey_order2 = rand() % hot_records; 
   };
 
+
+if (replica == 0)
+LOG(ERROR) << ": In Microbenchmark::MicroTxnSRSP:  2";
 
   uint64 hotkey1 = part + nparts * hotkey_order1;
   uint64 hotkey2 = part + nparts * hotkey_order2;
@@ -165,6 +171,9 @@ TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint32 part, uint32 replica
   for (set<uint64>::iterator it = keys.begin(); it != keys.end(); ++it) {
     txn->add_read_write_set(IntToString(*it));
   }
+
+if (replica == 0)
+LOG(ERROR) << ": In Microbenchmark::MicroTxnSRSP:  3";
 
   return txn;
 }
