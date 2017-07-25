@@ -135,7 +135,7 @@ TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint32 part, uint32 replica
   txn->set_txn_id(txn_id);
   txn->set_txn_type(MICROTXN_SRSP);
   txn->add_involved_replicas(replica);
-
+srand (time(NULL));
 if (replica == 0)
 LOG(ERROR) << ": In Microbenchmark::MicroTxnSRSP:  1";
 

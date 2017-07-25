@@ -135,11 +135,11 @@ LOG(ERROR) << configuration_->local_node_id()<<": In sequencer writer:  wrong3";
         } else {
           TxnProto* txn;
           string txn_string;
-if (configuration_->local_node_id() == 0)
-LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  before generate a new txn:"<<batch_number * max_batch_size_ + txn_id_offset;
+//if (configuration_->local_node_id() == 0)
+//LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  before generate a new txn:"<<batch_number * max_batch_size_ + txn_id_offset;
           client_->GetTxn(&txn, batch_number * max_batch_size_ + txn_id_offset);
-if (configuration_->local_node_id() == 0)
-LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  after generate a new txn:"<<batch_number * max_batch_size_ + txn_id_offset;
+//if (configuration_->local_node_id() == 0)
+//LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  after generate a new txn:"<<batch_number * max_batch_size_ + txn_id_offset;
           txn->set_origin_replica(local_replica);
           txn->SerializeToString(&txn_string);
 
