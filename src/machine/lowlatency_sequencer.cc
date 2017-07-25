@@ -175,7 +175,8 @@ LOG(ERROR) << configuration_->local_node_id()<<": In sequencer writer:  wrong2";
     // Send this epoch's transactions to the central machine of each replica
     for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
       uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_message.batch_number()), i);
-//LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  will send TXN_BATCH to :"<<machine_id<<"  batch_id:"<<batch_number;
+if (configuration_->local_node_id() == 0 && i == 0)
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  will send TXN_BATCH to :"<<machine_id<<"  batch_id:"<<batch_number;
       batch_message.set_destination_node(machine_id);
       connection_->Send(batch_message);
 //LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  after send TXN_BATCH to :"<<machine_id<<"  batch_id:"<<batch_number;
@@ -223,8 +224,8 @@ void LowlatencySequencer::RunReader() {
           batch_submit_message.set_type(MessageProto::BATCH_SUBMIT);
           batch_submit_message.add_misc_int(message.batch_number());
           connection_->Send(batch_submit_message);
-if (configuration_->local_node_id() == 0)
-LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader: send BATCH_SUBMIT, id:"<<message.batch_number();    
+//if (configuration_->local_node_id() == 0)
+//LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader: send BATCH_SUBMIT, id:"<<message.batch_number();    
         }
 
         // If received TXN_BATCH: Parse batch and forward sub-batches to relevant readers (same replica only).

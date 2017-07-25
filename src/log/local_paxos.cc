@@ -138,6 +138,9 @@ void LocalPaxos::RunLeader() {
       remote_replica = remote_sequence_pair.second;
       remote_sequence.SerializeToString(&encoded);
 
+if (configuration_->local_node_id() == 0)
+LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  will handle remote sequence, version: "<<global_next_version;
+
       if (local_replica != 0 && remote_replica == 0) {
         // Generate new txns for multi-replica txns.
         for (int i = 0; i < remote_sequence.batch_ids_size(); i++) {
