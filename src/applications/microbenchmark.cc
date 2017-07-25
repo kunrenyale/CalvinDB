@@ -62,7 +62,7 @@ TxnProto* Microbenchmark::MicroTxnSP(int64 txn_id, uint32 part) {
   txn->set_txn_id(txn_id);
   txn->set_txn_type(MICROTXN_SP);
 
-  //srand (time(NULL));
+  srand (time(NULL));
 
   // Add two hot keys to read/write set.
   uint64 hotkey1 = part + nparts * (rand() % hot_records);
@@ -99,7 +99,7 @@ TxnProto* Microbenchmark::MicroTxnMP(int64 txn_id, uint32 part1, uint32 part2) {
   txn->set_txn_id(txn_id);
   txn->set_txn_type(MICROTXN_MP);
 
-  //srand (time(NULL));
+  srand (time(NULL));
 
   // Add two hot keys to read/write set---one in each partition.
   uint64 hotkey1 = part1 + nparts * (rand() % hot_records);
@@ -394,14 +394,14 @@ double execution_start = GetTime();
   }
 
   // The following code is for microbenchmark "long" transaction, uncomment it if for "long" transaction
-  while (GetTime() - execution_start < 0.00008) {
+  /**while (GetTime() - execution_start < 0.00008) {
     int x = 1;
     for(int i = 0; i < 10000; i++) {
       x = x*x+1;
       x = x+10;
       x = x-2;
     }
-  }
+  }**/
 
   return 0;
 }
