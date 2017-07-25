@@ -119,7 +119,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
     batch_message.clear_data();
 
 if (configuration_->local_node_id() == 0)
-LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  will generate a new batch";
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  will generate a new batch"<<batch_number;
 
     // Collect txn requests for this epoch.
     txn_id_offset = 0;
@@ -184,6 +184,10 @@ LOG(ERROR) << configuration_->local_node_id()<<": In sequencer writer:  wrong2";
       connection_->Send(batch_message);
 //LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  after send TXN_BATCH to :"<<machine_id<<"  batch_id:"<<batch_number;
     }
+
+if (configuration_->local_node_id() == 0)
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  after generate a new batch"<<batch_number;
+
   }
 
 }
