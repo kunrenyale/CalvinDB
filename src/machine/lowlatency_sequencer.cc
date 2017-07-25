@@ -175,6 +175,8 @@ LOG(ERROR) << configuration_->local_node_id()<<": In sequencer writer:  wrong2";
       }
     }
 
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  batch size:"<<(uint32)(batch_message.data_size());
+
     // Send this epoch's transactions to the central machine of each replica
     for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
       uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_message.batch_number()), i);
