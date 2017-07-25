@@ -62,7 +62,7 @@ TxnProto* Microbenchmark::MicroTxnSP(int64 txn_id, uint32 part) {
   txn->set_txn_id(txn_id);
   txn->set_txn_type(MICROTXN_SP);
 
-  srand (time(NULL));
+  //srand (time(NULL));
 
   // Add two hot keys to read/write set.
   uint64 hotkey1 = part + nparts * (rand() % hot_records);
@@ -99,7 +99,7 @@ TxnProto* Microbenchmark::MicroTxnMP(int64 txn_id, uint32 part1, uint32 part2) {
   txn->set_txn_id(txn_id);
   txn->set_txn_type(MICROTXN_MP);
 
-  srand (time(NULL));
+  //srand (time(NULL));
 
   // Add two hot keys to read/write set---one in each partition.
   uint64 hotkey1 = part1 + nparts * (rand() % hot_records);
