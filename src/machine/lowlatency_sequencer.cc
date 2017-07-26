@@ -259,9 +259,7 @@ void LowlatencySequencer::RunReader() {
               uint64 mds = configuration_->LookupPartition(txn.read_write_set(i));
               writers.insert(mds);
               readers.insert(mds);
-            } else {
-LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  wrong3, LookupMaster:"<< configuration_->LookupMaster(txn.read_write_set(i)) << "  txn.origin: "<<txn.origin_replica();
-}
+            }
           }
 
           for (set<uint64>::iterator it = readers.begin(); it != readers.end(); ++it) {

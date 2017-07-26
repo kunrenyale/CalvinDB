@@ -223,7 +223,7 @@ CHECK(message->data_size() > 0);
      while (connection->GotMessage("scheduler_", message)) {
        if (message->type() == MessageProto::TXN_SUBBATCH) {
 //LOG(ERROR) << message->destination_node()<<"In scheduler:  receive a subbatch: "<<message->batch_number();
-CHECK(message->data_size() > 0);
+//CHECK(message->data_size() > 0);
          if ((uint64)(message->batch_number()) == current_batch_id_) {
 //LOG(ERROR) << message->destination_node()<<": ^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
            return message;
