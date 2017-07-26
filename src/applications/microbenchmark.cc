@@ -62,8 +62,6 @@ TxnProto* Microbenchmark::MicroTxnSP(int64 txn_id, uint32 part) {
   txn->set_txn_id(txn_id);
   txn->set_txn_type(MICROTXN_SP);
 
-  srand (time(NULL));
-
   // Add two hot keys to read/write set.
   uint64 hotkey1 = part + nparts * (rand() % hot_records);
   txn->add_read_write_set(IntToString(hotkey1));
@@ -98,8 +96,6 @@ TxnProto* Microbenchmark::MicroTxnMP(int64 txn_id, uint32 part1, uint32 part2) {
   // Set the transaction's standard attributes
   txn->set_txn_id(txn_id);
   txn->set_txn_type(MICROTXN_MP);
-
-  srand (time(NULL));
 
   // Add two hot keys to read/write set---one in each partition.
   uint64 hotkey1 = part1 + nparts * (rand() % hot_records);
@@ -140,7 +136,6 @@ TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint32 part, uint32 replica
   txn->set_txn_type(MICROTXN_SRSP);
   txn->add_involved_replicas(replica);
 
-  srand (time(NULL));
 //if (replica == 0)
 //LOG(ERROR) << ": In Microbenchmark::MicroTxnSRSP:  1";
 
@@ -193,8 +188,6 @@ TxnProto* Microbenchmark::MicroTxnSRMP(int64 txn_id, uint32 part1, uint32 part2,
   txn->set_txn_id(txn_id);
   txn->set_txn_type(MICROTXN_SRMP);
   txn->add_involved_replicas(replica);
-
-  srand (time(NULL));
 
   // Add two hot keys to read/write set---one in each partition.
   uint64 hotkey_order1 = rand() % hot_records;
@@ -253,8 +246,6 @@ TxnProto* Microbenchmark::MicroTxnMRSP(int64 txn_id, uint32 part, uint32 replica
   if (replica1 != 0 && replica2 != 0) {
     txn->set_fake_txn(true);
   }
-
-  srand (time(NULL));
 
   // Add two hot keys to read/write set.
   uint64 hotkey_order1 = rand() % hot_records;
@@ -316,8 +307,6 @@ TxnProto* Microbenchmark::MicroTxnMRMP(int64 txn_id, uint32 part1, uint32 part2,
   if (replica1 != 0 && replica2 != 0) {
     txn->set_fake_txn(true);
   }
-
-  srand (time(NULL));
 
   // Add two hot keys to read/write set---one in each partition.
   uint64 hotkey_order1 = rand() % hot_records;

@@ -62,6 +62,8 @@ void LowlatencySequencer::RunWriter() {
   uint64 local_machine = configuration_->local_node_id();
   uint64 nodes_per_replica = configuration_->nodes_per_replica();
 
+  srand (time(NULL));
+
   // Set up batch messages for each system node.
   MessageProto batch_message;
   batch_message.set_destination_channel("sequencer_");
