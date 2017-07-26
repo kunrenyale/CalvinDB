@@ -131,7 +131,6 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
           txn.set_origin_replica(local_replica);
           batch_message.add_data(message.data(0));
           txn_id_offset++; 
-LOG(ERROR) << configuration_->local_node_id()<<": In sequencer writer:  wrong3";
         } else {
           TxnProto* txn;
           string txn_string;
@@ -158,14 +157,12 @@ LOG(ERROR) << configuration_->local_node_id()<<": In sequencer writer:  wrong3";
             txn_message.add_data(txn_string);
             txn_message.set_destination_node(machine_sent);
             connection_->Send(txn_message);
-LOG(ERROR) << configuration_->local_node_id()<<": In sequencer writer:  wrong1";
           } else {
             uint64 machine_sent = rand() % nodes_per_replica;
             txn_message.clear_data();
             txn_message.add_data(txn_string);
             txn_message.set_destination_node(machine_sent);
             connection_->Send(txn_message); 
-LOG(ERROR) << configuration_->local_node_id()<<": In sequencer writer:  wrong2";
           }
 
           delete txn;
