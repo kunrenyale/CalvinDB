@@ -176,7 +176,7 @@ MessageProto* GetBatch(ConnectionMultiplexer* connection) {
        while (connection->GotMessage("scheduler_", message)) {
          if (message->type() == MessageProto::TXN_SUBBATCH) {
 //LOG(ERROR) << message->destination_node()<<"In scheduler:  receive a subbatch: "<<message->batch_number();
-CHECK(message->data_size() > 0);
+//CHECK(message->data_size() > 0);
            batches_data[message->batch_number()] = message;
            message = new MessageProto();
          } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
