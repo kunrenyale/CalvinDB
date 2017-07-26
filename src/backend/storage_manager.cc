@@ -49,7 +49,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
       writers.insert(mds);
 
       if (mode_ == 1 && configuration_->LookupMaster(key) != origin) {
-LOG(ERROR) <<configuration_->local_node_id()<< ":!!!!!! In StorageManager: wrong  "<<txn->txn_id()<<"  key is:"<<key;
+//LOG(ERROR) <<configuration_->local_node_id()<< ":!!!!!! In StorageManager: wrong  "<<txn->txn_id()<<"  key is:"<<key;
         continue;
       }
 

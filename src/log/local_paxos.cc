@@ -282,6 +282,7 @@ void LocalPaxos::RunLeader() {
             string txn_string;
             txn.SerializeToString(&txn_string);
             batch_message.add_data(txn_string);
+LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: generated a new txn:"<<txn.txn_id();
           }
         }
 
