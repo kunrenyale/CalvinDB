@@ -23,6 +23,7 @@ LocalPaxos::LocalPaxos(ClusterConfig* config, ConnectionMultiplexer* connection)
   }
   
   connection_->NewChannel("paxos_log_");
+  connection_->NewChannel("paxos_ack_");
   
   cpu_set_t cpuset;
   pthread_attr_t attr_writer;
@@ -308,7 +309,7 @@ void LocalPaxos::RunLeader() {
       sequence_message.add_misc_int(local_next_version);
     }
     sequence_message.set_type(MessageProto::PAXOS_DATA);
-    sequence_message.set_destination_channel("paxos_log_");
+    sequence_message.set_destination_channel("paxos_ack_");
 
     for (uint32 i = 1; i < participants_.size(); i++) {
       sequence_message.set_destination_node(participants_[i]);
@@ -320,7 +321,7 @@ void LocalPaxos::RunLeader() {
     // Collect Acks.
     MessageProto message;
     while (acks < quorum) {
-      while (connection_->GotMessage("paxos_log_", &message) == false) {
+      while (connection_->GotMessage("paxos_ack_", &message) == false) {
         usleep(10);
         if (!go_) {
           return;
@@ -513,7 +514,7 @@ void LocalPaxos::RunFollower() {
 
   while (go_) {
     // Get message from leader.
-    while (connection_->GotMessage("paxos_log_", &message) == false) {
+    while (connection_->GotMessage("paxos_ack_", &message) == false) {
       usleep(20);
       if (!go_) {
         return;
@@ -526,7 +527,7 @@ void LocalPaxos::RunFollower() {
       // Send ack to leader.
       ack_message.set_destination_node(participants_[0]);
       ack_message.set_type(MessageProto::PAXOS_DATA_ACK);
-      ack_message.set_destination_channel("paxos_log_");
+      ack_message.set_destination_channel("paxos_ack_");
       ack_message.add_misc_int(message.misc_int(0));
       connection_->Send(ack_message);
  
