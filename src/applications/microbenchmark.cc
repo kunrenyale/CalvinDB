@@ -34,20 +34,20 @@ void Microbenchmark::GetRandomKeys(set<uint64>* keys, uint32 num_keys, uint64 ke
 // Requires: key_start % nparts == 0
 void Microbenchmark::GetRandomKeysReplica(set<uint64>* keys, uint32 num_keys, uint64 key_start,
                                           uint64 key_limit, uint32 part, uint32 replica) {
-  CHECK(key_start % nparts == 0);
+  CHECK(key_start % (nparts*replica_size) == 0);
   keys->clear();
+
   for (uint32 i = 0; i < num_keys; i++) {
     // Find a key not already in '*keys'.
     uint64 key;
-    uint64 order = rand() % ((key_limit - key_start)/nparts);
-    key = key_start + part + nparts * order;
-    do {
-      while ((key/nparts) % replica_size != replica) {
-        order = rand() % ((key_limit - key_start)/nparts);
-        key = key_start + part + nparts * order; 
-      };
+    uint64 order = rand() % ((key_limit - key_start)/(nparts*replica_size));
+    key = key_start + part + nparts * (order * replica_size + replica);
+    
+    while (keys->count(key)) {
+      order = rand() % ((key_limit - key_start)/(nparts*replica_size));
+      key = key_start + part + nparts * (order * replica_size + replica);   
+    }
 
-    } while (keys->count(key));
     keys->insert(key);
   }
 }
@@ -161,10 +161,15 @@ TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint32 part, uint32 replica
 
   // Insert set of kRWSetSize - 1 random cold keys from specified partition into
   // read/write set.
+  uint64 key_start = nparts * hot_records;
+  if (key_start % (replica_size*nparts) != 0) {
+    key_start = key_start + (replica_size*nparts - (key_start % (replica_size*nparts)));
+  }
+
   set<uint64> keys;
   GetRandomKeysReplica(&keys,
                        kRWSetSize - 2,
-                       nparts * hot_records,
+                       key_start,
                        nparts * kDBSize,
                        part,
                        replica);
@@ -208,10 +213,15 @@ TxnProto* Microbenchmark::MicroTxnSRMP(int64 txn_id, uint32 part1, uint32 part2,
 
   // Insert set of kRWSetSize/2 - 1 random cold keys from each partition into
   // read/write set.
+  uint64 key_start = nparts * hot_records;
+  if (key_start % (replica_size*nparts) != 0) {
+    key_start = key_start + (replica_size*nparts - (key_start % (replica_size*nparts)));
+  }
+
   set<uint64> keys;
   GetRandomKeysReplica(&keys,
                        kRWSetSize/2 - 1,
-                       nparts * hot_records,
+                       key_start,
                        nparts * kDBSize,
                        part1,
                        replica);
@@ -221,7 +231,7 @@ TxnProto* Microbenchmark::MicroTxnSRMP(int64 txn_id, uint32 part1, uint32 part2,
 
   GetRandomKeysReplica(&keys,
                        kRWSetSize/2 - 1,
-                       nparts * hot_records,
+                       key_start,
                        nparts * kDBSize,
                        part2,
                        replica);
@@ -266,10 +276,16 @@ TxnProto* Microbenchmark::MicroTxnMRSP(int64 txn_id, uint32 part, uint32 replica
 
   // Insert set of kRWSetSize/2 - 1 random cold keys from specified replica/partition into
   // read/write set.
+
+  uint64 key_start = nparts * hot_records;
+  if (key_start % (replica_size*nparts) != 0) {
+    key_start = key_start + (replica_size*nparts - (key_start % (replica_size*nparts)));
+  }
+
   set<uint64> keys;
   GetRandomKeysReplica(&keys,
                        kRWSetSize/2 - 1,
-                       nparts * hot_records,
+                       key_start,
                        nparts * kDBSize,
                        part,
                        replica1);
@@ -281,7 +297,7 @@ TxnProto* Microbenchmark::MicroTxnMRSP(int64 txn_id, uint32 part, uint32 replica
   // read/write set.
   GetRandomKeysReplica(&keys,
                        kRWSetSize/2 - 1,
-                       nparts * hot_records,
+                       key_start,
                        nparts * kDBSize,
                        part,
                        replica2);
@@ -327,10 +343,17 @@ TxnProto* Microbenchmark::MicroTxnMRMP(int64 txn_id, uint32 part1, uint32 part2,
 
   // Insert set of kRWSetSize/2 - 1 random cold keys from each replica/partition into
   // read/write set.
+
+  uint64 key_start = nparts * hot_records;
+  if (key_start % (replica_size*nparts) != 0) {
+    key_start = key_start + (replica_size*nparts - (key_start % (replica_size*nparts)));
+  }
+
+
   set<uint64> keys;
   GetRandomKeysReplica(&keys,
                        kRWSetSize/2 - 1,
-                       nparts * hot_records,
+                       key_start,
                        nparts * kDBSize,
                        part1,
                        replica1);
@@ -342,7 +365,7 @@ TxnProto* Microbenchmark::MicroTxnMRMP(int64 txn_id, uint32 part1, uint32 part2,
   // read/write set.
   GetRandomKeysReplica(&keys,
                        kRWSetSize/2 - 1,
-                       nparts * hot_records,
+                       key_start,
                        nparts * kDBSize,
                        part2,
                        replica2);
