@@ -140,14 +140,11 @@ TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint32 part, uint32 replica
 //LOG(ERROR) << ": In Microbenchmark::MicroTxnSRSP:  1";
 
   // Add two hot keys to read/write set.
-  uint64 hotkey_order1 = rand() % hot_records;
-  while (hotkey_order1 % replica_size != replica) {
-    hotkey_order1 = rand() % hot_records; 
-  };
+  uint64 hotkey_order1 = (rand() % (hot_records/replica_size)) * replica_size + replica;
 
-  uint64 hotkey_order2 = rand() % hot_records;
-  while (hotkey_order2 % replica_size != replica || hotkey_order2 == hotkey_order1) {
-    hotkey_order2 = rand() % hot_records; 
+  uint64 hotkey_order2 = (rand() % (hot_records/replica_size)) * replica_size + replica;
+  while (hotkey_order2 == hotkey_order1) {
+    hotkey_order2 = (rand() % (hot_records/replica_size)) * replica_size + replica;
   };
 
 
