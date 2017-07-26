@@ -192,15 +192,9 @@ TxnProto* Microbenchmark::MicroTxnSRMP(int64 txn_id, uint32 part1, uint32 part2,
   txn->add_involved_replicas(replica);
 
   // Add two hot keys to read/write set---one in each partition.
-  uint64 hotkey_order1 = rand() % hot_records;
-  while (hotkey_order1 % replica_size != replica) {
-    hotkey_order1 = rand() % hot_records; 
-  };
+  uint64 hotkey_order1 = (rand() % (hot_records/replica_size)) * replica_size + replica;
+  uint64 hotkey_order2 = (rand() % (hot_records/replica_size)) * replica_size + replica;
 
-  uint64 hotkey_order2 = rand() % hot_records;
-  while (hotkey_order2 % replica_size != replica) {
-    hotkey_order2 = rand() % hot_records; 
-  };
 
   uint64 hotkey1 = part1 + nparts * hotkey_order1;
   uint64 hotkey2 = part2 + nparts * hotkey_order2;
@@ -241,6 +235,7 @@ TxnProto* Microbenchmark::MicroTxnSRMP(int64 txn_id, uint32 part1, uint32 part2,
 
 //------------- Create a multi-replica single-partition transaction------------
 TxnProto* Microbenchmark::MicroTxnMRSP(int64 txn_id, uint32 part, uint32 replica1, uint32 replica2) {
+  CHECK(replica1 != replica2);
   // Create the new transaction object
   TxnProto* txn = new TxnProto();
 
@@ -255,15 +250,8 @@ TxnProto* Microbenchmark::MicroTxnMRSP(int64 txn_id, uint32 part, uint32 replica
   }
 
   // Add two hot keys to read/write set.
-  uint64 hotkey_order1 = rand() % hot_records;
-  while (hotkey_order1 % replica_size != replica1) {
-    hotkey_order1 = rand() % hot_records; 
-  };
-
-  uint64 hotkey_order2 = rand() % hot_records;
-  while (hotkey_order2 % replica_size != replica2) {
-    hotkey_order2 = rand() % hot_records; 
-  };
+  uint64 hotkey_order1 = (rand() % (hot_records/replica_size)) * replica_size + replica1;
+  uint64 hotkey_order2 = (rand() % (hot_records/replica_size)) * replica_size + replica2;
 
   uint64 hotkey1 = part + nparts * hotkey_order1;
   uint64 hotkey2 = part + nparts * hotkey_order2;
@@ -322,15 +310,8 @@ TxnProto* Microbenchmark::MicroTxnMRMP(int64 txn_id, uint32 part1, uint32 part2,
   }
 
   // Add two hot keys to read/write set---one in each partition.
-  uint64 hotkey_order1 = rand() % hot_records;
-  while (hotkey_order1 % replica_size != replica1) {
-    hotkey_order1 = rand() % hot_records; 
-  };
-
-  uint64 hotkey_order2 = rand() % hot_records;
-  while (hotkey_order2 % replica_size != replica2) {
-    hotkey_order2 = rand() % hot_records; 
-  };
+  uint64 hotkey_order1 = (rand() % (hot_records/replica_size)) * replica_size + replica1;
+  uint64 hotkey_order2 = (rand() % (hot_records/replica_size)) * replica_size + replica2;
 
   uint64 hotkey1 = part1 + nparts * hotkey_order1;
   uint64 hotkey2 = part2 + nparts * hotkey_order2;
