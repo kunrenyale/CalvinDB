@@ -162,7 +162,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer: receive a mr t
             txn_message.add_data(txn_string);
             txn_message.set_destination_node(machine_sent);
             connection_->Send(txn_message);
-          } else if (txn->involved_replicas_size() > 1 && txn->involved_replicas(0) == 0) {
+          } else if (txn->involved_replicas_size() > 1 && local_replica == 0) {
             batch_message.add_data(txn_string);
           } else {
             uint64 machine_sent = rand() % nodes_per_replica;
