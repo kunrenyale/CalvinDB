@@ -266,7 +266,7 @@ void LocalPaxos::RunLeader() {
             continue;
           }
 
-LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: after handle remote_sequence:"<<batch_id<<"  size is:"<<mr_message->data_size();
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: after handle remote_sequence:"<<batch_id<<"  size is:"<<mr_message->data_size();
 
           batch_message.clear_data();
           for (int i = 0; i < mr_message->data_size(); i++) {
@@ -283,7 +283,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: after handle remot
             string txn_string;
             txn.SerializeToString(&txn_string);
             batch_message.add_data(txn_string);
-LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: generated a new txn:"<<txn.txn_id();
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: generated a new txn:"<<txn.txn_id();
           }
         }
 
