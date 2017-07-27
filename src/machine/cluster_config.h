@@ -98,6 +98,7 @@ class ClusterConfig {
 
   // Returns a globally unique ID (no ordering guarantees though).
   uint64 GetGUID() {
+    Lock l(&mutex_);
     return 1 + local_node_id_ + (all_nodes_size() * (next_guid_++));
   }
 
@@ -138,6 +139,8 @@ class ClusterConfig {
   // needs to exit gracefully.
   bool stop_;
   // Intentionally copyable.
+
+  Mutex mutex_;
 };
 
 #endif  // CALVIN_MACHINE_CLUSTER_CONFIG_H_
