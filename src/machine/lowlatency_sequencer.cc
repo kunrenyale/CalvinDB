@@ -124,7 +124,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
     while (!deconstructor_invoked_ &&
            GetTime() < epoch_start + epoch_duration_) {
       // Add next txn request to batch.
-      if ((uint32)(batch_message.data_size()) < max_batch_size_) {
+      if ((uint32)(batch_message.data_size()) < max_batch_size_ && txn_id_offset < max_batch_size_) {
         bool got_message = connection_->GotMessage("sequencer_txn_receive_", &message);
         if (got_message == true) {
           TxnProto txn;
@@ -180,7 +180,9 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer: receive a mr t
     }
 
 //LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  batch size:"<<(uint32)(batch_message.data_size());
-
+    if (batch_message.data_size() == 0) {
+      continue;
+    }
     // Send this epoch's transactions to the central machine of each replica
     for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
       uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_message.batch_number()), i);
