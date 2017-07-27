@@ -259,13 +259,14 @@ void LocalPaxos::RunLeader() {
 
           };
 
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: after handle remote_sequence:"<<batch_id;
 
           MessageProto* mr_message = mr_txn_batches_[batch_id];
 
           if (mr_message->data_size() == 0) {
             continue;
           }
+
+LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: after handle remote_sequence:"<<batch_id<<"  size is:"<<mr_message->data_size();
 
           batch_message.clear_data();
           for (int i = 0; i < mr_message->data_size(); i++) {
