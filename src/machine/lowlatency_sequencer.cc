@@ -304,6 +304,7 @@ void LowlatencySequencer::RunReader() {
                   string txn_data;
                   txn.SerializeToString(&txn_data);
                   mr_message.add_data(txn_data);
+LOG(ERROR) << configuration_->local_node_id()<<":--- In sequencer reader: append txn into mr_message:"<<txn.txn_id();
                 }
               }
             }
