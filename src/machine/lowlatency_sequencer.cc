@@ -134,7 +134,6 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
           string txn_string;
           txn.SerializeToString(&txn_string);
           batch_message.add_data(txn_string);
-          txn_id_offset++; 
 LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer: receive a mr txn:"<<txn.txn_id()<<"   from:"<<message.source_node();
         } else {
           TxnProto* txn;
