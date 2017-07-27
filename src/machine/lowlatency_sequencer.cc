@@ -131,7 +131,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
           txn.set_origin_replica(local_replica);
           batch_message.add_data(message.data(0));
           txn_id_offset++; 
-//LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer: receive a mr txn:"<<txn.txn_id();
+LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer: receive a mr txn:"<<txn.txn_id();
         } else {
           TxnProto* txn;
           string txn_string;
@@ -164,7 +164,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
             txn_message.add_data(txn_string);
             txn_message.set_destination_node(machine_sent);
             connection_->Send(txn_message);
-//LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer: create a new txn:"<<txn->txn_id();
+LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer: create a new txn:"<<txn->txn_id();
           }
 
           delete txn;
@@ -304,7 +304,7 @@ void LowlatencySequencer::RunReader() {
                   string txn_data;
                   txn.SerializeToString(&txn_data);
                   mr_message.add_data(txn_data);
-//LOG(ERROR) << configuration_->local_node_id()<<":--- In sequencer reader: append txn into mr_message:"<<txn.txn_id();
+LOG(ERROR) << configuration_->local_node_id()<<":--- In sequencer reader: append txn into mr_message:"<<txn.txn_id();
                 }
               }
             }
