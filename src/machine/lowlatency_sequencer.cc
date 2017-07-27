@@ -130,7 +130,10 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
           TxnProto txn;
           txn.ParseFromString(message.data(0));
           txn.set_origin_replica(local_replica);
-          batch_message.add_data(message.data(0));
+
+          string txn_string;
+          txn.SerializeToString(&txn_string);
+          batch_message.add_data(txn_string);
           txn_id_offset++; 
 LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer: receive a mr txn:"<<txn.txn_id()<<"   from:"<<message.source_node();
         } else {
@@ -159,6 +162,8 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer: receive a mr t
             txn_message.add_data(txn_string);
             txn_message.set_destination_node(machine_sent);
             connection_->Send(txn_message);
+          } else if (txn->involved_replicas_size() > 1 && txn->involved_replicas(0) == 0) {
+            batch_message.add_data(txn_string);
           } else {
             uint64 machine_sent = rand() % nodes_per_replica;
             txn_message.clear_data();

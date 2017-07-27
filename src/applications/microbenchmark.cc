@@ -242,6 +242,13 @@ TxnProto* Microbenchmark::MicroTxnMRSP(int64 txn_id, uint32 part, uint32 replica
   // Set the transaction's standard attributes
   txn->set_txn_id(txn_id);
   txn->set_txn_type(MICROTXN_MRSP);
+
+  if (replica1 > replica2) {
+    uint32 tmp = replica1;
+    replica1 = replica2;
+    replica2 = tmp;
+  }
+
   txn->add_involved_replicas(replica1);
   txn->add_involved_replicas(replica2);
 
@@ -302,6 +309,13 @@ TxnProto* Microbenchmark::MicroTxnMRMP(int64 txn_id, uint32 part1, uint32 part2,
   // Set the transaction's standard attributes
   txn->set_txn_id(txn_id);
   txn->set_txn_type(MICROTXN_MRMP);
+
+  if (replica1 > replica2) {
+    uint32 tmp = replica1;
+    replica1 = replica2;
+    replica2 = tmp;
+  }
+
   txn->add_involved_replicas(replica1);
   txn->add_involved_replicas(replica2);
 
