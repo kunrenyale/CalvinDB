@@ -202,7 +202,7 @@ void LocalPaxos::RunLeader() {
         // Generate new txns for multi-replica txns.
         for (int i = 0; i < remote_sequence.batch_ids_size(); i++) {
           uint64 batch_id = remote_sequence.batch_ids(i);
-LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: before handle remote_sequence:"<<batch_id;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: before handle remote_sequence:"<<batch_id;
           while (mr_txn_batches_.find(batch_id) == mr_txn_batches_.end()) {
             usleep(20);
    

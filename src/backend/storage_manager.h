@@ -35,6 +35,9 @@
 
 using std::vector;
 using std::tr1::unordered_map;
+using std::set;
+using std::pair;
+using std::make_pair;
 
 class ClusterConfig;
 class Connection;

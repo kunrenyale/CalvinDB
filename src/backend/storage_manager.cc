@@ -15,6 +15,8 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
   // results to all (other) writers.
   set<uint64> writers;
   uint32 origin = txn->origin_replica();
+  // pair<mds, replica_id>
+  set<pair<uint64, uint32>> remote_replica_writers;
 
   bool reader = false;
   for (int i = 0; i < txn->readers_size(); i++) {
@@ -23,7 +25,6 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
   }
 
   if (reader) {
-    message.set_destination_channel(IntToString(txn->txn_id()));
     message.set_type(MessageProto::READ_RESULT);
 
     // Execute local reads.
@@ -47,9 +48,10 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
       const Key& key = txn->read_write_set(i);
       uint64 mds = configuration_->LookupPartition(key);
       writers.insert(mds);
-
-      if (mode_ == 1 && configuration_->LookupMaster(key) != origin) {
-//LOG(ERROR) <<configuration_->local_node_id()<< ":!!!!!! In StorageManager: wrong  "<<txn->txn_id()<<"  key is:"<<key;
+      
+      uint32 replica_id = configuration_->LookupMaster(key);
+      if (mode_ == 1 && replica_id != origin) {
+        remote_replica_writers.insert(make_pair(mds, replica_id));
         continue;
       }
 
@@ -62,10 +64,22 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
     }
 
     // Broadcast local reads to (other) writers.
-    for (set<uint64>::iterator it = writers.begin(); it != writers.end(); ++it) {
-      if (*it != relative_node_id_) {
-        message.set_destination_node(configuration_->LookupMachineID(*it, configuration_->local_replica_id()));
-        connection_->Send(message);
+    if (mode_ == 0) {
+      message.set_destination_channel(IntToString(txn->txn_id()) + "-" + IntToString(origin));
+      for (set<uint64>::iterator it = writers.begin(); it != writers.end(); ++it) {
+        if (*it != relative_node_id_) {
+          message.set_destination_node(configuration_->LookupMachineID(*it, configuration_->local_replica_id()));
+          connection_->Send(message);
+        }
+      }
+    } else {
+      for (auto remote_writer : remote_replica_writers) {
+        uint64 mds = remote_writer.first;
+        uint64 replica = remote_writer.second;
+        string destination_channel = IntToString(txn->txn_id()) + "-" + IntToString(replica);
+        message.set_destination_channel(destination_channel);
+        message.set_destination_node(configuration_->LookupMachineID(mds, configuration_->local_replica_id()));
+        connection_->Send(message);        
       }
     }
 
