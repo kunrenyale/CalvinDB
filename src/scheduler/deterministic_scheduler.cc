@@ -98,7 +98,7 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
       CHECK(active_txns.count(message.destination_channel()) > 0);
       StorageManager* manager = active_txns[message.destination_channel()];
       manager->HandleReadResult(message);
-LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: received remote read "<<manager->txn_->txn_id();
+//LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: received remote read "<<manager->txn_->txn_id();
       if (manager->ReadyToExecute()) {
         // Execute and clean up.
         TxnProto* txn = manager->txn_;
@@ -283,6 +283,7 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
   int pending_txns = 0;
   int batch_offset = 0;
   uint64 machine_id = scheduler->configuration_->local_node_id();
+  uint32 local_replica = scheduler->configuration_->local_replica_id();
 
   while (true) {
     TxnProto* done_txn;
@@ -291,9 +292,10 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
       scheduler->lock_manager_->Release(done_txn);
       executing_txns--;
 
-      if(done_txn->writers_size() == 0 || rand() % done_txn->writers_size() == 0)
+      if((done_txn->writers_size() == 0 || rand() % done_txn->writers_size() == 0) && (done_txn->involved_replicas(0) == local_replica)) {
         txns++;       
-LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id()<<"  origin:"<<done_txn->origin_replica();
+      }
+//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id()<<"  origin:"<<done_txn->origin_replica();
 #ifdef LATENCY_TEST
     if (done_txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES && done_txn->origin_machine() == machine_id) {
       scheduler_unlock[done_txn->txn_id()] = GetTime();
@@ -348,7 +350,7 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_mess
 
         scheduler->lock_manager_->Lock(txn);
         pending_txns++;
-LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a txn: "<<txn->txn_id()<<"  origin:"<<txn->origin_replica();
+//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a txn: "<<txn->txn_id()<<"  origin:"<<txn->origin_replica();
       }
     }
 
@@ -361,7 +363,7 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a txn: "<<txn->txn_id()<<
 
       scheduler->txns_queue->Push(txn);
 
-LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id()<<"  origin:"<<txn->origin_replica();
+//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id()<<"  origin:"<<txn->origin_replica();
     }
 
     // Report throughput.

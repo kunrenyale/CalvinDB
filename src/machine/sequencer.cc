@@ -124,6 +124,7 @@ LOG(ERROR) << "In sequencer:  After synchronization. Starting sequencer writer."
         client_->GetTxn(&txn, batch_number * max_batch_size_ + txn_id_offset);
 
         txn->set_origin_replica(local_replica);
+        txn->add_involved_replicas(local_replica);
 
         txn->SerializeToString(&txn_string);
         batch_message.add_data(txn_string);

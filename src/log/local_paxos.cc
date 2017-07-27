@@ -68,7 +68,7 @@ void LocalPaxos::Append(uint64 blockid) {
     Lock l(&mutex_);
     sequence_.add_batch_ids(blockid);
     local_count_ += 1;
-LOG(ERROR) << configuration_->local_node_id()<< "+++In paxos Append: append a new batch:"<<blockid;
+//LOG(ERROR) << configuration_->local_node_id()<< "+++In paxos Append: append a new batch:"<<blockid;
 }
 
 void LocalPaxos::Stop() {
@@ -284,14 +284,14 @@ void LocalPaxos::RunLeader() {
             string txn_string;
             txn.SerializeToString(&txn_string);
             batch_message.add_data(txn_string);
-LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: generated a new txn:"<<txn.txn_id();
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: generated a new txn:"<<txn.txn_id();
           }
 
           if (batch_message.data_size() > 0) {
             uint64 batch_number = configuration_->GetGUID();
             batch_message.set_batch_number(batch_number);
             Append(batch_number);
-LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: append a new batch:"<<batch_number;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: append a new batch:"<<batch_number;
 
             for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
               uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_number), i);
