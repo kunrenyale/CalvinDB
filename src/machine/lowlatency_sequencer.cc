@@ -142,10 +142,10 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
 //LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  after generate a new txn:"<<batch_number * max_batch_size_ + txn_id_offset;
           txn->set_origin_replica(local_replica);
           txn->SerializeToString(&txn_string);
+          txn_id_offset++;
 
           if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) == local_replica) {
             batch_message.add_data(txn_string);
-            txn_id_offset++;
 
 #ifdef LATENCY_TEST
     if (txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES) {
@@ -304,7 +304,7 @@ void LowlatencySequencer::RunReader() {
                   string txn_data;
                   txn.SerializeToString(&txn_data);
                   mr_message.add_data(txn_data);
-LOG(ERROR) << configuration_->local_node_id()<<":--- In sequencer reader: append txn into mr_message:"<<txn.txn_id();
+//LOG(ERROR) << configuration_->local_node_id()<<":--- In sequencer reader: append txn into mr_message:"<<txn.txn_id();
                 }
               }
             }
