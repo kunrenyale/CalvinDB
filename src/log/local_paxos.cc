@@ -202,7 +202,7 @@ void LocalPaxos::RunLeader() {
         // Generate new txns for multi-replica txns.
         for (int i = 0; i < remote_sequence.batch_ids_size(); i++) {
           uint64 batch_id = remote_sequence.batch_ids(i);
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: before handle remote_sequence:"<<batch_id;
+LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: before handle remote_sequence:"<<batch_id;
           while (mr_txn_batches_.find(batch_id) == mr_txn_batches_.end()) {
             usleep(20);
    
@@ -255,10 +255,10 @@ void LocalPaxos::RunLeader() {
                   connection_->Send(sequence_batch_message);
 //LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  (2)send  NEW_SEQUENCE to: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version; 
                 }   
-              }
-            }
+              }// end if
+            } // end receive message
 
-          };
+          }; // end while
 
 
           MessageProto* mr_message = mr_txn_batches_[batch_id];
@@ -286,24 +286,24 @@ void LocalPaxos::RunLeader() {
             batch_message.add_data(txn_string);
 LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: generated a new txn:"<<txn.txn_id();
           }
-        }
 
-        if (batch_message.data_size() > 0) {
-          uint64 batch_number = configuration_->GetGUID();
-          batch_message.set_batch_number(batch_number);
-          Append(batch_number);
+          if (batch_message.data_size() > 0) {
+            uint64 batch_number = configuration_->GetGUID();
+            batch_message.set_batch_number(batch_number);
+            Append(batch_number);
 LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: append a new batch:"<<batch_number;
 
-          for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
-            uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_number), i);
-            batch_message.set_destination_node(machine_id);
-            connection_->Send(batch_message);
-          }
-        }
+            for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
+              uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_number), i);
+              batch_message.set_destination_node(machine_id);
+              connection_->Send(batch_message);
+            }
+          } // end if
 
-      }
+        } // end for loop
 
-    }
+      } // end if
+    }// end if
 
 
     // Handle this sequence
