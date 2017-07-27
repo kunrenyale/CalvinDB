@@ -291,7 +291,7 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
 
       if(done_txn->writers_size() == 0 || rand() % done_txn->writers_size() == 0)
         txns++;       
-//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id();
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id();
 #ifdef LATENCY_TEST
     if (done_txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES && done_txn->origin_machine() == machine_id) {
       scheduler_unlock[done_txn->txn_id()] = GetTime();
