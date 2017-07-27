@@ -105,7 +105,7 @@ LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: received 
         scheduler->application_->Execute(txn, manager);
         delete manager;
 
-        scheduler->connection_->UnlinkChannel(IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica()));
+        scheduler->connection_->UnlinkChannel(message.destination_channel());
         active_txns.erase(message.destination_channel());
         // Respond to scheduler;
         scheduler->done_queue->Push(txn);
@@ -133,9 +133,10 @@ LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: finish "<
           scheduler->done_queue->Push(txn);
         } else {
 //LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":~~~~~~~~~~~~~~~In worker: not ready  "<<txn->txn_id();
-          scheduler->connection_->LinkChannel(IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica()), channel);
+          string channel = IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica());
+          scheduler->connection_->LinkChannel(channel, channel);
           // There are outstanding remote reads.
-          active_txns[IntToString(txn->txn_id())] = manager;
+          active_txns[channel] = manager;
         }
       }
     }
