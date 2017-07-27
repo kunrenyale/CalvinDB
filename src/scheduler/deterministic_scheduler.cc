@@ -133,10 +133,10 @@ LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: finish "<
           scheduler->done_queue->Push(txn);
         } else {
 //LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":~~~~~~~~~~~~~~~In worker: not ready  "<<txn->txn_id();
-          string channel = IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica());
-          scheduler->connection_->LinkChannel(channel, channel);
+          string origin_channel = IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica());
+          scheduler->connection_->LinkChannel(origin_channel, channel);
           // There are outstanding remote reads.
-          active_txns[channel] = manager;
+          active_txns[origin_channel] = manager;
         }
       }
     }
