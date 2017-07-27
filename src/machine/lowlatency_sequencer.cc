@@ -75,6 +75,7 @@ void LowlatencySequencer::RunWriter() {
   MessageProto txn_message;
   txn_message.set_destination_channel("sequencer_txn_receive_");
   txn_message.set_type(MessageProto::TXN_FORWORD);
+  txn_message.set_source_node(local_machine);
 
 /**if (configuration_->local_node_id() == 2 || configuration_->local_node_id() == 3) {
 epoch_duration_ = 0.01;
@@ -131,7 +132,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
           txn.set_origin_replica(local_replica);
           batch_message.add_data(message.data(0));
           txn_id_offset++; 
-LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer: receive a mr txn:"<<txn.txn_id();
+LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer: receive a mr txn:"<<txn.txn_id()<<"   from:"<<message.source_node();
         } else {
           TxnProto* txn;
           string txn_string;
@@ -164,7 +165,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer: receive a mr t
             txn_message.add_data(txn_string);
             txn_message.set_destination_node(machine_sent);
             connection_->Send(txn_message);
-LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer: create a new txn:"<<txn->txn_id();
+//LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer: create a new txn:"<<txn->txn_id();
           }
 
           delete txn;
