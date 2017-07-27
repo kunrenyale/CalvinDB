@@ -130,7 +130,8 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
           TxnProto txn;
           txn.ParseFromString(message.data(0));
           txn.set_origin_replica(local_replica);
-
+          
+          txn_id_offset++;
           string txn_string;
           txn.SerializeToString(&txn_string);
           batch_message.add_data(txn_string);
@@ -163,6 +164,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer: receive a mr t
             connection_->Send(txn_message);
           } else if (txn->involved_replicas_size() > 1 && local_replica == 0) {
             batch_message.add_data(txn_string);
+LOG(ERROR) << configuration_->local_node_id()<<":^^^ In sequencer reader:  after generate a new txn:"<<txn->txn_id();
           } else {
             uint64 machine_sent = rand() % nodes_per_replica;
             txn_message.clear_data();
@@ -329,7 +331,7 @@ LOG(ERROR) << configuration_->local_node_id()<<":--- In sequencer reader: append
         uint64 batch_id = message.misc_int(0);
         paxos_log_->Append(batch_id);
 //if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader: append batch_id:"<<batch_id;
+LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader: append batch_id:"<<batch_id;
       }
     }
 
