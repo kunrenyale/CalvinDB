@@ -68,6 +68,7 @@ void LocalPaxos::Append(uint64 blockid) {
     Lock l(&mutex_);
     sequence_.add_batch_ids(blockid);
     local_count_ += 1;
+LOG(ERROR) << configuration_->local_node_id()<< "+++In paxos Append: append a new batch:"<<blockid;
 }
 
 void LocalPaxos::Stop() {
