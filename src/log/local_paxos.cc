@@ -138,7 +138,7 @@ void LocalPaxos::RunLeader() {
             sequences_other_replicas_.Push(make_pair(sequence_batch.sequence_batch(i), from_replica));
           }
 //if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;
+LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;
         } else if (message.type() == MessageProto::NEW_SEQUENCE_ACK) {
           SequenceBatch sequence_batch;
           uint32 from_replica = message.misc_int(0);
@@ -223,7 +223,7 @@ void LocalPaxos::RunLeader() {
                 for (int i = 0; i < sequence_batch.sequence_batch_size(); i++) {
                   sequences_other_replicas_.Push(make_pair(sequence_batch.sequence_batch(i), from_replica));
                 }
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  (2)receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;
+LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  (2)receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;
               } else if (message.type() == MessageProto::NEW_SEQUENCE_ACK) {
                 SequenceBatch sequence_batch;
                 uint32 from_replica = message.misc_int(0);
@@ -471,7 +471,7 @@ void LocalPaxos::RunLeader() {
           sequences_other_replicas_.Push(make_pair(sequence_batch.sequence_batch(i), from_replica));
         }
 //if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;
+LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;
       } else if (message.type() == MessageProto::NEW_SEQUENCE_ACK) {
         SequenceBatch sequence_batch;
         uint32 from_replica = message.misc_int(0);
