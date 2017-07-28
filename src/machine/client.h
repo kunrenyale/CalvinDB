@@ -93,7 +93,7 @@ class Lowlatency_MClient : public Client {
       } while (other_replica == local_replica_); **/
 
 if (local_replica_ == 0) {
-other_replica = rand() % 2 + 1;
+other_replica = 1;
 } else {
 other_replica = 0;
 }
