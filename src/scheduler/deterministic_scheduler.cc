@@ -294,7 +294,7 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
       if(done_txn->writers_size() == 0 || (rand() % done_txn->writers_size() == 0 && rand() % done_txn->involved_replicas_size() == 0)) {
         txns++;       
       }
-//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id()<<"  origin:"<<done_txn->origin_replica();
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id()<<"  origin:"<<done_txn->origin_replica();
 #ifdef LATENCY_TEST
     if (done_txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES && done_txn->origin_machine() == machine_id) {
       scheduler_unlock[done_txn->txn_id()] = GetTime();
@@ -349,7 +349,7 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_mess
 
         scheduler->lock_manager_->Lock(txn);
         pending_txns++;
-//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a txn: "<<txn->txn_id()<<"  origin:"<<txn->origin_replica();
+LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a txn: "<<txn->txn_id()<<"  origin:"<<txn->origin_replica();
       }
     }
 
@@ -362,7 +362,7 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_mess
 
       scheduler->txns_queue->Push(txn);
 
-//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id()<<"  origin:"<<txn->origin_replica();
+LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id()<<"  origin:"<<txn->origin_replica();
     }
 
     // Report throughput.
