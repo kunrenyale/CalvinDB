@@ -88,15 +88,15 @@ class Lowlatency_MClient : public Client {
     if ((uint32)(rand() % 100) < percent_mr_) {
       // Multi-replica txn.
       uint32 other_replica;
-      /**do {
+      do {
         other_replica = (uint32)(rand() % num_replicas_);
-      } while (other_replica == local_replica_); **/
+      } while (other_replica == local_replica_); 
 
-if (local_replica_ == 0) {
+/**if (local_replica_ == 0) {
 other_replica = 1;
 } else {
 other_replica = 0;
-}
+}**/
       if (nodes_per_replica_ > 1 && uint32(rand() % 100) < percent_mp_) {
         // Multi-replica multi-partition txn
         uint64 other_node;
@@ -107,8 +107,7 @@ other_replica = 0;
         *txn = microbenchmark.MicroTxnMRMP(txn_id, replative_node_id_, other_node, local_replica_, other_replica);
       } else {
         // Multi-replica single-partition txn
-        //*txn = microbenchmark.MicroTxnMRSP(txn_id, replative_node_id_, local_replica_, other_replica);   
-*txn = microbenchmark.MicroTxnMRSP(txn_id, replative_node_id_, 0, 1);  
+        *txn = microbenchmark.MicroTxnMRSP(txn_id, replative_node_id_, local_replica_, other_replica);    
       }
     } else {
       // Single-replica txn.
