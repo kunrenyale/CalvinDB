@@ -124,14 +124,14 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
     while (!deconstructor_invoked_ &&
            GetTime() < epoch_start + epoch_duration_) {
       // Add next txn request to batch.
-      if ((uint32)(batch_message.data_size()) < max_batch_size_ && txn_id_offset < max_batch_size_) {
+      if (txn_id_offset < max_batch_size_) {
         bool got_message = connection_->GotMessage("sequencer_txn_receive_", &message);
         if (got_message == true) {
           TxnProto txn;
           txn.ParseFromString(message.data(0));
           txn.set_origin_replica(local_replica);
           
-          txn_id_offset++;
+          //txn_id_offset++;
           string txn_string;
           txn.SerializeToString(&txn_string);
           batch_message.add_data(txn_string);
