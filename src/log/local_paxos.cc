@@ -138,7 +138,7 @@ void LocalPaxos::RunLeader() {
             sequences_other_replicas_.Push(make_pair(sequence_batch.sequence_batch(i), from_replica));
           }
 //if (configuration_->local_node_id() == 0)
-LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;
         } else if (message.type() == MessageProto::NEW_SEQUENCE_ACK) {
           SequenceBatch sequence_batch;
           uint32 from_replica = message.misc_int(0);
@@ -185,7 +185,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  receive  NEW_SEQU
       local_count_ = 0;
       isLocal = true;
 //if (configuration_->local_node_id() == 0)
-LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  will handle the version from local: "<<global_next_version;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  will handle the version from local: "<<global_next_version;
     } else if (sequences_other_replicas_.Size() > 0) {
       isLocal = false;
       global_next_version ++;
@@ -195,7 +195,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  will handle the v
       remote_sequence.SerializeToString(&encoded);
 
 //if (configuration_->local_node_id() == 0)
-LOG(ERROR) << configuration_->local_node_id()<< "### In paxos:  will handle remote sequence, version: "<<global_next_version;
+//LOG(ERROR) << configuration_->local_node_id()<< "### In paxos:  will handle remote sequence, version: "<<global_next_version;
 
       if (local_replica != 0 && remote_replica == 0) {
         // Generate new txns for multi-replica txns.
@@ -222,7 +222,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "### In paxos:  will handle remo
                 for (int i = 0; i < sequence_batch.sequence_batch_size(); i++) {
                   sequences_other_replicas_.Push(make_pair(sequence_batch.sequence_batch(i), from_replica));
                 }
-LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  (2)receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  (2)receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;
               } else if (message.type() == MessageProto::NEW_SEQUENCE_ACK) {
                 SequenceBatch sequence_batch;
                 uint32 from_replica = message.misc_int(0);
@@ -290,7 +290,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  (2)receive  NEW_S
             uint64 batch_number = configuration_->GetGUID();
             batch_message.set_batch_number(batch_number);
             Append(batch_number);
-LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: append a new batch:"<<batch_number;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: append a new batch:"<<batch_number;
 
             for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
               uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_number), i);
@@ -470,7 +470,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: append a new batch
           sequences_other_replicas_.Push(make_pair(sequence_batch.sequence_batch(i), from_replica));
         }
 //if (configuration_->local_node_id() == 0)
-LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;
       } else if (message.type() == MessageProto::NEW_SEQUENCE_ACK) {
         SequenceBatch sequence_batch;
         uint32 from_replica = message.misc_int(0);
