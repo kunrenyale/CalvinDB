@@ -182,6 +182,7 @@ MessageProto* GetBatch(ConnectionMultiplexer* connection) {
            batches_data[message->batch_number()] = message;
            message = new MessageProto();
          } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
+LOG(ERROR) << message->destination_node()<< ":In scheduler:  find the sequence: "<<message->misc_int(0);
            if (message->misc_int(0) == current_sequence_id_) {
 //if (message->destination_node() == 0)
 //LOG(ERROR) << message->destination_node()<< ":In scheduler:  find the sequence: "<<message->misc_int(0);
@@ -234,7 +235,7 @@ MessageProto* GetBatch(ConnectionMultiplexer* connection) {
            message = new MessageProto();
          }
        } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
-//LOG(ERROR)<< message->destination_node()<< ":In scheduler:  receive a sequence: "<<message->misc_int(0);
+LOG(ERROR)<< message->destination_node()<< ":In scheduler:  receive a sequence: "<<message->misc_int(0);
          global_batches_order[message->misc_int(0)] = message;
          message = new MessageProto();
        }

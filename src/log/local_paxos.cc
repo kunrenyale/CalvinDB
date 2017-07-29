@@ -172,9 +172,8 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  receive  NEW_SEQU
 //LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;
           }
         }
-      }
-      // End receiving messages
-    }
+      } // End receiving messages
+    } // End while
 
     if (local_count_.load() >  0) {
       // Propose a new sequence.
@@ -186,7 +185,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  receive  NEW_SEQU
       local_count_ = 0;
       isLocal = true;
 //if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  will handle local version: "<<local_next_version;
+LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  will handle the version from local: "<<global_next_version;
     } else if (sequences_other_replicas_.Size() > 0) {
       isLocal = false;
       global_next_version ++;
