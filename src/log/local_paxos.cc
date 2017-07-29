@@ -195,7 +195,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  will handle the v
       remote_sequence.SerializeToString(&encoded);
 
 //if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "### In paxos:  will handle remote sequence, version: "<<global_next_version;
+LOG(ERROR) << configuration_->local_node_id()<< "### In paxos:  will handle remote sequence, version: "<<global_next_version;
 
       if (local_replica != 0 && remote_replica == 0) {
         // Generate new txns for multi-replica txns.
@@ -290,7 +290,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  (2)receive  NEW_S
             uint64 batch_number = configuration_->GetGUID();
             batch_message.set_batch_number(batch_number);
             Append(batch_number);
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: append a new batch:"<<batch_number;
+LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: append a new batch:"<<batch_number;
 
             for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
               uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_number), i);
