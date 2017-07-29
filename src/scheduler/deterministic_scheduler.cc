@@ -206,19 +206,21 @@ LOG(ERROR) << message->destination_node()<< ":In scheduler:  find the sequence: 
    
    CHECK(current_sequence_batch_index_ < (uint32)(current_sequence_->batch_ids_size()));
    current_batch_id_ = current_sequence_->batch_ids(current_sequence_batch_index_);
-   if (++current_sequence_batch_index_ >= (uint32)(current_sequence_->batch_ids_size())) {
-     delete current_sequence_;
-     current_sequence_ = NULL;
-     current_sequence_id_++;
-LOG(ERROR) << "^^^^^In scheduler:  will work on next sequence: "<<current_sequence_id_;
-   }
 
 
    if (batches_data.count(current_batch_id_) > 0) {
      // Requested batch has already been received.
      MessageProto* batch = batches_data[current_batch_id_];
      batches_data.erase(current_batch_id_);
-//LOG(ERROR) <<batch->destination_node()<< ": ^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
+LOG(ERROR) <<batch->destination_node()<< ": ^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
+   
+     if (++current_sequence_batch_index_ >= (uint32)(current_sequence_->batch_ids_size())) {
+       delete current_sequence_;
+       current_sequence_ = NULL;
+       current_sequence_id_++;
+LOG(ERROR) << "^^^^^In scheduler:  will work on next sequence: "<<current_sequence_id_;
+     }
+
      return batch; 
    } else {
      // Receive the batch data or global batch order
@@ -228,7 +230,15 @@ LOG(ERROR) << "^^^^^In scheduler:  will work on next sequence: "<<current_sequen
 LOG(ERROR) << message->destination_node()<<"In scheduler:  receive a subbatch: "<<message->batch_number();
 //CHECK(message->data_size() > 0);
          if ((uint64)(message->batch_number()) == current_batch_id_) {
-//LOG(ERROR) << message->destination_node()<<": ^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
+LOG(ERROR) << message->destination_node()<<": ^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
+
+           if (++current_sequence_batch_index_ >= (uint32)(current_sequence_->batch_ids_size())) {
+             delete current_sequence_;
+             current_sequence_ = NULL;
+             current_sequence_id_++;
+LOG(ERROR) << "^^^^^In scheduler:  will work on next sequence: "<<current_sequence_id_;
+           }
+
            return message;
          } else {
            batches_data[message->batch_number()] = message;
