@@ -290,10 +290,12 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
   MessageProto* batch_message = NULL;
   int txns = 0;
   double time = GetTime();
-  int executing_txns = 0;
-  int pending_txns = 0;
+  uint64 executing_txns = 0;
+  uint64 pending_txns = 0;
   int batch_offset = 0;
   uint64 machine_id = scheduler->configuration_->local_node_id();
+  uint64 maximum_txns = 20000;
+  
 
   while (true) {
     TxnProto* done_txn;
@@ -348,7 +350,7 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(1): "<<batch_mess
 LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
 }**/ 
     // Current batch has remaining txns, grab up to 10.
-    } else if (executing_txns + pending_txns < 1000000) {
+    } else if (executing_txns + pending_txns < maximum_txns) {
       for (int i = 0; i < 100; i++) {
         if (batch_offset >= batch_message->data_size()) {
           // Oops we ran out of txns in this batch. Stop adding txns for now.
