@@ -53,6 +53,9 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
       if (mode_ == 1 && replica_id != origin) {
         remote_replica_writers.insert(make_pair(mds, replica_id));
         continue;
+      } else if (mode_ == 1 && mds != relative_node_id_) {
+        remote_replica_writers.insert(make_pair(mds, origin));
+        continue;
       }
 
       if (mds == relative_node_id_) {
