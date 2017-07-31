@@ -294,7 +294,7 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
   uint64 pending_txns = 0;
   int batch_offset = 0;
   uint64 machine_id = scheduler->configuration_->local_node_id();
-  uint64 maximum_txns = 20000;
+  uint64 maximum_txns = 2000;
   
 
   while (true) {
