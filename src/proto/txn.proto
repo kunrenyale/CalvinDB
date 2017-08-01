@@ -46,6 +46,9 @@ message TxnProto {
   optional bool new_generated = 51 [default = false];
   repeated uint32 involved_replicas = 52;
   optional bool fake_txn = 53 [default = false];
+
+  // This is to measure latency
+  optional uint64 generated_machine = 54 [default = 1000];
 }
 
 

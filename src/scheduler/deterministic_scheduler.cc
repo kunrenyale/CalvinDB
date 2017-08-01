@@ -285,6 +285,9 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
 
   scheduler->start_working_ = true;
 
+  uint32 local_replica = scheduler->configuration_->local_replica_id();
+  uint64 local_machine = scheduler->configuration_->local_node_id();
+
   // Run main loop.
   MessageProto message;
   MessageProto* batch_message = NULL;
@@ -309,7 +312,7 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
       }
 //LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id()<<"  origin:"<<done_txn->origin_replica();
 #ifdef LATENCY_TEST
-    if (done_txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES && done_txn->origin_machine() == machine_id) {
+    if (done_txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES && done_txn->origin_replica() == local_replica && done_txn->generated_machine() == local_machine) {
       scheduler_unlock[done_txn->txn_id()] = GetTime();
       latency_counter++;
       measured_latency.push_back(scheduler_unlock[done_txn->txn_id()] - sequencer_recv[done_txn->txn_id()]);

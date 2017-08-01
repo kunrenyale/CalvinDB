@@ -154,6 +154,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
 #ifdef LATENCY_TEST
     if (txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES) {
       sequencer_recv[txn->txn_id()] = GetTime();
+      txn->set_generated_machine(local_machine);
     }
 #endif
           } else if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) != local_replica) {
@@ -164,6 +165,12 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
             connection_->Send(txn_message);
           } else if (txn->involved_replicas_size() > 1 && local_replica == 0) {
             batch_message.add_data(txn_string);
+#ifdef LATENCY_TEST
+    if (txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES) {
+      sequencer_recv[txn->txn_id()] = GetTime();
+      txn->set_generated_machine(local_machine);
+    }
+#endif
 //LOG(ERROR) << configuration_->local_node_id()<<":^^^ In sequencer reader:  after generate a new txn:"<<txn->txn_id();
           } else {
             uint64 machine_sent = rand() % nodes_per_replica;
