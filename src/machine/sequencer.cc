@@ -127,16 +127,16 @@ LOG(ERROR) << "In sequencer:  After synchronization. Starting sequencer writer."
         txn->set_origin_replica(local_replica);
         txn->add_involved_replicas(local_replica);
 
-        txn->SerializeToString(&txn_string);
-        batch_message.add_data(txn_string);
-        txn_id_offset++;
-
 #ifdef LATENCY_TEST
     if (txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES) {
       sequencer_recv[txn->txn_id()] = GetTime();
       txn->set_generated_machine(local_machine);
     }
 #endif
+
+        txn->SerializeToString(&txn_string);
+        batch_message.add_data(txn_string);
+        txn_id_offset++;
 
         delete txn;
       } else {
