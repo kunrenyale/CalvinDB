@@ -317,7 +317,7 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
       latency_counter++;
       measured_latency.push_back(scheduler_unlock[done_txn->txn_id()] - sequencer_recv[done_txn->txn_id()]);
     }
-
+LOG(ERROR) << machine_id<<": got a latency, counter is: " << latency_counter;
     // Write out the latency results
     if (latency_counter == SAMPLES) {
       latency_counter++;
