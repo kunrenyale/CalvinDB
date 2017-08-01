@@ -19,7 +19,7 @@ void* LowlatencySequencer::RunSequencerReader(void *arg) {
 }
 
 LowlatencySequencer::LowlatencySequencer(ClusterConfig* conf, ConnectionMultiplexer* connection, Client* client, LocalPaxos* paxos, uint32 max_batch_size)
-          : epoch_duration_(0.005), configuration_(conf), connection_(connection),
+          : epoch_duration_(0.01), configuration_(conf), connection_(connection),
           client_(client), deconstructor_invoked_(false), paxos_log_(paxos), max_batch_size_(max_batch_size) {
   // Start Sequencer main loops running in background thread.
 
@@ -186,9 +186,8 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
 //LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  batch size:"<<(uint32)(batch_message.data_size());
     if (batch_message.data_size() == 0) {
       continue;
-    } else if (batch_message.data_size() < 50) {
-LOG(ERROR) << configuration_->local_node_id()<<": ---------In sequencer reader:  batch_message.data_size() :"<<batch_message.data_size();
-}
+    } 
+
     // Send this epoch's transactions to the central machine of each replica
     for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
       uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_message.batch_number()), i);
