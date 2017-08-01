@@ -186,7 +186,9 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
 //LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  batch size:"<<(uint32)(batch_message.data_size());
     if (batch_message.data_size() == 0) {
       continue;
-    }
+    } else if (batch_message.data_size() < 50) {
+LOG(ERROR) << configuration_->local_node_id()<<": ---------In sequencer reader:  batch_message.data_size() :"<<batch_message.data_size();
+}
     // Send this epoch's transactions to the central machine of each replica
     for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
       uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_message.batch_number()), i);

@@ -285,8 +285,10 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
 
   scheduler->start_working_ = true;
 
+#ifdef LATENCY_TEST
   uint32 local_replica = scheduler->configuration_->local_replica_id();
   uint64 local_machine = scheduler->configuration_->local_node_id();
+#endif
 
   // Run main loop.
   MessageProto message;
