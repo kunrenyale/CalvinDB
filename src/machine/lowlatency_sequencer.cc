@@ -19,7 +19,7 @@ void* LowlatencySequencer::RunSequencerReader(void *arg) {
 }
 
 LowlatencySequencer::LowlatencySequencer(ClusterConfig* conf, ConnectionMultiplexer* connection, Client* client, LocalPaxos* paxos, uint32 max_batch_size)
-          : epoch_duration_(0.01), configuration_(conf), connection_(connection),
+          : epoch_duration_(0.005), configuration_(conf), connection_(connection),
           client_(client), deconstructor_invoked_(false), paxos_log_(paxos), max_batch_size_(max_batch_size) {
   // Start Sequencer main loops running in background thread.
 

@@ -16,7 +16,7 @@
 // 'key_start' <= k < 'key_limit', and k == part (mod nparts).
 // Requires: key_start % nparts == 0
 void Microbenchmark::GetRandomKeys(set<uint64>* keys, uint32 num_keys, uint64 key_start,
-                                   uint64 key_limit, uint32 part) {
+                                   uint64 key_limit, uint64 part) {
   CHECK(key_start % nparts == 0);
   keys->clear();
   for (uint32 i = 0; i < num_keys; i++) {
@@ -33,7 +33,7 @@ void Microbenchmark::GetRandomKeys(set<uint64>* keys, uint32 num_keys, uint64 ke
 // 'key_start' <= k < 'key_limit', and k == part (mod nparts), keys's master == replica
 // Requires: key_start % nparts == 0
 void Microbenchmark::GetRandomKeysReplica(set<uint64>* keys, uint32 num_keys, uint64 key_start,
-                                          uint64 key_limit, uint32 part, uint32 replica) {
+                                          uint64 key_limit, uint64 part, uint32 replica) {
   CHECK(key_start % (nparts*replica_size) == 0);
   keys->clear();
 
@@ -54,7 +54,7 @@ void Microbenchmark::GetRandomKeysReplica(set<uint64>* keys, uint32 num_keys, ui
 
 
 //--------- Create a  single-partition transaction -------------------------
-TxnProto* Microbenchmark::MicroTxnSP(int64 txn_id, uint32 part) {
+TxnProto* Microbenchmark::MicroTxnSP(int64 txn_id, uint64 part) {
   // Create the new transaction object
   TxnProto* txn = new TxnProto();
 
@@ -88,7 +88,7 @@ TxnProto* Microbenchmark::MicroTxnSP(int64 txn_id, uint32 part) {
 }
 
 //----------- Create a multi-partition transaction -------------------------
-TxnProto* Microbenchmark::MicroTxnMP(int64 txn_id, uint32 part1, uint32 part2) {
+TxnProto* Microbenchmark::MicroTxnMP(int64 txn_id, uint64 part1, uint64 part2) {
   CHECK(part1 != part2 || nparts == 1);
   // Create the new transaction object
   TxnProto* txn = new TxnProto();
@@ -127,7 +127,7 @@ TxnProto* Microbenchmark::MicroTxnMP(int64 txn_id, uint32 part1, uint32 part2) {
 }
 
 //------------- Create a single-replica single-partition transaction------------
-TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint32 part, uint32 replica) {
+TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint64 part, uint32 replica) {
   // Create the new transaction object
   TxnProto* txn = new TxnProto();
 
@@ -181,7 +181,7 @@ TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint32 part, uint32 replica
 }
 
 //------------- Create a single-replica multi-partition transaction------------
-TxnProto* Microbenchmark::MicroTxnSRMP(int64 txn_id, uint32 part1, uint32 part2, uint32 replica) {
+TxnProto* Microbenchmark::MicroTxnSRMP(int64 txn_id, uint64 part1, uint64 part2, uint32 replica) {
   CHECK(part1 != part2 || nparts == 1);
   // Create the new transaction object
   TxnProto* txn = new TxnProto();
@@ -234,7 +234,7 @@ TxnProto* Microbenchmark::MicroTxnSRMP(int64 txn_id, uint32 part1, uint32 part2,
 }
 
 //------------- Create a multi-replica single-partition transaction------------
-TxnProto* Microbenchmark::MicroTxnMRSP(int64 txn_id, uint32 part, uint32 replica1, uint32 replica2) {
+TxnProto* Microbenchmark::MicroTxnMRSP(int64 txn_id, uint64 part, uint32 replica1, uint32 replica2) {
   CHECK(replica1 != replica2);
   // Create the new transaction object
   TxnProto* txn = new TxnProto();
@@ -301,7 +301,7 @@ TxnProto* Microbenchmark::MicroTxnMRSP(int64 txn_id, uint32 part, uint32 replica
 }
 
 //------------- Create a multi-replica multi-partition transaction------------
-TxnProto* Microbenchmark::MicroTxnMRMP(int64 txn_id, uint32 part1, uint32 part2, uint32 replica1, uint32 replica2) {
+TxnProto* Microbenchmark::MicroTxnMRMP(int64 txn_id, uint64 part1, uint64 part2, uint32 replica1, uint32 replica2) {
   CHECK(part1 != part2 || nparts == 1);
   // Create the new transaction object
   TxnProto* txn = new TxnProto();
@@ -314,6 +314,10 @@ TxnProto* Microbenchmark::MicroTxnMRMP(int64 txn_id, uint32 part1, uint32 part2,
     uint32 tmp = replica1;
     replica1 = replica2;
     replica2 = tmp;
+
+    uint64 tmp2 = part1;
+    part1 = part2;
+    part2 = tmp2;
   }
 
   txn->add_involved_replicas(replica1);

@@ -40,12 +40,12 @@ class Microbenchmark : public Application {
 
   virtual int Execute(TxnProto* txn, StorageManager* storage) const;
 
-  TxnProto* MicroTxnSP(int64 txn_id, uint32 part);
-  TxnProto* MicroTxnMP(int64 txn_id, uint32 part1, uint32 part2);
-  TxnProto* MicroTxnSRSP(int64 txn_id, uint32 part, uint32 replica);
-  TxnProto* MicroTxnSRMP(int64 txn_id, uint32 part1, uint32 part2, uint32 replica);
-  TxnProto* MicroTxnMRSP(int64 txn_id, uint32 part, uint32 replica1, uint32 replica2);
-  TxnProto* MicroTxnMRMP(int64 txn_id, uint32 part1, uint32 part2, uint32 replica1, uint32 replica2);
+  TxnProto* MicroTxnSP(int64 txn_id, uint64 part);
+  TxnProto* MicroTxnMP(int64 txn_id, uint64 part1, uint64 part2);
+  TxnProto* MicroTxnSRSP(int64 txn_id, uint64 part, uint32 replica);
+  TxnProto* MicroTxnSRMP(int64 txn_id, uint64 part1, uint64 part2, uint32 replica);
+  TxnProto* MicroTxnMRSP(int64 txn_id, uint64 part, uint32 replica1, uint32 replica2);
+  TxnProto* MicroTxnMRMP(int64 txn_id, uint64 part1, uint64 part2, uint32 replica1, uint32 replica2);
 
   uint32 nparts;
   uint32 hot_records;
@@ -59,9 +59,9 @@ class Microbenchmark : public Application {
 
  private:
   void GetRandomKeys(set<uint64>* keys, uint32 num_keys, uint64 key_start,
-                     uint64 key_limit, uint32 part);
+                     uint64 key_limit, uint64 part);
   void GetRandomKeysReplica(set<uint64>* keys, uint32 num_keys, uint64 key_start,
-                            uint64 key_limit, uint32 part, uint32 replica);
+                            uint64 key_limit, uint64 part, uint32 replica);
   Microbenchmark() {}
 };
 
