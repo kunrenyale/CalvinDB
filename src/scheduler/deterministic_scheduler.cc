@@ -307,8 +307,7 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
       scheduler->lock_manager_->Release(done_txn);
       executing_txns--;
 
-      if(done_txn->writers_size() == 0 || (rand() % done_txn->writers_size() == 0)) {
-//      if(done_txn->writers_size() == 0 || (rand() % done_txn->writers_size() == 0 && rand() % done_txn->involved_replicas_size() == 0)) {
+      if(done_txn->writers_size() == 0 || (rand() % done_txn->writers_size() == 0 && rand() % done_txn->involved_replicas_size() == 0)) {
         txns++;       
       }
 //LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id()<<"  origin:"<<done_txn->origin_replica();
@@ -354,7 +353,8 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(1): "<<batch_mess
 LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
 }**/ 
     // Current batch has remaining txns, grab up to 10.
-    } else if (executing_txns + pending_txns < maximum_txns) {
+//    } else if (executing_txns + pending_txns < maximum_txns) {
+    } else {
       for (int i = 0; i < 100; i++) {
         if (batch_offset >= batch_message->data_size()) {
           // Oops we ran out of txns in this batch. Stop adding txns for now.
