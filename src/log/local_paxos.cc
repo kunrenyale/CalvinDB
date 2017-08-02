@@ -442,7 +442,7 @@ void LocalPaxos::RunLeader() {
       }
     } else if (isLocal == false) {
       latest_processed_version_for_replicas_[remote_replica]++;
-      if (sent_sequence_ack[remote_replica] == false && latest_received_version_for_replicas_[remote_replica] - latest_processed_version_for_replicas_[remote_replica] < 10) {
+      if (sent_sequence_ack[remote_replica] == false && latest_received_version_for_replicas_[remote_replica] - latest_processed_version_for_replicas_[remote_replica] < 100) {
         sent_sequence_ack[remote_replica] = true;
         MessageProto new_sequence_ack_message;
 
