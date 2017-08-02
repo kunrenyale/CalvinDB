@@ -81,6 +81,8 @@ class LocalPaxos {
   map<uint32, uint64> latest_received_version_for_replicas_;
   map<uint32, uint64> latest_processed_version_for_replicas_;
 
+  map<uint32, bool> sent_sequence_ack;
+
   set<uint32> new_sequence_todo;
 
   uint64 local_next_version;
