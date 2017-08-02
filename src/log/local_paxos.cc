@@ -279,7 +279,7 @@ void LocalPaxos::RunLeader() {
             uint64 batch_number = configuration_->GetGUID();
             batch_message.set_batch_number(batch_number);
             Append(batch_number);
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: append a new batch:"<<batch_number;
+LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: append a new batch:"<<batch_number;
 
             for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
               uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_number), i);
