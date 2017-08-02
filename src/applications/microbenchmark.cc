@@ -243,11 +243,11 @@ TxnProto* Microbenchmark::MicroTxnMRSP(int64 txn_id, uint64 part, uint32 replica
   txn->set_txn_id(txn_id);
   txn->set_txn_type(MICROTXN_MRSP);
 
-  /**if (replica1 > replica2) {
+  if (replica1 > replica2) {
     uint32 tmp = replica1;
     replica1 = replica2;
     replica2 = tmp;
-  } **/
+  } 
 
   txn->add_involved_replicas(replica1);
   txn->add_involved_replicas(replica2);
@@ -310,7 +310,7 @@ TxnProto* Microbenchmark::MicroTxnMRMP(int64 txn_id, uint64 part1, uint64 part2,
   txn->set_txn_id(txn_id);
   txn->set_txn_type(MICROTXN_MRMP);
 
-  /**if (replica1 > replica2) {
+  if (replica1 > replica2) {
     uint32 tmp = replica1;
     replica1 = replica2;
     replica2 = tmp;
@@ -318,7 +318,7 @@ TxnProto* Microbenchmark::MicroTxnMRMP(int64 txn_id, uint64 part1, uint64 part2,
     uint64 tmp2 = part1;
     part1 = part2;
     part2 = tmp2;
-  }**/
+  }
 
   txn->add_involved_replicas(replica1);
   txn->add_involved_replicas(replica2);
