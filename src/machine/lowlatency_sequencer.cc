@@ -283,7 +283,6 @@ void LowlatencySequencer::RunReader() {
             txn.add_writers(*it);
           }
 
-CHECK(txn.writers_size() == 1);
           string txn_data;
           txn.SerializeToString(&txn_data);
 
