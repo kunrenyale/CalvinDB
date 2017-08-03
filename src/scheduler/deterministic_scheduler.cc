@@ -100,7 +100,9 @@ unordered_map<string, double> time_measure;
       CHECK(active_txns.count(message.destination_channel()) > 0);
       StorageManager* manager = active_txns[message.destination_channel()];
       manager->HandleReadResult(message);
+if (scheduler->configuration_->local_node_id() == 0)
 LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: received remote read: "<<manager->txn_->txn_id()<<"   origin:"<<manager->txn_->origin_replica()<<"   time:"<<(GetTime() - time_measure[message.destination_channel()])*1000;
+time_measure.erase(message.destination_channel());
       if (manager->ReadyToExecute()) {
         // Execute and clean up.
         TxnProto* txn = manager->txn_;
