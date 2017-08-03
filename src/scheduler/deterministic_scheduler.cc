@@ -98,7 +98,7 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
       CHECK(active_txns.count(message.destination_channel()) > 0);
       StorageManager* manager = active_txns[message.destination_channel()];
       manager->HandleReadResult(message);
-//LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: received remote read "<<manager->txn_->txn_id();
+LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: received remote read: "<<manager->txn_->txn_id()<<"   origin:"<<manager->txn_->origin_replica();
       if (manager->ReadyToExecute()) {
         // Execute and clean up.
         TxnProto* txn = manager->txn_;
@@ -132,7 +132,7 @@ LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: finish "<
           // Respond to scheduler;
           scheduler->done_queue->Push(txn);
         } else {
-//LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":~~~~~~~~~~~~~~~In worker: not ready  "<<txn->txn_id();
+LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":~~~~~~~~~~~~~~~In worker: not ready  "<<txn->txn_id()<<"   origin:"<<txn->origin_replica();
           string origin_channel = IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica());
           scheduler->connection_->LinkChannel(origin_channel, channel);
           // There are outstanding remote reads.
