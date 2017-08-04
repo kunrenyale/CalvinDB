@@ -47,7 +47,7 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
   pthread_attr_t attr1;
   pthread_attr_init(&attr1);
   CPU_ZERO(&cpuset);
-  CPU_SET(7, &cpuset);
+  CPU_SET(5, &cpuset);
   pthread_attr_setaffinity_np(&attr1, sizeof(cpu_set_t), &cpuset); 
   pthread_create(&lock_manager_thread_, &attr1, LockManagerThread, reinterpret_cast<void*>(this));
 
@@ -304,7 +304,7 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
   uint64 pending_txns = 0;
   int batch_offset = 0;
   uint64 machine_id = scheduler->configuration_->local_node_id();
- // uint64 maximum_txns = 2000000;
+  uint64 maximum_txns = 1000000;
   
 
   while (true) {
@@ -360,8 +360,8 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(1): "<<batch_mess
 LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
 }**/ 
     // Current batch has remaining txns, grab up to 10.
-//    } else if (executing_txns + pending_txns < maximum_txns) {
-    } else {
+    } else if (executing_txns + pending_txns < maximum_txns) {
+//    } else {
       for (int i = 0; i < 100; i++) {
         if (batch_offset >= batch_message->data_size()) {
           // Oops we ran out of txns in this batch. Stop adding txns for now.
