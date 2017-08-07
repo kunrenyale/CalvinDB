@@ -23,9 +23,9 @@ using std::queue;
 using std::map;
 
 #define SAMPLES  1000
-#define SAMPLE_RATE 199
+#define SAMPLE_RATE 99
 
-//#define LATENCY_TEST
+#define LATENCY_TEST
 
 #ifdef LATENCY_TEST
 extern map<uint64, double> sequencer_recv;
