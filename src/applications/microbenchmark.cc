@@ -383,8 +383,13 @@ TxnProto* Microbenchmark::NewTxn(int64 txn_id, int txn_type,
 int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {
   // Read all elements of 'txn->read_set()', add one to each, write them all
   // back out.
-
-double execution_start = GetTime();
+  
+  double factor = 1.0;
+  uint32 txn_type = txn->txn_type();
+  if (txn_type == MICROTXN_MP || txn_type == MICROTXN_SRMP || txn_type == MICROTXN_MRSP || txn_type == MICROTXN_MRMP) {
+    factor = 2.0;
+  }
+  double execution_start = GetTime();
 
   for (uint32 i = 0; i < kRWSetSize; i++) {
     Record* val = storage->ReadObject(txn->read_write_set(i));
@@ -402,7 +407,7 @@ double execution_start = GetTime();
   }
 
   // The following code is for microbenchmark "long" transaction, uncomment it if for "long" transaction
-  while (GetTime() - execution_start < 0.00008) {
+  while (GetTime() - execution_start < 0.00008/factor) {
     int x = 1;
     for(int i = 0; i < 10000; i++) {
       x = x+10;
