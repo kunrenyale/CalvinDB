@@ -15,6 +15,9 @@ LocalPaxos::LocalPaxos(ClusterConfig* config, ConnectionMultiplexer* connection)
   this_machine_id_ = configuration_->local_node_id();
   this_replica_id_ = configuration_->local_replica_id();
 
+  machines_per_replica_ = configuration_->nodes_per_replica();
+  local_replica_ = configuration_->local_replica_id();
+
   for (uint32 i = 0; i < 3; i++) {
     uint64 id = this_replica_id_ * configuration_->nodes_per_replica() + i;
     if (id < (this_replica_id_ + 1) * configuration_->nodes_per_replica()) {
@@ -72,6 +75,66 @@ void LocalPaxos::Append(uint64 blockid) {
 //LOG(ERROR) << configuration_->local_node_id()<< "+++In paxos Append: append a new batch:"<<blockid;
 }
 
+void LocalPaxos::ReceiveMessage() {
+  MessageProto message;
+     
+  // Receive the messages.
+  while (connection_->GotMessage("paxos_log_", &message) == true) {
+    if (message.type() == MessageProto::MR_TXNS_BATCH) {
+      MessageProto* mr_message = new MessageProto();
+      mr_message->CopyFrom(message);
+      mr_txn_batches_[message.misc_int(0)] = mr_message;
+    } else if (message.type() == MessageProto::NEW_SEQUENCE) {
+      uint32 from_replica = message.misc_int(0);
+      uint64 latest_version = message.misc_int(1);
+
+      latest_received_version_for_replicas_[from_replica] = latest_version;
+      SequenceBatch sequence_batch;
+      sequence_batch.ParseFromString(message.data(0));
+        
+      for (int i = 0; i < sequence_batch.sequence_batch_size(); i++) {
+        sequences_other_replicas_.Push(make_pair(sequence_batch.sequence_batch(i), from_replica));
+      }
+
+      sent_sequence_ack[from_replica] = false;
+//if (configuration_->local_node_id() == 0)
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica_<<"  . latest_version is:"<<latest_version;
+    } else if (message.type() == MessageProto::NEW_SEQUENCE_ACK) {
+      SequenceBatch sequence_batch;
+      uint32 from_replica = message.misc_int(0);
+      Sequence current_sequence_;
+      Log::Reader* r = readers_for_local_log_[from_replica];
+      uint64 latest_version = message.misc_int(1);
+
+      bool find = r->Next();
+      while (find == true) {
+        latest_version = r->Version();
+        current_sequence_.ParseFromString(r->Entry());
+        sequence_batch.add_sequence_batch()->CopyFrom(current_sequence_);
+        find = r->Next();
+      }
+
+      if (latest_version == message.misc_int(1)) {
+        new_sequence_todo.insert(from_replica);
+      } else {
+        string sequence_batch_string;
+        sequence_batch.SerializeToString(&sequence_batch_string);
+
+        MessageProto sequence_batch_message;
+        sequence_batch_message.add_data(sequence_batch_string);
+        sequence_batch_message.set_destination_channel("paxos_log_");
+        sequence_batch_message.set_destination_node(from_replica * machines_per_replica_);
+        sequence_batch_message.set_type(MessageProto::NEW_SEQUENCE);
+        sequence_batch_message.add_misc_int(local_replica_);
+        sequence_batch_message.add_misc_int(latest_version);
+        connection_->Send(sequence_batch_message);
+//if (configuration_->local_node_id() == 0)
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<from_replica * machines_per_replica_<<"  . latest_version is:"<<latest_version;
+      }
+    }
+  } // End receiving messages
+}
+
 void LocalPaxos::Stop() {
   go_ = false;
 }
@@ -87,9 +150,6 @@ void LocalPaxos::RunLeader() {
 
   uint64 quorum = static_cast<int>(participants_.size()) / 2 + 1;
   MessageProto sequence_message;
-  
-  uint64 machines_per_replica = configuration_->nodes_per_replica();
-  uint32 local_replica = configuration_->local_replica_id();
 
   MessageProto message;
   string encoded;
@@ -108,7 +168,7 @@ void LocalPaxos::RunLeader() {
 
 
   for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
-    if (i == local_replica) {
+    if (i == local_replica_) {
       continue;
     }
     latest_received_version_for_replicas_[i] = 0;
@@ -121,62 +181,9 @@ void LocalPaxos::RunLeader() {
     // Sleep while there are NO requests.
     while (local_count_.load() == 0 && sequences_other_replicas_.Size() == 0) {
       usleep(20);
-
-      // Receive the messages.
-      while (connection_->GotMessage("paxos_log_", &message) == true) {
-        if (message.type() == MessageProto::MR_TXNS_BATCH) {
-          MessageProto* mr_message = new MessageProto();
-          mr_message->CopyFrom(message);
-          mr_txn_batches_[message.misc_int(0)] = mr_message;
-        } else if (message.type() == MessageProto::NEW_SEQUENCE) {
-          uint32 from_replica = message.misc_int(0);
-          uint64 latest_version = message.misc_int(1);
-
-          latest_received_version_for_replicas_[from_replica] = latest_version;
-          SequenceBatch sequence_batch;
-          sequence_batch.ParseFromString(message.data(0));
-        
-          for (int i = 0; i < sequence_batch.sequence_batch_size(); i++) {
-            sequences_other_replicas_.Push(make_pair(sequence_batch.sequence_batch(i), from_replica));
-          }
-
-          sent_sequence_ack[from_replica] = false;
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;
-        } else if (message.type() == MessageProto::NEW_SEQUENCE_ACK) {
-          SequenceBatch sequence_batch;
-          uint32 from_replica = message.misc_int(0);
-          Sequence current_sequence_;
-          Log::Reader* r = readers_for_local_log_[from_replica];
-          uint64 latest_version = message.misc_int(1);
-
-          bool find = r->Next();
-          while (find == true) {
-            latest_version = r->Version();
-            current_sequence_.ParseFromString(r->Entry());
-            sequence_batch.add_sequence_batch()->CopyFrom(current_sequence_);
-            find = r->Next();
-          }
-
-          if (latest_version == message.misc_int(1)) {
-            new_sequence_todo.insert(from_replica);
-          } else {
-            string sequence_batch_string;
-            sequence_batch.SerializeToString(&sequence_batch_string);
-
-            MessageProto sequence_batch_message;
-            sequence_batch_message.add_data(sequence_batch_string);
-            sequence_batch_message.set_destination_channel("paxos_log_");
-            sequence_batch_message.set_destination_node(from_replica * machines_per_replica);
-            sequence_batch_message.set_type(MessageProto::NEW_SEQUENCE);
-            sequence_batch_message.add_misc_int(local_replica);
-            sequence_batch_message.add_misc_int(latest_version);
-            connection_->Send(sequence_batch_message);
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;
-          }
-        }
-      } // End receiving messages
+     
+      // Receive messages
+      ReceiveMessage();
     } // End while
     
  if (sequences_other_replicas_.Size() > 0) {
@@ -190,7 +197,7 @@ void LocalPaxos::RunLeader() {
 //if (configuration_->local_node_id() == 0)
 //LOG(ERROR) << configuration_->local_node_id()<< "### In paxos:  will handle remote sequence, version: "<<global_next_version;
 
-      if (local_replica != 0 && remote_replica == 0) {
+      if (local_replica_ != 0 && remote_replica == 0) {
         // Generate new txns for multi-replica txns.
         for (int i = 0; i < remote_sequence.batch_ids_size(); i++) {
           uint64 batch_id = remote_sequence.batch_ids(i);
@@ -199,58 +206,7 @@ void LocalPaxos::RunLeader() {
             usleep(20);
    
             // Receive messages
-            while (connection_->GotMessage("paxos_log_", &message) == true) {
-              if (message.type() == MessageProto::MR_TXNS_BATCH) {
-                MessageProto* mr_message = new MessageProto();
-                mr_message->CopyFrom(message);
-                mr_txn_batches_[message.misc_int(0)] = mr_message;
-              } else if (message.type() == MessageProto::NEW_SEQUENCE) {
-                uint32 from_replica = message.misc_int(0);
-                uint64 latest_version = message.misc_int(1);
-
-                latest_received_version_for_replicas_[from_replica] = latest_version;
-                SequenceBatch sequence_batch;
-                sequence_batch.ParseFromString(message.data(0));
-        
-                for (int i = 0; i < sequence_batch.sequence_batch_size(); i++) {
-                  sequences_other_replicas_.Push(make_pair(sequence_batch.sequence_batch(i), from_replica));
-                }
-
-                sent_sequence_ack[from_replica] = false;
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  (2)receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;
-              } else if (message.type() == MessageProto::NEW_SEQUENCE_ACK) {
-                SequenceBatch sequence_batch;
-                uint32 from_replica = message.misc_int(0);
-                Sequence current_sequence_;
-                Log::Reader* r = readers_for_local_log_[from_replica];
-                uint64 latest_version = message.misc_int(1);
-
-                bool find = r->Next();
-                while (find == true) {
-                  latest_version = r->Version();
-                  current_sequence_.ParseFromString(r->Entry());
-                  sequence_batch.add_sequence_batch()->CopyFrom(current_sequence_);
-                  find = r->Next();
-                }
-
-                if (latest_version == message.misc_int(1)) {
-                  new_sequence_todo.insert(from_replica);
-                } else {
-                  string sequence_batch_string;
-                  sequence_batch.SerializeToString(&sequence_batch_string);
-
-                  MessageProto sequence_batch_message;
-                  sequence_batch_message.add_data(sequence_batch_string);
-                  sequence_batch_message.set_destination_channel("paxos_log_");
-                  sequence_batch_message.set_destination_node(from_replica * machines_per_replica);
-                  sequence_batch_message.set_type(MessageProto::NEW_SEQUENCE);
-                  sequence_batch_message.add_misc_int(local_replica);
-                  sequence_batch_message.add_misc_int(latest_version);
-                  connection_->Send(sequence_batch_message);
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  (2)send  NEW_SEQUENCE to: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version; 
-                }   
-              }// end if
-            } // end receive message
+            ReceiveMessage();
 
           }; // end while
 
@@ -273,7 +229,7 @@ void LocalPaxos::RunLeader() {
             }
 
             txn.set_new_generated(true);
-            txn.set_origin_replica(local_replica);
+            txn.set_origin_replica(local_replica_);
 
             string txn_string;
             txn.SerializeToString(&txn_string);
@@ -347,7 +303,7 @@ void LocalPaxos::RunLeader() {
     // Send the order to the locking thread
     sequence_message.set_type(MessageProto::PAXOS_BATCH_ORDER);
     sequence_message.set_destination_channel("scheduler_");
-    for (uint64 i = local_replica * machines_per_replica; i < (local_replica + 1)*machines_per_replica ;i++) {
+    for (uint64 i = local_replica_ * machines_per_replica_; i < (local_replica_ + 1)*machines_per_replica_ ;i++) {
       sequence_message.set_destination_node(i);
       connection_->Send(sequence_message);
     }
@@ -377,7 +333,7 @@ void LocalPaxos::RunLeader() {
     // Send its local sequences to other replicas for the first time.
     if (isLocal == true && isFirst == true) {
       for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
-        if (i == local_replica) {
+        if (i == local_replica_) {
           continue;
         }
         SequenceBatch sequence_batch;
@@ -399,13 +355,13 @@ void LocalPaxos::RunLeader() {
         MessageProto sequence_batch_message;
         sequence_batch_message.add_data(sequence_batch_string);
         sequence_batch_message.set_destination_channel("paxos_log_");
-        sequence_batch_message.set_destination_node(i * machines_per_replica);
+        sequence_batch_message.set_destination_node(i * machines_per_replica_);
         sequence_batch_message.set_type(MessageProto::NEW_SEQUENCE);
-        sequence_batch_message.add_misc_int(local_replica);
+        sequence_batch_message.add_misc_int(local_replica_);
         sequence_batch_message.add_misc_int(latest_version);
         connection_->Send(sequence_batch_message);
 //if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<i * machines_per_replica<<"  . latest_version is:"<<latest_version;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<i * machines_per_replica_<<"  . latest_version is:"<<latest_version;
       }
 
       isFirst = false;
@@ -432,13 +388,13 @@ void LocalPaxos::RunLeader() {
         MessageProto sequence_batch_message;
         sequence_batch_message.add_data(sequence_batch_string);
         sequence_batch_message.set_destination_channel("paxos_log_");
-        sequence_batch_message.set_destination_node(pending_replica * machines_per_replica);
+        sequence_batch_message.set_destination_node(pending_replica * machines_per_replica_);
         sequence_batch_message.set_type(MessageProto::NEW_SEQUENCE);
-        sequence_batch_message.add_misc_int(local_replica);
+        sequence_batch_message.add_misc_int(local_replica_);
         sequence_batch_message.add_misc_int(latest_version);
         connection_->Send(sequence_batch_message);
 //if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<pending_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;  
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<pending_replica * machines_per_replica_<<"  . latest_version is:"<<latest_version;  
 
       }
     } else if (isLocal == false) {
@@ -448,72 +404,18 @@ void LocalPaxos::RunLeader() {
         MessageProto new_sequence_ack_message;
 
         new_sequence_ack_message.set_destination_channel("paxos_log_");
-        new_sequence_ack_message.set_destination_node(remote_replica * machines_per_replica);
+        new_sequence_ack_message.set_destination_node(remote_replica * machines_per_replica_);
         new_sequence_ack_message.set_type(MessageProto::NEW_SEQUENCE_ACK);
-        new_sequence_ack_message.add_misc_int(local_replica);
+        new_sequence_ack_message.add_misc_int(local_replica_);
         new_sequence_ack_message.add_misc_int(latest_received_version_for_replicas_[remote_replica]);
         connection_->Send(new_sequence_ack_message);
 //if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE_ACK to: "<<remote_replica * machines_per_replica<<"  . latest_version is:"<<latest_received_version_for_replicas_[remote_replica];   
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE_ACK to: "<<remote_replica * machines_per_replica_<<"  . latest_version is:"<<latest_received_version_for_replicas_[remote_replica];   
       }
     }
 
-
-    // Receive the messages.
-    while (connection_->GotMessage("paxos_log_", &message) == true) {
-      if (message.type() == MessageProto::MR_TXNS_BATCH) {
-        MessageProto* mr_message = new MessageProto();
-        mr_message->CopyFrom(message);
-        mr_txn_batches_[message.misc_int(0)] = mr_message;
-      } else if (message.type() == MessageProto::NEW_SEQUENCE) {
-        uint32 from_replica = message.misc_int(0);
-        uint64 latest_version = message.misc_int(1);
-
-        latest_received_version_for_replicas_[from_replica] = latest_version;
-        SequenceBatch sequence_batch;
-        sequence_batch.ParseFromString(message.data(0));
-        
-        for (int i = 0; i < sequence_batch.sequence_batch_size(); i++) {
-          sequences_other_replicas_.Push(make_pair(sequence_batch.sequence_batch(i), from_replica));
-        }
-
-        sent_sequence_ack[from_replica] = false;
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;
-      } else if (message.type() == MessageProto::NEW_SEQUENCE_ACK) {
-        SequenceBatch sequence_batch;
-        uint32 from_replica = message.misc_int(0);
-        Sequence current_sequence_;
-        Log::Reader* r = readers_for_local_log_[from_replica];
-        uint64 latest_version = message.misc_int(1);
-
-        bool find = r->Next();
-        while (find == true) {
-          latest_version = r->Version();
-          current_sequence_.ParseFromString(r->Entry());
-          sequence_batch.add_sequence_batch()->CopyFrom(current_sequence_);
-          find = r->Next();
-        }
-
-        if (latest_version == message.misc_int(1)) {
-          new_sequence_todo.insert(from_replica);
-        } else {
-          string sequence_batch_string;
-          sequence_batch.SerializeToString(&sequence_batch_string);
-
-          MessageProto sequence_batch_message;
-          sequence_batch_message.add_data(sequence_batch_string);
-          sequence_batch_message.set_destination_channel("paxos_log_");
-          sequence_batch_message.set_destination_node(from_replica * machines_per_replica);
-          sequence_batch_message.set_type(MessageProto::NEW_SEQUENCE);
-          sequence_batch_message.add_misc_int(local_replica);
-          sequence_batch_message.add_misc_int(latest_version);
-          connection_->Send(sequence_batch_message);
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<from_replica * machines_per_replica<<"  . latest_version is:"<<latest_version;  
-        }  
-      }
-    }
+    // Receive messages
+    ReceiveMessage();
   }
 }
 

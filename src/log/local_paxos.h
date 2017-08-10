@@ -35,6 +35,8 @@ class LocalPaxos {
   void Stop();
   void Append(uint64 blockid);
 
+  void ReceiveMessage();
+
  private:
 
   // Functions to start the Multiplexor's main loops, called in new pthreads by
@@ -87,6 +89,9 @@ class LocalPaxos {
 
   uint64 local_next_version;
   uint64 global_next_version;
+
+  uint64 machines_per_replica_;
+  uint32 local_replica_;
 };
 
 #endif  // CALVIN_LOG_LOCALPAXOS_H_
