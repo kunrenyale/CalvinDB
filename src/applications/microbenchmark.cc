@@ -64,13 +64,21 @@ TxnProto* Microbenchmark::MicroTxnSP(int64 txn_id, uint64 part) {
 
   // Add two hot keys to read/write set.
   uint64 hotkey1 = part + nparts * (rand() % hot_records);
-  txn->add_read_write_set(IntToString(hotkey1));
+
+  KeyEntry* key_entry = txn->add_read_write_set();
+  key_entry->set_key(IntToString(hotkey1));
+  key_entry->set_master(0);
+  key_entry->set_counter(0);
 
   uint64 hotkey2 = part + nparts * (rand() % hot_records);
   while (hotkey2 == hotkey1) {
     hotkey2 = part + nparts * (rand() % hot_records);    
   };
-  txn->add_read_write_set(IntToString(hotkey2));
+
+  key_entry = txn->add_read_write_set();
+  key_entry->set_key(IntToString(hotkey2));
+  key_entry->set_master(0);
+  key_entry->set_counter(0);
 
   // Insert set of kRWSetSize - 1 random cold keys from specified partition into
   // read/write set.
@@ -81,7 +89,10 @@ TxnProto* Microbenchmark::MicroTxnSP(int64 txn_id, uint64 part) {
                 nparts * kDBSize,
                 part);
   for (set<uint64>::iterator it = keys.begin(); it != keys.end(); ++it) {
-    txn->add_read_write_set(IntToString(*it));
+    key_entry = txn->add_read_write_set();
+    key_entry->set_key(IntToString(*it));
+    key_entry->set_master(0);
+    key_entry->set_counter(0);
   }
 
   return txn;
@@ -100,8 +111,16 @@ TxnProto* Microbenchmark::MicroTxnMP(int64 txn_id, uint64 part1, uint64 part2) {
   // Add two hot keys to read/write set---one in each partition.
   uint64 hotkey1 = part1 + nparts * (rand() % hot_records);
   uint64 hotkey2 = part2 + nparts * (rand() % hot_records);
-  txn->add_read_write_set(IntToString(hotkey1));
-  txn->add_read_write_set(IntToString(hotkey2));
+
+  KeyEntry* key_entry = txn->add_read_write_set();
+  key_entry->set_key(IntToString(hotkey1));
+  key_entry->set_master(0);
+  key_entry->set_counter(0);
+
+  key_entry = txn->add_read_write_set();
+  key_entry->set_key(IntToString(hotkey2));
+  key_entry->set_master(0);
+  key_entry->set_counter(0);
 
   // Insert set of kRWSetSize/2 - 1 random cold keys from each partition into
   // read/write set.
@@ -112,15 +131,22 @@ TxnProto* Microbenchmark::MicroTxnMP(int64 txn_id, uint64 part1, uint64 part2) {
                 nparts * kDBSize,
                 part1);
   for (set<uint64>::iterator it = keys.begin(); it != keys.end(); ++it) {
-    txn->add_read_write_set(IntToString(*it));
+    key_entry = txn->add_read_write_set();
+    key_entry->set_key(IntToString(*it));
+    key_entry->set_master(0);
+    key_entry->set_counter(0);
   }
+
   GetRandomKeys(&keys,
                 kRWSetSize/2 - 1,
                 nparts * hot_records,
                 nparts * kDBSize,
                 part2);
   for (set<uint64>::iterator it = keys.begin(); it != keys.end(); ++it) {
-    txn->add_read_write_set(IntToString(*it));
+    key_entry = txn->add_read_write_set();
+    key_entry->set_key(IntToString(*it));
+    key_entry->set_master(0);
+    key_entry->set_counter(0);
   }
 
   return txn;
@@ -153,8 +179,16 @@ TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint64 part, uint32 replica
 
   uint64 hotkey1 = part + nparts * hotkey_order1;
   uint64 hotkey2 = part + nparts * hotkey_order2;
-  txn->add_read_write_set(IntToString(hotkey1));
-  txn->add_read_write_set(IntToString(hotkey2));
+
+  KeyEntry* key_entry = txn->add_read_write_set();
+  key_entry->set_key(IntToString(hotkey1));
+  key_entry->set_master(replica);
+  key_entry->set_counter(0);
+
+  key_entry = txn->add_read_write_set();
+  key_entry->set_key(IntToString(hotkey2));
+  key_entry->set_master(replica);
+  key_entry->set_counter(0);
 
   // Insert set of kRWSetSize - 1 random cold keys from specified partition into
   // read/write set.
@@ -171,7 +205,10 @@ TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint64 part, uint32 replica
                        part,
                        replica);
   for (set<uint64>::iterator it = keys.begin(); it != keys.end(); ++it) {
-    txn->add_read_write_set(IntToString(*it));
+    key_entry = txn->add_read_write_set();
+    key_entry->set_key(IntToString(*it));
+    key_entry->set_master(replica);
+    key_entry->set_counter(0);
   }
 
 //if (replica == 0)
@@ -199,8 +236,15 @@ TxnProto* Microbenchmark::MicroTxnSRMP(int64 txn_id, uint64 part1, uint64 part2,
   uint64 hotkey1 = part1 + nparts * hotkey_order1;
   uint64 hotkey2 = part2 + nparts * hotkey_order2;
 
-  txn->add_read_write_set(IntToString(hotkey1));
-  txn->add_read_write_set(IntToString(hotkey2));
+  KeyEntry* key_entry = txn->add_read_write_set();
+  key_entry->set_key(IntToString(hotkey1));
+  key_entry->set_master(replica);
+  key_entry->set_counter(0);
+
+  key_entry = txn->add_read_write_set();
+  key_entry->set_key(IntToString(hotkey2));
+  key_entry->set_master(replica);
+  key_entry->set_counter(0);
 
   // Insert set of kRWSetSize/2 - 1 random cold keys from each partition into
   // read/write set.
@@ -217,7 +261,10 @@ TxnProto* Microbenchmark::MicroTxnSRMP(int64 txn_id, uint64 part1, uint64 part2,
                        part1,
                        replica);
   for (set<uint64>::iterator it = keys.begin(); it != keys.end(); ++it) {
-    txn->add_read_write_set(IntToString(*it));
+    key_entry = txn->add_read_write_set();
+    key_entry->set_key(IntToString(*it));
+    key_entry->set_master(replica);
+    key_entry->set_counter(0);
   }
 
   GetRandomKeysReplica(&keys,
@@ -227,7 +274,10 @@ TxnProto* Microbenchmark::MicroTxnSRMP(int64 txn_id, uint64 part1, uint64 part2,
                        part2,
                        replica);
   for (set<uint64>::iterator it = keys.begin(); it != keys.end(); ++it) {
-    txn->add_read_write_set(IntToString(*it));
+    key_entry = txn->add_read_write_set();
+    key_entry->set_key(IntToString(*it));
+    key_entry->set_master(replica);
+    key_entry->set_counter(0);
   }
 
   return txn;
@@ -263,8 +313,15 @@ TxnProto* Microbenchmark::MicroTxnMRSP(int64 txn_id, uint64 part, uint32 replica
   uint64 hotkey1 = part + nparts * hotkey_order1;
   uint64 hotkey2 = part + nparts * hotkey_order2;
 
-  txn->add_read_write_set(IntToString(hotkey1));
-  txn->add_read_write_set(IntToString(hotkey2));
+  KeyEntry* key_entry = txn->add_read_write_set();
+  key_entry->set_key(IntToString(hotkey1));
+  key_entry->set_master(replica1);
+  key_entry->set_counter(0);
+
+  key_entry = txn->add_read_write_set();
+  key_entry->set_key(IntToString(hotkey2));
+  key_entry->set_master(replica2);
+  key_entry->set_counter(0);
 
   // Insert set of kRWSetSize/2 - 1 random cold keys from specified replica/partition into
   // read/write set.
@@ -282,7 +339,10 @@ TxnProto* Microbenchmark::MicroTxnMRSP(int64 txn_id, uint64 part, uint32 replica
                        part,
                        replica1);
   for (set<uint64>::iterator it = keys.begin(); it != keys.end(); ++it) {
-    txn->add_read_write_set(IntToString(*it));
+    key_entry = txn->add_read_write_set();
+    key_entry->set_key(IntToString(*it));
+    key_entry->set_master(replica1);
+    key_entry->set_counter(0);
   }
 
   // Insert set of kRWSetSize/2 - 1 random cold keys from specified replica/partition into
@@ -294,7 +354,10 @@ TxnProto* Microbenchmark::MicroTxnMRSP(int64 txn_id, uint64 part, uint32 replica
                        part,
                        replica2);
   for (set<uint64>::iterator it = keys.begin(); it != keys.end(); ++it) {
-    txn->add_read_write_set(IntToString(*it));
+    key_entry = txn->add_read_write_set();
+    key_entry->set_key(IntToString(*it));
+    key_entry->set_master(replica2);
+    key_entry->set_counter(0);
   }
 
   return txn;
@@ -334,8 +397,15 @@ TxnProto* Microbenchmark::MicroTxnMRMP(int64 txn_id, uint64 part1, uint64 part2,
   uint64 hotkey1 = part1 + nparts * hotkey_order1;
   uint64 hotkey2 = part2 + nparts * hotkey_order2;
 
-  txn->add_read_write_set(IntToString(hotkey1));
-  txn->add_read_write_set(IntToString(hotkey2));
+  KeyEntry* key_entry = txn->add_read_write_set();
+  key_entry->set_key(IntToString(hotkey1));
+  key_entry->set_master(replica1);
+  key_entry->set_counter(0);
+
+  key_entry = txn->add_read_write_set();
+  key_entry->set_key(IntToString(hotkey2));
+  key_entry->set_master(replica2);
+  key_entry->set_counter(0);
 
   // Insert set of kRWSetSize/2 - 1 random cold keys from each replica/partition into
   // read/write set.
@@ -354,7 +424,10 @@ TxnProto* Microbenchmark::MicroTxnMRMP(int64 txn_id, uint64 part1, uint64 part2,
                        part1,
                        replica1);
   for (set<uint64>::iterator it = keys.begin(); it != keys.end(); ++it) {
-    txn->add_read_write_set(IntToString(*it));
+    key_entry = txn->add_read_write_set();
+    key_entry->set_key(IntToString(*it));
+    key_entry->set_master(replica1);
+    key_entry->set_counter(0);
   }
 
   // Insert set of kRWSetSize/2 - 1 random cold keys from each replica/partition into
@@ -366,7 +439,10 @@ TxnProto* Microbenchmark::MicroTxnMRMP(int64 txn_id, uint64 part1, uint64 part2,
                        part2,
                        replica2);
   for (set<uint64>::iterator it = keys.begin(); it != keys.end(); ++it) {
-    txn->add_read_write_set(IntToString(*it));
+    key_entry = txn->add_read_write_set();
+    key_entry->set_key(IntToString(*it));
+    key_entry->set_master(replica2);
+    key_entry->set_counter(0);
   }
 
   return txn;
@@ -392,9 +468,10 @@ int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {
   double execution_start = GetTime();
 
   for (uint32 i = 0; i < kRWSetSize; i++) {
-    Record* val = storage->ReadObject(txn->read_write_set(i));
+    KeyEntry key_entry = txn->read_write_set(i);
+    Record* val = storage->ReadObject(key_entry.key);
     // Not necessary since storage already has a pointer to val.
-    //   storage->PutObject(txn->read_write_set(i), val);
+    //   storage->PutObject(key_entry.key, val);
 
     for (int j = 0; j < 8; j++) {
       if ((val->value)[j] + 1 > 'z') {

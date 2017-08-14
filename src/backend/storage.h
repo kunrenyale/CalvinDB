@@ -10,15 +10,27 @@
 
 #include "common/types.h"
 
+#define REPLICA_SIZE 3
+#define LAST_N_TOUCH 1000
+#define ACCESS_PATTERN_THRESHOLD  0.75
+
 using std::vector;
 
 struct Record {
-  Record(Value v, uint32 m) : value(v), master(m), counter(0) {}
+  Record(Value v, uint32 m) : value(v), master(m), counter(0) {
+    for (uint32 i = 0; i < REPLICA_SIZE; i++) {
+      access_pattern[i] = 0;
+    }
+  }
 
   // The actual value
   Value value;
   uint32 master;
   uint32 counter;
+
+  // access pattern
+  vector<REPLICA_SIZE> access_pattern;
+
 };
 
 

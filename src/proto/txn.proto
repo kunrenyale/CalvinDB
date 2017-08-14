@@ -2,6 +2,13 @@
 //
 
 syntax = "proto2";
+
+message KeyEntry {
+  required bytes key = 1;
+  required uint32 master = 2;
+  required uint64 counter = 3;
+}
+
 message TxnProto {
   // Globally unique transaction id, specifying global order.
   required uint64 txn_id = 1;
@@ -13,13 +20,13 @@ message TxnProto {
   optional bool multipartition = 12;
 
   // Keys of objects read (but not modified) by this transaction.
-  repeated bytes read_set = 20;
+  repeated KeyEntry read_set = 20;
 
   // Keys of objects modified (but not read) by this transaction.
-  repeated bytes write_set = 21;
+  repeated KeyEntry write_set = 21;
 
   // Keys of objects read AND modified by this transaction.
-  repeated bytes read_write_set = 22;
+  repeated KeyEntry read_write_set = 22;
 
   // Arguments to be passed when invoking the stored procedure to execute this
   // transaction. 'arg' is a serialized protocol message. The client and backend
@@ -47,8 +54,19 @@ message TxnProto {
   repeated uint32 involved_replicas = 52;
   optional bool fake_txn = 53 [default = false];
 
+//------- Below is for remaster transactions
+  optional bool remaster_txn = 54 [default = false];
+  optional uint32 remaster_from = 55 [default = 99999];
+  optional uint32 remaster_to = 56 [default = 99999];
+  optional bool wait_for_remaster_pros = 57 [default = false];
+
+  optional KeyEntry remastered_key = 59;
+
+  // Also should take some information about which records will be remaster
   // This is to measure latency
-  optional uint64 generated_machine = 54 [default = 1000];
+  optional uint64 generated_machine = 64 [default = 1000];
+
+
 }
 
 
