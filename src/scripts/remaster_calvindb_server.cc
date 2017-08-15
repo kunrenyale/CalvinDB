@@ -14,7 +14,7 @@
 #include "scripts/script_utils.h"
 
 DEFINE_bool(calvin_version, false, "Print Calvin version information");
-DEFINE_string(binary, "lowlatency_calvindb_server", "Lowlatency Calvin binary executable program");
+DEFINE_string(binary, "remaster_calvindb_server", "Lowlatency Calvin binary executable program");
 DEFINE_string(config, "calvin.conf", "conf file of Calvin cluster");
 DEFINE_int32(machine_id, 0, "machine id");
 DEFINE_int32(experiment, 0, "the experiment that you want to run, default is microbenchmark");
@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
   LOG(ERROR) << FLAGS_machine_id << ":Created paxos log "; 
 
   // Initialize sequencer component and start sequencer thread running.
-  LowlatencySequencer sequencer(config, multiplexer, client, paxos, storage, FLAGS_max_batch_size);
+  LowlatencySequencer sequencer(config, multiplexer, client, paxos, FLAGS_max_batch_size);
 
   LOG(ERROR) << FLAGS_machine_id << ":Created sequencer ";
 

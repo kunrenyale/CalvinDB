@@ -37,6 +37,8 @@ message MessageProto {
     MR_TXNS_BATCH = 16;
     NEW_SEQUENCE = 17;
     NEW_SEQUENCE_ACK = 18;
+    MASTER_LOOKUP = 19;
+    MASTER_LOOKUP_RESULT = 20;
   };
   required MessageType type = 9;
 
@@ -62,7 +64,7 @@ message MessageProto {
   // Stick miscellaneous stuff in here if you really want to.
   repeated bool   misc_bool   = 41;
   repeated uint64 misc_int    = 42;
-  repeated string  misc_string = 43;
+  repeated string misc_string = 43;
   repeated double misc_double = 44;
 
   // For (UN)LINK_CHANNEL messages, specifies the main channel of the requesting

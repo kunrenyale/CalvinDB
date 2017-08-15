@@ -22,6 +22,7 @@ class SimpleStorage : public Storage {
   virtual Record* ReadObject(const Key& key);
   virtual bool PutObject(const Key& key, Record* record);
   virtual bool DeleteObject(const Key& key);
+  virtual pair<uint32, uint64> GetMasterCounter(const Key& key);
 
  private:
   unordered_map<Key, Record*> objects_;

@@ -6,11 +6,8 @@
 #include "backend/simple_storage.h"
 
 Record* SimpleStorage::ReadObject(const Key& key) {
-  if (objects_.count(key) != 0) {
-    return objects_[key];
-  } else {
-    return NULL;
-  }
+  CHECK(objects_.count(key) != 0);
+  return objects_[key];
 }
 
 bool SimpleStorage::PutObject(const Key& key, Record* record) {
@@ -25,3 +22,8 @@ bool SimpleStorage::DeleteObject(const Key& key) {
   return true;
 }
 
+virtual pair<uint32, uint64> GetMasterCounter(const Key& key) {
+  CHECK(objects_.count(key) != 0);
+  Record* record = objects_[key];
+  return make_pair(record.master, record.counter);
+}

@@ -10,11 +10,12 @@ DEFINE_string(command, "status", "cluster command");
 DEFINE_string(config, "calvin.conf", "conf file of Calvin cluster");
 DEFINE_string(calvin_path, "/home/ubuntu/CalvinDB", "path to the main calvin directory");
 DEFINE_string(binary, "calvindb_server", "Calvin binary executable program");
-DEFINE_string(lowlatency_binary, "lowlatency_calvindb_server", "Calvin binary executable program");
+DEFINE_string(lowlatency_binary, "lowlatency_calvindb_server", "Lowlatency Calvin binary executable program");
+DEFINE_string(remaster_binary, "remaster_calvindb_server", "Lowlatency(with remaster) Calvin binary executable program");
 DEFINE_string(ssh_key1, "-i ~/Virginia.pem", "ssh_key for the first data center(Virginia)");
 DEFINE_string(ssh_key2, "-i ~/Oregon.pem", "ssh_key for the second data center(Oregon)");
 DEFINE_string(ssh_key3, "-i ~/Ireland.pem", "ssh_key for the third data center(Ireland)");
-DEFINE_int32(lowlatency, 0, "0: Original CalvinDB ; 1: low latency version of CalvinDB");
+DEFINE_int32(lowlatency, 0, "0: Original CalvinDB ; 1: low latency version of CalvinDB; 2: low latency with access pattern remasters");
 DEFINE_int32(experiment, 0, "the experiment that you want to run, default is microbenchmark");
 DEFINE_int32(percent_mp, 0, "percent of distributed txns");
 DEFINE_int32(percent_mr, 0, "percent of multi-replica txns");
@@ -27,8 +28,10 @@ int main(int argc, char** argv) {
   ClusterManager* cm;
   if (FLAGS_lowlatency == 0) {
     cm = new ClusterManager(FLAGS_config, FLAGS_calvin_path, FLAGS_binary, FLAGS_ssh_key1, FLAGS_ssh_key2, FLAGS_ssh_key3);
-  } else {
+  } else if (FLAGS_lowlatency == 1) {
     cm = new ClusterManager(FLAGS_config, FLAGS_calvin_path, FLAGS_lowlatency_binary, FLAGS_ssh_key1, FLAGS_ssh_key2, FLAGS_ssh_key3);    
+  } else {
+    cm = new ClusterManager(FLAGS_config, FLAGS_calvin_path, FLAGS_remaster_binary, FLAGS_ssh_key1, FLAGS_ssh_key2, FLAGS_ssh_key3);     
   }
 
   if (FLAGS_command == "update") {

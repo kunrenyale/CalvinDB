@@ -52,6 +52,8 @@ class Storage {
   // false if it fails for any reason.
   virtual bool DeleteObject(const Key& key) = 0;
 
+  virtual pair<uint32, uint64> GetMasterCounter(const Key& key) = 0;
+
 };
 
 #endif  // _DB_BACKEND_STORAGE_H_

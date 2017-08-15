@@ -6,7 +6,8 @@ SRCS := scripts/script_utils.cc
 
 EXES := scripts/cluster.cc \
         scripts/calvindb_server.cc \
-        scripts/lowlatency_calvindb_server.cc
+        scripts/lowlatency_calvindb_server.cc \
+        scripts/remaster_calvindb_server.cc
 
 DEPS := $(PROTO_OBJS) $(COMMON_OBJS) $(BACKEND_OBJS) $(APPLICATIONS_OBJS) $(MACHINE_OBJS) $(LOG_OBJS) $(SCHEDULER_OBJS)
 
