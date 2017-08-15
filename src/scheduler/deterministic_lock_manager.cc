@@ -26,22 +26,23 @@ int DeterministicLockManager::Lock(TxnProto* txn) {
 
   // Handle read/write lock requests.
   for (int i = 0; i < txn->read_write_set_size(); i++) {
-    if (mode_ == 1 && configuration_->LookupMaster(txn->read_write_set(i)) != origin) {
+    KeyEntry key_entry = txn->read_write_set(i);
+    if (mode_ == 1 && key_entry.master() != origin) {
       continue;
     }
 
     // Only lock local keys.
-    if (IsLocal(txn->read_write_set(i))) {
-      deque<KeysList>* key_requests = lock_table_[Hash(txn->read_write_set(i))];
+    if (IsLocal(key_entry.key())) {
+      deque<KeysList>* key_requests = lock_table_[Hash(key_entry.key())];
       
       deque<KeysList>::iterator it;
-      for(it = key_requests->begin();
-          it != key_requests->end() && it->key != txn->read_write_set(i); ++it) { 
+      for(it = key_requests->begin(); it != key_requests->end() && it->key != key_entry.key(); ++it) { 
       }
+
       deque<LockRequest>* requests;
       if (it == key_requests->end()) {
         requests = new deque<LockRequest>();
-        key_requests->push_back(KeysList(txn->read_write_set(i), requests));
+        key_requests->push_back(KeysList(key_entry.key(), requests));
       } else {
         requests = it->locksrequest;
       }
@@ -59,23 +60,24 @@ int DeterministicLockManager::Lock(TxnProto* txn) {
   // Handle read lock requests. This is last so that we don't have to deal with
   // upgrading lock requests from read to write on hash collisions.
   for (int i = 0; i < txn->read_set_size(); i++) {
+    KeyEntry key_entry = txn->read_set(i);
 
-    if (mode_ == 1 && configuration_->LookupMaster(txn->read_set(i)) != origin) {
+    if (mode_ == 1 && key_entry.master() != origin) {
       continue;
     }
 
     // Only lock local keys.
-    if (IsLocal(txn->read_set(i))) {
-      deque<KeysList>* key_requests = lock_table_[Hash(txn->read_set(i))];
+    if (IsLocal(key_entry.key())) {
+      deque<KeysList>* key_requests = lock_table_[Hash(key_entry.key())];
       
       deque<KeysList>::iterator it;
-      for(it = key_requests->begin();
-          it != key_requests->end() && it->key != txn->read_set(i); ++it) { 
+      for(it = key_requests->begin(); it != key_requests->end() && it->key != key_entry.key(); ++it) { 
       }
+
       deque<LockRequest>* requests;
       if (it == key_requests->end()) {
         requests = new deque<LockRequest>();
-        key_requests->push_back(KeysList(txn->read_set(i), requests));
+        key_requests->push_back(KeysList(key_entry.key(), requests));
       } else {
         requests = it->locksrequest;
       }
@@ -108,12 +110,14 @@ void DeterministicLockManager::Release(TxnProto* txn) {
   uint32 origin = txn->origin_replica();
 
   for (int i = 0; i < txn->read_set_size(); i++) {
-    if (mode_ == 1 && configuration_->LookupMaster(txn->read_set(i)) != origin) {
+    KeyEntry key_entry = txn->read_set(i);
+
+    if (mode_ == 1 && key_entry.master() != origin) {
       continue;
     }
 
-    if (IsLocal(txn->read_set(i))) {
-      Release(txn->read_set(i), txn);
+    if (IsLocal(key_entry.key())) {
+      Release(key_entry.key(), txn);
     }
   }
   // Currently commented out because nothing in any write set can conflict
@@ -122,12 +126,14 @@ void DeterministicLockManager::Release(TxnProto* txn) {
 //    if (IsLocal(txn->write_set(i)))
 //      Release(txn->write_set(i), txn);
   for (int i = 0; i < txn->read_write_set_size(); i++) {
-    if (mode_ == 1 && configuration_->LookupMaster(txn->read_write_set(i)) != origin) {
+    KeyEntry key_entry = txn->read_write_set(i);
+
+    if (mode_ == 1 && key_entry.master() != origin) {
       continue;
     }
 
-    if (IsLocal(txn->read_write_set(i))) {
-      Release(txn->read_write_set(i), txn);
+    if (IsLocal(key_entry.key())) {
+      Release(key_entry.key(), txn);
     }
   }
 }

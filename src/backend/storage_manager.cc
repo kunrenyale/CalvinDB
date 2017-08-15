@@ -29,10 +29,11 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
 
     // Execute local reads.
     for (int i = 0; i < txn->read_set_size(); i++) {
-      const Key& key = txn->read_set(i);
+      KeyEntry key_entry = txn->read_set(i);
+      const Key& key = key_entry.key();
       uint64 mds = configuration_->LookupPartition(key);
 
-      if (mode_ == 1 && configuration_->LookupMaster(key) != origin) {
+      if (mode_ == 1 && key_entry.master() != origin) {
         continue;
       }
 
@@ -45,11 +46,12 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
     }
 
     for (int i = 0; i < txn->read_write_set_size(); i++) {
-      const Key& key = txn->read_write_set(i);
+      KeyEntry key_entry = txn->read_write_set(i);
+      const Key& key = key_entry.key();
       uint64 mds = configuration_->LookupPartition(key);
       writers.insert(mds);
       
-      uint32 replica_id = configuration_->LookupMaster(key);
+      uint32 replica_id = key_entry.master();
       if (mode_ == 1 && replica_id != origin) {
         remote_replica_writers.insert(make_pair(mds, replica_id));
         continue;

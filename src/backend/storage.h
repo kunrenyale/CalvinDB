@@ -29,7 +29,7 @@ struct Record {
   uint32 counter;
 
   // access pattern
-  vector<REPLICA_SIZE> access_pattern;
+  uint32 access_pattern[REPLICA_SIZE];
 
 };
 

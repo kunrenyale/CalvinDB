@@ -257,20 +257,16 @@ void LowlatencySequencer::RunReader() {
           set<uint64> readers;
           set<uint64> writers;
           for (uint32 i = 0; i < (uint32)(txn.read_set_size()); i++) {
-            if (configuration_->LookupMaster(txn.read_set(i)) == txn.origin_replica()) {
-              uint64 mds = configuration_->LookupPartition(txn.read_set(i));
+            KeyEntry key_entry = txn.read_set(i);
+            if (key_entry.master() == txn.origin_replica()) {
+              uint64 mds = configuration_->LookupPartition(key_entry.key());
               readers.insert(mds);
             }
           }
-          for (uint32 i = 0; i < (uint32)(txn.write_set_size()); i++) {
-            if (configuration_->LookupMaster(txn.write_set(i)) == txn.origin_replica()) {
-              uint64 mds = configuration_->LookupPartition(txn.write_set(i));
-              writers.insert(mds);
-            }
-          }
           for (uint32 i = 0; i < (uint32)(txn.read_write_set_size()); i++) {
-            if (configuration_->LookupMaster(txn.read_write_set(i)) == txn.origin_replica()) {
-              uint64 mds = configuration_->LookupPartition(txn.read_write_set(i));
+            KeyEntry key_entry = txn.read_write_set(i);
+            if (key_entry.master() == txn.origin_replica()) {
+              uint64 mds = configuration_->LookupPartition(key_entry.key());
               writers.insert(mds);
               readers.insert(mds);
             }

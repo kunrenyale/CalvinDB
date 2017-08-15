@@ -469,9 +469,9 @@ int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {
 
   for (uint32 i = 0; i < kRWSetSize; i++) {
     KeyEntry key_entry = txn->read_write_set(i);
-    Record* val = storage->ReadObject(key_entry.key);
+    Record* val = storage->ReadObject(key_entry.key());
     // Not necessary since storage already has a pointer to val.
-    //   storage->PutObject(key_entry.key, val);
+    //   storage->PutObject(txn->read_write_set(i), val);
 
     for (int j = 0; j < 8; j++) {
       if ((val->value)[j] + 1 > 'z') {
