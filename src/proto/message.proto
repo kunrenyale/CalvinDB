@@ -39,6 +39,7 @@ message MessageProto {
     NEW_SEQUENCE_ACK = 18;
     MASTER_LOOKUP = 19;
     MASTER_LOOKUP_RESULT = 20;
+    LOCAL_ENTRIES_TO_MIM_MACHINE = 21;
   };
   required MessageType type = 9;
 

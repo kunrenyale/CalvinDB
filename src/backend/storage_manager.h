@@ -94,6 +94,21 @@ class StorageManager {
 
   uint32 mode_;
 
+  // For request chopping algorithm: pair<mds, replica_id>
+  set<pair<uint64, uint32>> remote_replica_writers_;
+
+  // remote results message
+  MessageProto remote_result_message_;
+  // For request chopping with remaster: non-min machine ----->min machine
+  MessageProto local_key_entries_message_;
+  // For request chopping with remaster: min machine ----->non-min machine
+  MessageProto abort_or_commit_decision_message_;
+
+  // For request chopping with remaster
+  set<uint64> involved_machines_;
+  uint64 min_involved_machine_;
+  KeyEntries local_entries_;
+
 };
 
 #endif  // _DB_BACKEND_STORAGE_MANAGER_H_
