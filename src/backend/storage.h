@@ -28,7 +28,7 @@ struct Record {
   // The actual value
   Value value;
   uint32 master;
-  uint32 counter;
+  uint64 counter;
 
   // access pattern
   uint32 access_pattern[REPLICA_SIZE];

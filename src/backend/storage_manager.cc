@@ -33,7 +33,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
       const Key& key = key_entry.key();
       uint64 mds = configuration_->LookupPartition(key);
 
-      if (mode_ == 1 && key_entry.master() != origin) {
+      if (mode_ != 0 && key_entry.master() != origin) {
         continue;
       }
 
@@ -52,10 +52,10 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
       writers.insert(mds);
       
       uint32 replica_id = key_entry.master();
-      if (mode_ == 1 && replica_id != origin) {
+      if (mode_ != 0 && replica_id != origin) {
         remote_replica_writers.insert(make_pair(mds, replica_id));
         continue;
-      } else if (mode_ == 1 && mds != relative_node_id_) {
+      } else if (mode_ != 0 && mds != relative_node_id_) {
         remote_replica_writers.insert(make_pair(mds, origin));
         continue;
       }

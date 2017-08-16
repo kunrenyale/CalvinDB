@@ -27,7 +27,7 @@ int DeterministicLockManager::Lock(TxnProto* txn) {
   // Handle read/write lock requests.
   for (int i = 0; i < txn->read_write_set_size(); i++) {
     KeyEntry key_entry = txn->read_write_set(i);
-    if (mode_ == 1 && key_entry.master() != origin) {
+    if (mode_ != 0 && key_entry.master() != origin) {
       continue;
     }
 
@@ -62,7 +62,7 @@ int DeterministicLockManager::Lock(TxnProto* txn) {
   for (int i = 0; i < txn->read_set_size(); i++) {
     KeyEntry key_entry = txn->read_set(i);
 
-    if (mode_ == 1 && key_entry.master() != origin) {
+    if (mode_ != 0 && key_entry.master() != origin) {
       continue;
     }
 
@@ -112,7 +112,7 @@ void DeterministicLockManager::Release(TxnProto* txn) {
   for (int i = 0; i < txn->read_set_size(); i++) {
     KeyEntry key_entry = txn->read_set(i);
 
-    if (mode_ == 1 && key_entry.master() != origin) {
+    if (mode_ != 0 && key_entry.master() != origin) {
       continue;
     }
 
@@ -128,7 +128,7 @@ void DeterministicLockManager::Release(TxnProto* txn) {
   for (int i = 0; i < txn->read_write_set_size(); i++) {
     KeyEntry key_entry = txn->read_write_set(i);
 
-    if (mode_ == 1 && key_entry.master() != origin) {
+    if (mode_ != 0 && key_entry.master() != origin) {
       continue;
     }
 

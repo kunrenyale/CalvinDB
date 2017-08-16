@@ -64,8 +64,6 @@ message TxnProto {
   optional uint32 remaster_to = 56 [default = 99999];
   optional bool wait_for_remaster_pros = 57 [default = false];
 
-  optional KeyEntry remastered_key = 59;
-
   // Also should take some information about which records will be remaster
   // This is to measure latency
   optional uint64 generated_machine = 64 [default = 1000];

@@ -19,6 +19,7 @@
 #include <utility>
 #include <sched.h>
 #include <map>
+#include <queue>
 
 #include "applications/application.h"
 #include "common/utils.h"
@@ -32,12 +33,7 @@
 #include "proto/scalar.pb.h"
 
 using std::deque;
-
-namespace zmq {
-class socket_t;
-class message_t;
-}
-using zmq::socket_t;
+using std::queue;
 
 class ClusterConfig;
 class Connection;
@@ -52,11 +48,23 @@ class DeterministicScheduler : public Scheduler {
   DeterministicScheduler(ClusterConfig* conf, Storage* storage, const Application* application,ConnectionMultiplexer* connection, uint32 mode);
   virtual ~DeterministicScheduler();
 
+  bool IsLocal(const Key& key);
+
+  bool VerifyStorageCounters(TxnProto* txn, set<pair<string,uint64>>& keys);
+
  private:
   // Function for starting main loops in a separate pthreads.
-  static void* RunWorkerThread(void* arg);
+  static void* WorkerThread(void* arg);
   
   static void* LockManagerThread(void* arg);
+
+  // LockManager's main loop.
+  void RunLockManagerThread();
+
+  // LockManager's main loop.
+  void RunWorkerThread(uint32 thread);
+
+  MessageProto* GetBatch();
 
   // Configuration specifying node & system settings.
   ClusterConfig* configuration_;
@@ -82,8 +90,8 @@ class DeterministicScheduler : public Scheduler {
   std::deque<TxnProto*>* ready_txns_;
 
   
-  AtomicQueue<TxnProto*>* txns_queue;
-  AtomicQueue<TxnProto*>* done_queue;
+  AtomicQueue<TxnProto*>* txns_queue_;
+  AtomicQueue<TxnProto*>* done_queue_;
   
   // Connection for receiving txn batches from sequencer.
   ConnectionMultiplexer* connection_;
@@ -91,6 +99,21 @@ class DeterministicScheduler : public Scheduler {
   bool start_working_;
 
   uint32 mode_;
+
+  // below is for GetBatch
+  unordered_map<uint64, MessageProto*> batches_data_;
+  unordered_map<uint64, MessageProto*> global_batches_order_;
+
+  Sequence* current_sequence_;
+  uint32 current_sequence_id_;
+  uint32 current_sequence_batch_index_;
+  uint64 current_batch_id_;
+  
+  // Below is for request chopping with remaster transactions
+  //  pair<key, counter>
+  map<pair<string, uint64>, vector<TxnProto*>> waiting_txns_by_key_;
+  map<uint64, set<pair<string, uint64>>> waiting_txns_by_txnid_;
+  map<uint32, queue<TxnProto*>> blocking_txns_;
   
 };
 #endif  // _DB_SCHEDULER_DETERMINISTIC_SCHEDULER_H_

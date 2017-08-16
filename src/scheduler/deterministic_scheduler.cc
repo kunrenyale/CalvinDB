@@ -1,4 +1,5 @@
-// Author: Alex Thomson (thomson@cs.yale.edu)
+// Author: Kun Ren <renkun.nwpu@gmail.com>
+//         Alex Thomson (thomson@cs.yale.edu)
 //
 //
 // The deterministic lock manager implements deterministic locking as described
@@ -16,10 +17,9 @@
 
 using std::pair;
 using std::string;
-using zmq::socket_t;
 using std::map;
 
-
+//----------------------------------------------------------------  constructor --------------------------------------------------------------------
 DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
                                                Storage* storage,
                                                const Application* application,
@@ -29,8 +29,8 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
   
   ready_txns_ = new std::deque<TxnProto*>();
   lock_manager_ = new DeterministicLockManager(ready_txns_, configuration_, mode_);
-  txns_queue = new AtomicQueue<TxnProto*>();
-  done_queue = new AtomicQueue<TxnProto*>();
+  txns_queue_ = new AtomicQueue<TxnProto*>();
+  done_queue_ = new AtomicQueue<TxnProto*>();
 
   connection_->NewChannel("scheduler_");
 
@@ -42,6 +42,12 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
 
   start_working_ = false;
 
+  // For GetBatch method
+  current_sequence_ = NULL;
+  current_sequence_id_ = 1;
+  current_sequence_batch_index_ = 0;
+  current_batch_id_ = 0;
+
   // start lock manager thread
   cpu_set_t cpuset;
   pthread_attr_t attr1;
@@ -52,7 +58,7 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
   pthread_create(&lock_manager_thread_, &attr1, LockManagerThread, reinterpret_cast<void*>(this));
 
   // Start all worker threads.
-  for (int i = 0; i < NUM_THREADS; i++) {
+  for (uint32 i = 0; i < NUM_THREADS; i++) {
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     CPU_ZERO(&cpuset);
@@ -64,19 +70,22 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
 
     pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset);
 
-    pthread_create(&(threads_[i]), &attr, RunWorkerThread,
-                   reinterpret_cast<void*>(
-                   new pair<int, DeterministicScheduler*>(i, this)));
+    pthread_create(&(threads_[i]), &attr, WorkerThread, reinterpret_cast<void*>(new pair<uint32, DeterministicScheduler*>(i, this)));
   }
 }
 
+void* DeterministicScheduler::LockManagerThread(void *arg) {
+  reinterpret_cast<DeterministicScheduler*>(arg)->RunLockManagerThread();
+  return NULL;
+}
 
-void* DeterministicScheduler::RunWorkerThread(void* arg) {
-  int thread =
-      reinterpret_cast<pair<int, DeterministicScheduler*>*>(arg)->first;
-  DeterministicScheduler* scheduler =
-      reinterpret_cast<pair<int, DeterministicScheduler*>*>(arg)->second;
+void* DeterministicScheduler::WorkerThread(void *arg) {
+  (reinterpret_cast<pair<uint32, DeterministicScheduler*>*>(arg))->second->RunWorkerThread((reinterpret_cast<pair<int, DeterministicScheduler*>*>(arg))->first);
+  return NULL;
+}
 
+//----------------------------------------------------------------  RunWorkerThread --------------------------------------------------------------------
+void DeterministicScheduler::RunWorkerThread(uint32 thread) {
   unordered_map<string, StorageManager*> active_txns;
 
 //unordered_map<string, double> time_measure;
@@ -84,61 +93,59 @@ void* DeterministicScheduler::RunWorkerThread(void* arg) {
   string channel("scheduler");
   channel.append(IntToString(thread));
 
-  uint32 mode = scheduler->mode_;
-
-  while (scheduler->start_working_ != true) {
+  while (start_working_ != true) {
     usleep(100);
   }
 
   // Begin main loop.
   MessageProto message;
   while (true) {
-    bool got_message = scheduler->connection_->GotMessage(channel, &message);
+    bool got_message = connection_->GotMessage(channel, &message);
     if (got_message == true) {
       // Remote read result.
       CHECK(message.type() == MessageProto::READ_RESULT);
       CHECK(active_txns.count(message.destination_channel()) > 0);
       StorageManager* manager = active_txns[message.destination_channel()];
       manager->HandleReadResult(message);
-//if (scheduler->configuration_->local_node_id() == 0)
-//LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: received remote read: "<<manager->txn_->txn_id()<<"   origin:"<<manager->txn_->origin_replica()<<"   time:"<<(GetTime() - time_measure[message.destination_channel()])*1000;
+//if (configuration_->local_node_id() == 0)
+//LOG(ERROR) <<configuration_->local_node_id()<< ":In worker: received remote read: "<<manager->txn_->txn_id()<<"   origin:"<<manager->txn_->origin_replica()<<"   time:"<<(GetTime() - time_measure[message.destination_channel()])*1000;
 //time_measure.erase(message.destination_channel());
       if (manager->ReadyToExecute()) {
         // Execute and clean up.
         TxnProto* txn = manager->txn_;
-        scheduler->application_->Execute(txn, manager);
+        application_->Execute(txn, manager);
         delete manager;
 
-        scheduler->connection_->UnlinkChannel(message.destination_channel());
+        connection_->UnlinkChannel(message.destination_channel());
         active_txns.erase(message.destination_channel());
         // Respond to scheduler;
-        scheduler->done_queue->Push(txn);
-/**if (scheduler->configuration_->local_node_id() == 2 || scheduler->configuration_->local_node_id() == 3)
-LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: finish "<<txn->txn_id();**/
+        done_queue_->Push(txn);
+/**if (configuration_->local_node_id() == 2 || configuration_->local_node_id() == 3)
+LOG(ERROR) <<configuration_->local_node_id()<< ":In worker: finish "<<txn->txn_id();**/
       }
     } else {
       // No remote read result found, start on next txn if one is waiting.
       TxnProto* txn;
-      bool got_it = scheduler->txns_queue->Pop(&txn);
+      bool got_it = txns_queue_->Pop(&txn);
       if (got_it == true) {
-//LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":----In worker: find "<<txn->txn_id();
+//LOG(ERROR) <<configuration_->local_node_id()<< ":----In worker: find "<<txn->txn_id();
         // Create manager.
-        StorageManager* manager = new StorageManager(scheduler->configuration_,
-                                      scheduler->connection_,
-                                      scheduler->storage_, txn, mode);
+        StorageManager* manager = new StorageManager(configuration_,
+                                      connection_,
+                                      storage_, txn, mode_);
 
         // Writes occur at this node.
         if (manager->ReadyToExecute()) {
           // No remote reads. Execute and clean up.
-          scheduler->application_->Execute(txn, manager);
+          application_->Execute(txn, manager);
           delete manager;
 
           // Respond to scheduler;
-          scheduler->done_queue->Push(txn);
+          done_queue_->Push(txn);
         } else {
-//LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":~~~~~~~~~~~~~~~In worker: not ready  "<<txn->txn_id()<<"   origin:"<<txn->origin_replica();
+//LOG(ERROR) <<configuration_->local_node_id()<< ":~~~~~~~~~~~~~~~In worker: not ready  "<<txn->txn_id()<<"   origin:"<<txn->origin_replica();
           string origin_channel = IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica());
-          scheduler->connection_->LinkChannel(origin_channel, channel);
+          connection_->LinkChannel(origin_channel, channel);
           // There are outstanding remote reads.
           active_txns[origin_channel] = manager;
 //time_measure[origin_channel] = GetTime();
@@ -146,7 +153,7 @@ LOG(ERROR) <<scheduler->configuration_->local_node_id()<< ":In worker: finish "<
       }
     }
   }
-  return NULL;
+  return ;
 }
 
 DeterministicScheduler::~DeterministicScheduler() {
@@ -157,34 +164,27 @@ DeterministicScheduler::~DeterministicScheduler() {
   }
 }
 
-
-unordered_map<uint64, MessageProto*> batches_data;
-unordered_map<uint64, MessageProto*> global_batches_order;
-
-Sequence* current_sequence_ = NULL;
-uint32 current_sequence_id_ = 1;
-uint32 current_sequence_batch_index_ = 0;
-uint64 current_batch_id_ = 0;
-
-MessageProto* GetBatch(ConnectionMultiplexer* connection) {
+//----------------------------------------------------------------  GetBatch --------------------------------------------------------------------
+// Get the next batch deterministicly
+MessageProto* DeterministicScheduler::GetBatch() {
    if (current_sequence_ == NULL) {
-     if (global_batches_order.count(current_sequence_id_) > 0) {
-       MessageProto* sequence_message = global_batches_order[current_sequence_id_];
+     if (global_batches_order_.count(current_sequence_id_) > 0) {
+       MessageProto* sequence_message = global_batches_order_[current_sequence_id_];
        current_sequence_ = new Sequence();
        current_sequence_->ParseFromString(sequence_message->data(0));
        current_sequence_batch_index_ = 0;
 //if (sequence_message->destination_node() == 0)
 //LOG(ERROR) << sequence_message->destination_node()<< ":In scheduler:  find the sequence: "<<current_sequence_id_;
        delete sequence_message;
-       global_batches_order.erase(current_sequence_id_);
+       global_batches_order_.erase(current_sequence_id_);
      } else {
        // Receive the batch data or global batch order
        MessageProto* message = new MessageProto();
-       while (connection->GotMessage("scheduler_", message)) {
+       while (connection_->GotMessage("scheduler_", message)) {
          if (message->type() == MessageProto::TXN_SUBBATCH) {
 //LOG(ERROR) << message->destination_node()<<"In scheduler:  receive a subbatch: "<<message->batch_number();
 //CHECK(message->data_size() > 0);
-           batches_data[message->batch_number()] = message;
+           batches_data_[message->batch_number()] = message;
            message = new MessageProto();
          } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
 //LOG(ERROR)<< message->destination_node()<< ":In scheduler:  receive a sequence: "<<message->misc_int(0);
@@ -196,7 +196,7 @@ MessageProto* GetBatch(ConnectionMultiplexer* connection) {
              current_sequence_batch_index_ = 0;
              break;
            } else {
-             global_batches_order[message->misc_int(0)] = message;
+             global_batches_order_[message->misc_int(0)] = message;
              message = new MessageProto();
            }       
          }
@@ -213,10 +213,10 @@ MessageProto* GetBatch(ConnectionMultiplexer* connection) {
    current_batch_id_ = current_sequence_->batch_ids(current_sequence_batch_index_);
 
 
-   if (batches_data.count(current_batch_id_) > 0) {
+   if (batches_data_.count(current_batch_id_) > 0) {
      // Requested batch has already been received.
-     MessageProto* batch = batches_data[current_batch_id_];
-     batches_data.erase(current_batch_id_);
+     MessageProto* batch = batches_data_[current_batch_id_];
+     batches_data_.erase(current_batch_id_);
 //LOG(ERROR) <<batch->destination_node()<< ": ^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
    
      if (++current_sequence_batch_index_ >= (uint32)(current_sequence_->batch_ids_size())) {
@@ -230,7 +230,7 @@ MessageProto* GetBatch(ConnectionMultiplexer* connection) {
    } else {
      // Receive the batch data or global batch order
      MessageProto* message = new MessageProto();
-     while (connection->GotMessage("scheduler_", message)) {
+     while (connection_->GotMessage("scheduler_", message)) {
        if (message->type() == MessageProto::TXN_SUBBATCH) {
 //LOG(ERROR) << message->destination_node()<<"In scheduler:  receive a subbatch: "<<message->batch_number();
 //CHECK(message->data_size() > 0);
@@ -246,12 +246,12 @@ MessageProto* GetBatch(ConnectionMultiplexer* connection) {
 
            return message;
          } else {
-           batches_data[message->batch_number()] = message;
+           batches_data_[message->batch_number()] = message;
            message = new MessageProto();
          }
        } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
 //LOG(ERROR)<< message->destination_node()<< ":In scheduler:  receive a sequence: "<<message->misc_int(0);
-         global_batches_order[message->misc_int(0)] = message;
+         global_batches_order_[message->misc_int(0)] = message;
          message = new MessageProto();
        }
      }
@@ -260,39 +260,73 @@ MessageProto* GetBatch(ConnectionMultiplexer* connection) {
    }
 }
 
-void* DeterministicScheduler::LockManagerThread(void* arg) {
+bool  DeterministicScheduler::IsLocal(const Key& key) {
+    return configuration_->LookupPartition(key) == configuration_->relative_node_id();
+}
 
-  DeterministicScheduler* scheduler = reinterpret_cast<DeterministicScheduler*>(arg);
+//----------------------------------------------------------------  VerifyStorageCounters --------------------------------------------------------------------
+bool DeterministicScheduler::VerifyStorageCounters(TxnProto* txn, set<pair<string,uint64>>& keys) {
+  bool can_execute_now = true;
+  uint32 origin = txn->origin_replica();
 
-    // Synchronization loadgen start with other machines.
-  scheduler->connection_->NewChannel("synchronization_scheduler_channel");
+  for (int i = 0; i < txn->read_set_size(); i++) {
+    KeyEntry key_entry = txn->read_set(i);
+    if (IsLocal(key_entry.key()) && key_entry.master() == origin) {
+      pair<uint32, uint64> master_counter = storage_->GetMasterCounter(key_entry.key());
+      
+      if (key_entry.counter() > master_counter.second) {
+        keys.insert(make_pair(key_entry.key(), key_entry.counter()));
+        can_execute_now = false;    
+      }
+    }
+  }
+
+  for (int i = 0; i < txn->read_write_set_size(); i++) {
+    KeyEntry key_entry = txn->read_write_set(i);
+    if (IsLocal(key_entry.key()) && key_entry.master() == origin) {
+      pair<uint32, uint64> master_counter = storage_->GetMasterCounter(key_entry.key());
+      
+      if (key_entry.counter() > master_counter.second) {
+        keys.insert(make_pair(key_entry.key(), key_entry.counter()));
+        can_execute_now = false;    
+      }
+    }
+  }
+
+  return can_execute_now;
+}
+
+//----------------------------------------------------------------  RunLockManagerThread --------------------------------------------------------------------
+void DeterministicScheduler::RunLockManagerThread() {
+  // Synchronization loadgen start with other machines.
+  connection_->NewChannel("synchronization_scheduler_channel");
   MessageProto synchronization_message;
   synchronization_message.set_type(MessageProto::EMPTY);
   synchronization_message.set_destination_channel("synchronization_scheduler_channel");
-  for (uint64 i = 0; i < (uint64)(scheduler->configuration_->all_nodes_size()); i++) {
+  for (uint64 i = 0; i < (uint64)(configuration_->all_nodes_size()); i++) {
     synchronization_message.set_destination_node(i);
-    if (i != static_cast<uint64>(scheduler->configuration_->local_node_id())) {
-      scheduler->connection_->Send(synchronization_message);
+    if (i != static_cast<uint64>(configuration_->local_node_id())) {
+      connection_->Send(synchronization_message);
     }
   }
 
   uint32 synchronization_counter = 1;
-  while (synchronization_counter < (uint64)(scheduler->configuration_->all_nodes_size())) {
+  while (synchronization_counter < (uint64)(configuration_->all_nodes_size())) {
     synchronization_message.Clear();
-    if (scheduler->connection_->GotMessage("synchronization_scheduler_channel", &synchronization_message)) {
+    if (connection_->GotMessage("synchronization_scheduler_channel", &synchronization_message)) {
       CHECK(synchronization_message.type() == MessageProto::EMPTY);
       synchronization_counter++;
     }
   }
 
-  scheduler->connection_->DeleteChannel("synchronization_scheduler_channel");
+  connection_->DeleteChannel("synchronization_scheduler_channel");
 LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler thread.";
 
-  scheduler->start_working_ = true;
+  start_working_ = true;
 
 #ifdef LATENCY_TEST
-  uint32 local_replica = scheduler->configuration_->local_replica_id();
-  uint64 local_machine = scheduler->configuration_->local_node_id();
+  uint32 local_replica = configuration_->local_replica_id();
+  uint64 local_machine = configuration_->local_node_id();
 #endif
 
   // Run main loop.
@@ -303,15 +337,49 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
   uint64 executing_txns = 0;
   uint64 pending_txns = 0;
   int batch_offset = 0;
-  uint64 machine_id = scheduler->configuration_->local_node_id();
+  uint64 machine_id = configuration_->local_node_id();
   uint64 maximum_txns = 2000000;
   
 
   while (true) {
     TxnProto* done_txn;
-    while (scheduler->done_queue->Pop(&done_txn) == true) {
+    while (done_queue_->Pop(&done_txn) == true) {
+      // Handle remaster transactions     
+      if (mode_ == 2 && done_txn->remaster_txn() == true) {
+        uint64 txn_id = done_txn->txn_id();
+
+        KeyEntry key_entry = done_txn->read_write_set(0);
+        pair <string, uint64> key_info = make_pair(key_entry.key(), key_entry.counter()+1);
+
+        if (waiting_txns_by_key_.find(key_info) != waiting_txns_by_key_.end()) {
+          vector<TxnProto*> blocked_txns = waiting_txns_by_key_[key_info];
+
+          for (auto it = blocked_txns.begin(); it != blocked_txns.end(); it++) {
+            TxnProto* a = *it;
+            (waiting_txns_by_txnid_[txn_id]).erase(key_info);
+
+            if ((waiting_txns_by_txnid_[txn_id]).size() == 0) {
+              a->set_wait_for_remaster_pros(false);
+              waiting_txns_by_txnid_.erase(txn_id);
+
+              if (blocking_txns_[a->origin_replica()].front() == a) {
+                    ready_txns_->push_back(a); 
+                blocking_txns_[a->origin_replica()].pop();
+
+                while (!blocking_txns_[a->origin_replica()].empty() && blocking_txns_[a->origin_replica()].front()->wait_for_remaster_pros() == false) {
+                  ready_txns_->push_back(blocking_txns_[a->origin_replica()].front()); 
+                  blocking_txns_[a->origin_replica()].pop();
+                }
+              }
+            }
+          } // end for
+
+          waiting_txns_by_key_.erase(key_info);
+        } 
+      } // end  if (mode_ == 2 && done_txn->remaster_txn() == true) 
+
       // We have received a finished transaction back, release the lock
-      scheduler->lock_manager_->Release(done_txn);
+      lock_manager_->Release(done_txn);
       executing_txns--;
 
       if(done_txn->writers_size() == 0 || (rand() % done_txn->writers_size() == 0 && rand() % done_txn->involved_replicas_size() == 0)) {
@@ -342,12 +410,13 @@ LOG(ERROR) << machine_id<<": reporting latencies to " << filename;
 
     }
 #endif
+      
       delete done_txn;
     }
 
     // Have we run out of txns in our batch? Let's get some new ones.
     if (batch_message == NULL) {
-      batch_message = GetBatch(scheduler->connection_);
+      batch_message = GetBatch();
 /**if (batch_message != NULL) {
 LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(1): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
 } **/
@@ -355,36 +424,63 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(1): "<<batch_mess
     } else if (batch_offset >= batch_message->data_size()) {
         batch_offset = 0;
         delete batch_message;
-        batch_message = GetBatch(scheduler->connection_);
+        batch_message = GetBatch();
 /**if (batch_message != NULL) {
 LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
 }**/ 
     // Current batch has remaining txns, grab up to 10.
     } else if (executing_txns + pending_txns < maximum_txns) {
-//    } else {
       for (int i = 0; i < 10; i++) {
         if (batch_offset >= batch_message->data_size()) {
           // Oops we ran out of txns in this batch. Stop adding txns for now.
           break;
         }
+
         TxnProto* txn = new TxnProto();
         txn->ParseFromString(batch_message->data(batch_offset));
         batch_offset++;
 
-        scheduler->lock_manager_->Lock(txn);
+        if (mode_ == 2) {
+          blocking_txns_[txn->origin_replica()].push(txn);
+          txn->set_wait_for_remaster_pros(true);
+
+          // Check the mastership of the records without locking
+          set<pair<string,uint64>> keys;
+          bool can_execute_now = VerifyStorageCounters(txn, keys);
+          if (can_execute_now == false) {
+            // Put it into the queue and wait for the remaster action come
+            waiting_txns_by_txnid_[txn->txn_id()] = keys;
+            for (auto it = keys.begin(); it != keys.end(); it++) {
+              waiting_txns_by_key_[*it].push_back(txn);
+            }
+
+             // Working on next txn
+             continue;
+          } else {
+            txn->set_wait_for_remaster_pros(false);
+            // It is the first txn and can be executed right now
+            if (txn == blocking_txns_[txn->origin_replica()].front()) {
+              blocking_txns_[txn->origin_replica()].pop();
+            } else {
+              // Working on next txn
+              continue;
+            }
+          }
+        } // end if (mode_ == 2)
+
+        lock_manager_->Lock(txn);
         pending_txns++;
-//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a txn: "<<txn->txn_id()<<"  origin:"<<txn->origin_replica();
       }
     }
 
     // Start executing any and all ready transactions to get them off our plate
-    while (!scheduler->ready_txns_->empty()) {
-      TxnProto* txn = scheduler->ready_txns_->front();
-      scheduler->ready_txns_->pop_front();
+    while (!ready_txns_->empty()) {
+      TxnProto* txn = ready_txns_->front();
+      ready_txns_->pop_front();
       pending_txns--;
       executing_txns++;
 
-      scheduler->txns_queue->Push(txn);
+      txns_queue_->Push(txn);
 
 //LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id()<<"  origin:"<<txn->origin_replica();
     }
@@ -400,6 +496,6 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_mess
       txns = 0;
     }
   }
-  return NULL;
+  return ;
 }
 
