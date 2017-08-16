@@ -22,8 +22,8 @@ bool SimpleStorage::DeleteObject(const Key& key) {
   return true;
 }
 
-virtual pair<uint32, uint64> GetMasterCounter(const Key& key) {
+pair<uint32, uint64> SimpleStorage::GetMasterCounter(const Key& key) {
   CHECK(objects_.count(key) != 0);
   Record* record = objects_[key];
-  return make_pair(record.master, record.counter);
+  return make_pair(record->master, record->counter);
 }

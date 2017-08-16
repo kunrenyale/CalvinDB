@@ -7,7 +7,7 @@
 #define _DB_BACKEND_STORAGE_H_
 
 #include <vector>
-
+#include <utility> 
 #include "common/types.h"
 
 #define REPLICA_SIZE 3
@@ -15,6 +15,8 @@
 #define ACCESS_PATTERN_THRESHOLD  0.75
 
 using std::vector;
+using std::pair;
+using std::make_pair;
 
 struct Record {
   Record(Value v, uint32 m) : value(v), master(m), counter(0) {

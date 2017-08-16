@@ -9,6 +9,7 @@
 #include "proto/message.pb.h"
 #include "log/local_paxos.h"
 #include "machine/client.h"
+#include "backend/simple_storage.h"
 
 class LowlatencySequencer {
  public:
@@ -67,10 +68,12 @@ class LowlatencySequencer {
 
   LocalPaxos* paxos_log_;
 
+  Storage* storage_;
+
   uint32 max_batch_size_;
 
   bool start_working_;
 
-  Storage* storage_;
+
 };
 #endif  // _DB_MACHINE_LOWLATENCY_SEQUENCER_H_

@@ -10,7 +10,7 @@ SRCS := machine/cluster_config.cc \
 
 EXES := 
 
-DEPS := $(PROTO_OBJS) $(COMMON_OBJS) $(LOG_OBJS)
+DEPS := $(PROTO_OBJS) $(COMMON_OBJS) $(LOG_OBJS) $(BACKEND_OBJS)
 
 # Link the template to avoid redundancy
 include $(MAKEFILE_TEMPLATE)

@@ -9,8 +9,8 @@ message KeyEntry {
   required uint64 counter = 3;
 }
 
-message KeyMasterEntries {
-  repeated KeyMasterEntry entries = 1;
+message KeyEntries {
+  repeated KeyEntry entries = 1;
 }
 
 message TxnProto {
