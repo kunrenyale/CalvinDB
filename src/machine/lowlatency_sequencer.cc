@@ -124,141 +124,56 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
     // Collect txn requests for this epoch.
     txn_id_offset = 0;
     while (!deconstructor_invoked_ && GetTime() < epoch_start + epoch_duration_) {
-      // Add next txn request to batch.
-      if (txn_id_offset < max_batch_size_) {
-        bool got_message = connection_->GotMessage("sequencer_txn_receive_", &message);
-        if (got_message == true) {
-          if (message.type() == MessageProto::TXN_FORWORD) {
-            TxnProto txn;
-            txn.ParseFromString(message.data(0));
-            txn.set_origin_replica(local_replica);
+      // Check messages
+      bool got_message = connection_->GotMessage("sequencer_txn_receive_", &message);
+      if (got_message == true) {
+        if (message.type() == MessageProto::TXN_FORWORD) {
+          TxnProto txn;
+          txn.ParseFromString(message.data(0));
+          txn.set_origin_replica(local_replica);
           
-            //txn_id_offset++;
-            string txn_string;
-            txn.SerializeToString(&txn_string);
-            batch_message.add_data(txn_string);
-          } else if (message.type() == MessageProto::MASTER_LOOKUP_RESULT) {
-            KeyEntries remote_entries;
-            remote_entries.ParseFromString(message.data(0));
-            uint64 txn_id = message.misc_int(0);
-            TxnProto* txn = expected_master_lookups[txn_id].second;
-            uint32 expected_remote = expected_master_lookups[txn_id].first;
+          //txn_id_offset++;
+          string txn_string;
+          txn.SerializeToString(&txn_string);
+          batch_message.add_data(txn_string);
+        } else if (message.type() == MessageProto::MASTER_LOOKUP_RESULT) {
+          KeyEntries remote_entries;
+          remote_entries.ParseFromString(message.data(0));
+          uint64 txn_id = message.misc_int(0);
+          TxnProto* txn = expected_master_lookups[txn_id].second;
+          CHECK(txn != NULL);
+          uint32 expected_remote = expected_master_lookups[txn_id].first;
         
-            map<Key, KeyEntry> remote_entries_map;
-            for (uint32 j = 0; j < (uint32)remote_entries.entries_size(); j++) {
-              KeyEntry key_entry = remote_entries.entries(j);
-              remote_entries_map[key_entry.key()] = key_entry;
-            }
-
-            for (uint32 i = 0; i < (uint32)(txn->read_set_size()); i++) {
-              KeyEntry key_entry = txn->read_set(i);
-              if (remote_entries_map.find(key_entry.key()) != remote_entries_map.end()) {
-                txn->mutable_read_set(i)->set_master(remote_entries_map[key_entry.key()].master());
-                txn->mutable_read_set(i)->set_counter(remote_entries_map[key_entry.key()].counter());
-                expected_remote--;
-
-                involved_replicas[txn_id].insert(remote_entries_map[key_entry.key()].master());
-              }
-            }
-
-            for (uint32 i = 0; i < (uint32)(txn->read_write_set_size()); i++) {
-              KeyEntry key_entry = txn->read_write_set(i);
-              if (remote_entries_map.find(key_entry.key()) != remote_entries_map.end()) {
-                txn->mutable_read_write_set(i)->set_master(remote_entries_map[key_entry.key()].master());
-                txn->mutable_read_write_set(i)->set_counter(remote_entries_map[key_entry.key()].counter());
-                expected_remote--;
-
-                involved_replicas[txn_id].insert(remote_entries_map[key_entry.key()].master());
-              }
-            }
-
-            if (expected_remote == 0) {
-              expected_master_lookups.erase(txn_id);
-
-              // Add involved replicas
-              for (uint32 replica : involved_replicas[txn_id]) {
-                txn->add_involved_replicas(replica);
-              }
-              involved_replicas.erase(txn_id);
-
-              // ready to put into the batch
-              txn_id_offset++;
-              string txn_string;
-              txn->SerializeToString(&txn_string);
-
-
-              if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) == local_replica) {
-                batch_message.add_data(txn_string);
-              } else if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) != local_replica) {
-                uint64 machine_sent = txn->involved_replicas(0) * nodes_per_replica + rand() % nodes_per_replica;
-                txn_message.clear_data();
-                txn_message.add_data(txn_string);
-                txn_message.set_destination_node(machine_sent);
-                connection_->Send(txn_message);
-              } else if (txn->involved_replicas_size() > 1 && local_replica == 0) {
-                batch_message.add_data(txn_string);
-              } else {
-                uint64 machine_sent = rand() % nodes_per_replica;
-                txn_message.clear_data();
-                txn_message.add_data(txn_string);
-                txn_message.set_destination_node(machine_sent);
-                connection_->Send(txn_message);
-              }
-
-              delete txn;
-            } else {
-              expected_master_lookups[txn_id].first = expected_remote;
-            }
+          map<Key, KeyEntry> remote_entries_map;
+          for (uint32 j = 0; j < (uint32)remote_entries.entries_size(); j++) {
+            KeyEntry key_entry = remote_entries.entries(j);
+            remote_entries_map[key_entry.key()] = key_entry;
           }
-        } else {
-          TxnProto* txn;
 
-          client_->GetTxn(&txn, batch_number * max_batch_size_ + txn_id_offset);
-
-          txn->set_origin_replica(local_replica);
-
-#ifdef LATENCY_TEST
-    if (txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES) {
-      sequencer_recv[txn->txn_id()] = GetTime();
-      txn->set_generated_machine(local_machine);
-    }
-#endif
-
-          // Lookup the master
-          map<uint64, set<string>> remote_keys;
-          uint32 remote_expected = 0;
-          uint64 txn_id = txn->txn_id();
           for (uint32 i = 0; i < (uint32)(txn->read_set_size()); i++) {
             KeyEntry key_entry = txn->read_set(i);
-            uint64 mds = configuration_->LookupPartition(key_entry.key());
+            if (remote_entries_map.find(key_entry.key()) != remote_entries_map.end()) {
+              txn->mutable_read_set(i)->set_master(remote_entries_map[key_entry.key()].master());
+              txn->mutable_read_set(i)->set_counter(remote_entries_map[key_entry.key()].counter());
+              expected_remote--;
 
-            if (mds == relative_machine) {
-              pair<uint32, uint64> key_info = storage_->GetMasterCounter(key_entry.key());
-              txn->mutable_read_set(i)->set_master(key_info.first);
-              txn->mutable_read_set(i)->set_counter(key_info.second);
-              involved_replicas[txn_id].insert(key_info.first);
-            } else {
-              remote_expected++;
-              remote_keys[mds].insert(key_entry.key());
+              involved_replicas[txn_id].insert(remote_entries_map[key_entry.key()].master());
             }
           }
 
           for (uint32 i = 0; i < (uint32)(txn->read_write_set_size()); i++) {
             KeyEntry key_entry = txn->read_write_set(i);
-            uint64 mds = configuration_->LookupPartition(key_entry.key());
+            if (remote_entries_map.find(key_entry.key()) != remote_entries_map.end()) {
+              txn->mutable_read_write_set(i)->set_master(remote_entries_map[key_entry.key()].master());
+              txn->mutable_read_write_set(i)->set_counter(remote_entries_map[key_entry.key()].counter());
+              expected_remote--;
 
-            if (mds == relative_machine) {
-              pair<uint32, uint64> key_info = storage_->GetMasterCounter(key_entry.key());
-              txn->mutable_read_write_set(i)->set_master(key_info.first);
-              txn->mutable_read_write_set(i)->set_counter(key_info.second);
-              involved_replicas[txn_id].insert(key_info.first);
-            } else {
-              remote_expected++;
-              remote_keys[mds].insert(key_entry.key());
+              involved_replicas[txn_id].insert(remote_entries_map[key_entry.key()].master());
             }
           }
 
-          if (remote_expected == 0) {
+          if (expected_remote == 0) {
+            expected_master_lookups.erase(txn_id);
 
             // Add involved replicas
             for (uint32 replica : involved_replicas[txn_id]) {
@@ -270,6 +185,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
             txn_id_offset++;
             string txn_string;
             txn->SerializeToString(&txn_string);
+
 
             if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) == local_replica) {
               batch_message.add_data(txn_string);
@@ -291,30 +207,114 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
 
             delete txn;
           } else {
-            expected_master_lookups[txn_id] = make_pair(remote_expected, txn);
+            expected_master_lookups[txn_id].first = expected_remote;
+          } 
+        }
+      } // end if (got_message == true)
 
-            for(auto it = remote_keys.begin(); it != remote_keys.end();it++) {
-              // Send message to remote machines to get the mastership of remote records
-              uint64 remote_machineid = it->first;
-              set<string> keys = it->second;
-              uint64 machine_sent = configuration_->LookupMachineID(remote_machineid, local_replica);
+      // Add next txn request to batch.
+      if (txn_id_offset < max_batch_size_) {
+        TxnProto* txn;
+
+        client_->GetTxn(&txn, batch_number * max_batch_size_ + txn_id_offset);
+
+        txn->set_origin_replica(local_replica);
+
+#ifdef LATENCY_TEST
+    if (txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES) {
+      sequencer_recv[txn->txn_id()] = GetTime();
+      txn->set_generated_machine(local_machine);
+    }
+#endif
+
+        // Lookup the master
+        map<uint64, set<string>> remote_keys;
+        uint32 remote_expected = 0;
+        uint64 txn_id = txn->txn_id();
+        for (uint32 i = 0; i < (uint32)(txn->read_set_size()); i++) {
+          KeyEntry key_entry = txn->read_set(i);
+          uint64 mds = configuration_->LookupPartition(key_entry.key());
+
+          if (mds == relative_machine) {
+            // Get <master, counter> pair
+            pair<uint32, uint64> key_info = storage_->GetMasterCounter(key_entry.key());
+            txn->mutable_read_set(i)->set_master(key_info.first);
+            txn->mutable_read_set(i)->set_counter(key_info.second);
+            involved_replicas[txn_id].insert(key_info.first);
+          } else {
+            remote_expected++;
+            remote_keys[mds].insert(key_entry.key());
+          }
+        }
+
+        for (uint32 i = 0; i < (uint32)(txn->read_write_set_size()); i++) {
+          KeyEntry key_entry = txn->read_write_set(i);
+          uint64 mds = configuration_->LookupPartition(key_entry.key());
+
+          if (mds == relative_machine) {
+            // Get <master, counter> pair
+            pair<uint32, uint64> key_info = storage_->GetMasterCounter(key_entry.key());
+            txn->mutable_read_write_set(i)->set_master(key_info.first);
+            txn->mutable_read_write_set(i)->set_counter(key_info.second);
+            involved_replicas[txn_id].insert(key_info.first);
+          } else {
+            remote_expected++;
+            remote_keys[mds].insert(key_entry.key());
+          }
+        }
+
+        if (remote_expected == 0) {
+          // Add involved replicas
+          for (uint32 replica : involved_replicas[txn_id]) {
+            txn->add_involved_replicas(replica);
+          }
+          involved_replicas.erase(txn_id);
+
+          // ready to put into the batch
+          txn_id_offset++;
+          string txn_string;
+          txn->SerializeToString(&txn_string);
+
+          if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) == local_replica) {
+            batch_message.add_data(txn_string);
+          } else if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) != local_replica) {
+            uint64 machine_sent = txn->involved_replicas(0) * nodes_per_replica + rand() % nodes_per_replica;
+            txn_message.clear_data();
+            txn_message.add_data(txn_string);
+            txn_message.set_destination_node(machine_sent);
+            connection_->Send(txn_message);
+          } else if (txn->involved_replicas_size() > 1 && local_replica == 0) {
+            batch_message.add_data(txn_string);
+          } else {
+            uint64 machine_sent = rand() % nodes_per_replica;
+            txn_message.clear_data();
+            txn_message.add_data(txn_string);
+            txn_message.set_destination_node(machine_sent);
+            connection_->Send(txn_message);
+          }
+
+          delete txn;
+        } else {
+          expected_master_lookups[txn_id] = make_pair(remote_expected, txn);
+
+          for(auto it = remote_keys.begin(); it != remote_keys.end();it++) {
+            // Send message to remote machines to get the mastership of remote records
+            uint64 remote_machineid = it->first;
+            set<string> keys = it->second;
+            uint64 machine_sent = configuration_->LookupMachineID(remote_machineid, local_replica);
    
-              master_lookup_message.clear_misc_int();
-              master_lookup_message.clear_misc_string();
-              master_lookup_message.set_destination_node(machine_sent);
-              master_lookup_message.add_misc_int(txn_id);
-              master_lookup_message.add_misc_int(keys.size());
-              for (auto it2 = keys.begin(); it2 != keys.end(); it2++) {
-                master_lookup_message.add_misc_string(*it2);
-              }
-              connection_->Send(master_lookup_message);
-            } // end for
-          } // end if (remote_expected == 0) 
-
-        } // end if (got_message == true)
-      } else {
-        usleep(50);
-      }
+            master_lookup_message.clear_misc_int();
+            master_lookup_message.clear_misc_string();
+            master_lookup_message.set_destination_node(machine_sent);
+            master_lookup_message.add_misc_int(txn_id);
+            master_lookup_message.add_misc_int(keys.size());
+            for (auto it2 = keys.begin(); it2 != keys.end(); it2++) {
+              master_lookup_message.add_misc_string(*it2);
+            }
+            connection_->Send(master_lookup_message);
+          } // end for
+        } // end if (remote_expected == 0) 
+      }  //if (txn_id_offset < max_batch_size_)
     }
 
 //LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  batch size:"<<(uint32)(batch_message.data_size());
@@ -468,6 +468,7 @@ void LowlatencySequencer::RunReader() {
         uint64 batch_id = message.misc_int(0);
         paxos_log_->Append(batch_id);
       } else if (message.type() == MessageProto::MASTER_LOOKUP) {
+        // Lookup local KeyEntries and sent it back
         KeyEntries local_entries;
         uint64 txn_id = message.misc_int(0);
         uint32 cnt = message.misc_int(1);
