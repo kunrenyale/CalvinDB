@@ -60,9 +60,10 @@ message TxnProto {
 
 //------- Below is for remaster transactions
   optional bool remaster_txn = 54 [default = false];
-  optional uint32 remaster_from = 55 [default = 99999];
-  optional uint32 remaster_to = 56 [default = 99999];
-  optional bool wait_for_remaster_pros = 57 [default = false];
+  optional uint32 client_replica = 55;
+  optional uint32 remaster_from = 56 [default = 99999];
+  optional uint32 remaster_to = 57 [default = 99999];
+  optional bool wait_for_remaster_pros = 58 [default = false];
 
   // Also should take some information about which records will be remaster
   // This is to measure latency

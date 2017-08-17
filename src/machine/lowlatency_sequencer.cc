@@ -219,6 +219,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
         client_->GetTxn(&txn, batch_number * max_batch_size_ + txn_id_offset);
 
         txn->set_origin_replica(local_replica);
+        txn->set_client_replica(local_replica);
 
 #ifdef LATENCY_TEST
     if (txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES) {
