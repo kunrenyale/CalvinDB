@@ -88,8 +88,6 @@ void* DeterministicScheduler::WorkerThread(void *arg) {
 void DeterministicScheduler::RunWorkerThread(uint32 thread) {
   unordered_map<string, StorageManager*> active_txns;
 
-//unordered_map<string, double> time_measure;
-
   string channel("scheduler");
   channel.append(IntToString(thread));
 
@@ -102,33 +100,64 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
   while (true) {
     bool got_message = connection_->GotMessage(channel, &message);
     if (got_message == true) {
-      // Remote read result.
-      CHECK(message.type() == MessageProto::READ_RESULT);
-      CHECK(active_txns.count(message.destination_channel()) > 0);
-      StorageManager* manager = active_txns[message.destination_channel()];
-      manager->HandleReadResult(message);
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) <<configuration_->local_node_id()<< ":In worker: received remote read: "<<manager->txn_->txn_id()<<"   origin:"<<manager->txn_->origin_replica()<<"   time:"<<(GetTime() - time_measure[message.destination_channel()])*1000;
-//time_measure.erase(message.destination_channel());
-      if (manager->ReadyToExecute()) {
-        // Execute and clean up.
-        TxnProto* txn = manager->txn_;
-        application_->Execute(txn, manager);
-        delete manager;
+      if (message.type() == MessageProto::READ_RESULT) {
+        // Remote read result.
+        CHECK(active_txns.count(message.destination_channel()) > 0);
+        StorageManager* manager = active_txns[message.destination_channel()];
+        manager->HandleReadResult(message);
 
-        connection_->UnlinkChannel(message.destination_channel());
-        active_txns.erase(message.destination_channel());
-        // Respond to scheduler;
-        done_queue_->Push(txn);
-/**if (configuration_->local_node_id() == 2 || configuration_->local_node_id() == 3)
-LOG(ERROR) <<configuration_->local_node_id()<< ":In worker: finish "<<txn->txn_id();**/
+        if (manager->ReadyToExecute()) {
+          // Execute and clean up.
+          TxnProto* txn = manager->txn_;
+          application_->Execute(txn, manager);
+          delete manager;
+
+          connection_->UnlinkChannel(message.destination_channel());
+          active_txns.erase(message.destination_channel());
+
+          // Respond to scheduler;
+          txn->set_status(TxnProto::COMMITTED);
+          done_queue_->Push(txn);
+        }
+      } else if (message.type() == MessageProto::LOCAL_ENTRIES_TO_MIM_MACHINE) {
+        // message sent from non-min machines to min-machine
+        CHECK(active_txns.count(message.destination_channel()) > 0);
+        StorageManager* manager = active_txns[message.destination_channel()];
+        manager->HandleRemoteEntries(message);
+
+        if (manager->AbortTxn()) {
+          connection_->UnlinkChannel(message.destination_channel());
+          active_txns.erase(message.destination_channel());
+          // Respond to scheduler;
+
+          manager->txn_->set_status(TxnProto::ABORTED);
+          done_queue_->Push(manager->txn_);
+          delete manager;     
+        }
+        
+      } else if (message.type() == MessageProto::COMMIT_OR_ABORT_DECISION) {
+        // min-machine sent decision messages to all non-min machines
+        CHECK(active_txns.count(message.destination_channel()) > 0);
+        StorageManager* manager = active_txns[message.destination_channel()];
+
+        bool commit = message.misc_bool(0);
+        if (commit == true) {
+          manager->SendLocalResults();
+        } else {
+          connection_->UnlinkChannel(message.destination_channel());
+          active_txns.erase(message.destination_channel());
+          // Respond to scheduler;
+
+          manager->txn_->set_status(TxnProto::ABORTED);
+          done_queue_->Push(manager->txn_);
+          delete manager;        
+        }
       }
     } else {
       // No remote read result found, start on next txn if one is waiting.
       TxnProto* txn;
       bool got_it = txns_queue_->Pop(&txn);
       if (got_it == true) {
-//LOG(ERROR) <<configuration_->local_node_id()<< ":----In worker: find "<<txn->txn_id();
         // Create manager.
         StorageManager* manager = new StorageManager(configuration_,
                                       connection_,
@@ -141,14 +170,13 @@ LOG(ERROR) <<configuration_->local_node_id()<< ":In worker: finish "<<txn->txn_i
           delete manager;
 
           // Respond to scheduler;
+          txn->set_status(TxnProto::COMMITTED);
           done_queue_->Push(txn);
         } else {
-//LOG(ERROR) <<configuration_->local_node_id()<< ":~~~~~~~~~~~~~~~In worker: not ready  "<<txn->txn_id()<<"   origin:"<<txn->origin_replica();
           string origin_channel = IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica());
           connection_->LinkChannel(origin_channel, channel);
           // There are outstanding remote reads.
           active_txns[origin_channel] = manager;
-//time_measure[origin_channel] = GetTime();
         }
       }
     }
@@ -382,7 +410,8 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
       lock_manager_->Release(done_txn);
       executing_txns--;
 
-      if(done_txn->writers_size() == 0 || (rand() % done_txn->writers_size() == 0 && rand() % done_txn->involved_replicas_size() == 0)) {
+      if((done_txn->status() == TxnProto::COMMITTED) && 
+         (done_txn->writers_size() == 0 || (rand() % done_txn->writers_size() == 0 && rand() % done_txn->involved_replicas_size() == 0))) {
         txns++;       
       }
 //LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id()<<"  origin:"<<done_txn->origin_replica();

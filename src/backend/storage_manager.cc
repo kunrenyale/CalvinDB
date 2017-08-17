@@ -3,6 +3,16 @@
 
 #include "backend/storage_manager.h"
 
+// Compares two pairs
+bool ComparePair(pair<uint64, uint32> p1, pair<uint64, uint32> p2)
+{  
+    if (p1.first != p2.first) {
+      return (p1.first - p2.first);
+    } else {
+      return (p1.second - p2.second);
+    }
+}
+
 StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* connection,
                                Storage* actual_storage, TxnProto* txn, uint32 mode)
     : configuration_(config), connection_(connection),
@@ -12,7 +22,8 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
   // If reads are performed at this node, execute local reads and broadcast
   // results to all (other) writers.
   set<uint64> writers;
-  uint32 origin = txn->origin_replica();
+  txn_origin_replica_ = txn->origin_replica();
+  commit_ = true;
 
   bool reader = false;
   for (int i = 0; i < txn->readers_size(); i++) {
@@ -30,10 +41,10 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
       uint64 mds = configuration_->LookupPartition(key);
       
       if (mode_ == 2) {
-        involved_machines_.insert(mds);     
+        involved_machines_.push_back(make_pair(mds, key_entry.master()));     
       }
 
-      if (mode_ != 0 && key_entry.master() != origin) {
+      if (mode_ != 0 && key_entry.master() != txn_origin_replica_) {
         continue;
       }
 
@@ -60,15 +71,15 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
       writers.insert(mds);
       
       if (mode_ == 2) {
-        involved_machines_.insert(mds);     
+        involved_machines_.push_back(make_pair(mds, key_entry.master())); 
       }
 
       uint32 replica_id = key_entry.master();
-      if (mode_ != 0 && replica_id != origin) {
+      if (mode_ != 0 && replica_id != txn_origin_replica_) {
         remote_replica_writers_.insert(make_pair(mds, replica_id));
         continue;
       } else if (mode_ != 0 && mds != relative_node_id_) {
-        remote_replica_writers_.insert(make_pair(mds, origin));
+        remote_replica_writers_.insert(make_pair(mds, txn_origin_replica_));
         continue;
       }
 
@@ -90,7 +101,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
 
     if (mode_ == 0) {
       // Original CalvinDB: Broadcast local reads to (other) writers.
-      remote_result_message_.set_destination_channel(IntToString(txn->txn_id()) + "-" + IntToString(origin));
+      remote_result_message_.set_destination_channel(IntToString(txn->txn_id()) + "-" + IntToString(txn_origin_replica_));
       for (set<uint64>::iterator it = writers.begin(); it != writers.end(); ++it) {
         if (*it != relative_node_id_) {
           remote_result_message_.set_destination_node(configuration_->LookupMachineID(*it, configuration_->local_replica_id()));
@@ -109,13 +120,19 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
       }
     } else {
       // Request chopping with remaster: do the one-phase commit protocol
-      min_involved_machine_ = *(involved_machines_.begin());
-      if (min_involved_machine_ != relative_node_id_) {
+      sort(involved_machines_.begin(), involved_machines_.end(), ComparePair);
+      
+      min_involved_machine_ = (involved_machines_.begin())->first;
+      min_involved_machine_origin_ = (involved_machines_.begin())->second;
+
+      if (min_involved_machine_ != relative_node_id_ || ((min_involved_machine_ == relative_node_id_) && min_involved_machine_origin_ != txn_origin_replica_)) {
         // non-min machine: sent local entries to min machine
         uint64 machine_sent = configuration_->LookupMachineID(min_involved_machine_, local_replica_id_);
 
         local_key_entries_message_.set_type(MessageProto::LOCAL_ENTRIES_TO_MIM_MACHINE);
-        local_key_entries_message_.set_destination_channel(destination_channel); // TODO:
+
+        string destination_channel = IntToString(txn->txn_id()) + "-" + IntToString(min_involved_machine_origin_);
+        local_key_entries_message_.set_destination_channel(destination_channel);
         local_key_entries_message_.set_destination_node(machine_sent);
 
         string local_entries_string;
@@ -146,6 +163,117 @@ void StorageManager::HandleReadResult(const MessageProto& message) {
   }
 }
 
+void StorageManager::HandleRemoteEntries(const MessageProto& message) {
+  CHECK(message.type() == MessageProto::LOCAL_ENTRIES_TO_MIM_MACHINE);
+
+  KeyEntries remote_entries;
+  remote_entries.ParseFromString(message.data(0));
+  for (uint32 i = 0; i < (uint32)remote_entries.entries_size(); i++) {
+    KeyEntry* key_entry = local_entries_.add_entries();
+    key_entry->set_key(remote_entries.entries(i).key());
+    key_entry->set_master(remote_entries.entries(i).master());
+    key_entry->set_counter(remote_entries.entries(i).counter());
+  }
+
+  if (local_entries_.entries_size() == txn_->read_set_size() + txn_->read_write_set_size()) {
+    // Received all remote entries. check whether commit the txn or abort it
+    set<uint32> involved_replicas;
+    for (uint32 i = 0; i < (uint32)local_entries_.entries_size(); i++) {
+      KeyEntry key_entry = local_entries_.entries(i);
+      records_in_storege_[key_entry.key()] = make_pair(key_entry.master(), key_entry.counter());
+      involved_replicas.insert(key_entry.master());
+    }
+
+    for (int i = 0; i < txn_->read_set_size(); i++) {
+      KeyEntry key_entry = txn_->read_set(i);
+      pair<uint32, uint64> map_counter = records_in_storege_[key_entry.key()];
+      if (key_entry.master() != map_counter.first || key_entry.counter() != map_counter.second) {
+        commit_ = false;
+   
+        // update to the latest master/counter
+        txn_->mutable_read_set(i)->set_master(map_counter.first);
+        txn_->mutable_read_set(i)->set_counter(map_counter.second);
+      }
+    }
+
+    for (int i = 0; i < txn_->read_write_set_size(); i++) {
+      KeyEntry key_entry = txn_->read_write_set(i);
+      pair<uint32, uint64> map_counter = records_in_storege_[key_entry.key()];
+      if (key_entry.master() != map_counter.first || key_entry.counter() != map_counter.second) {
+        commit_ = false;
+   
+        // update to the latest master/counter
+        txn_->mutable_read_write_set(i)->set_master(map_counter.first);
+        txn_->mutable_read_write_set(i)->set_counter(map_counter.second);
+      }     
+    }
+    
+    //send decisions to all non-min machines; 
+    MessageProto abort_or_commit_decision_message_;
+    abort_or_commit_decision_message_.set_type(MessageProto::COMMIT_OR_ABORT_DECISION);
+    for (auto machine : involved_machines_) {
+      if (machine.first == relative_node_id_ && machine.second == txn_origin_replica_) {
+        continue;
+      }
+
+      uint64 machine_sent = configuration_->LookupMachineID(machine.first, local_replica_id_);
+      string destination_channel = IntToString(txn_->txn_id()) + "-" + IntToString(machine.second);
+      abort_or_commit_decision_message_.set_destination_channel(destination_channel);
+      abort_or_commit_decision_message_.set_destination_node(machine_sent);
+      abort_or_commit_decision_message_.clear_misc_bool();
+      abort_or_commit_decision_message_.add_misc_bool(commit_);
+      connection_->Send(abort_or_commit_decision_message_); 
+    }
+
+    if (commit_ == true) {
+      // commit this txns: begin sending out local reads to other writers
+      SendLocalResults();
+    } else {
+      // abort the txn and send it to the related replica.
+      txn_->clear_involved_replicas();
+      for (auto replica : involved_replicas) {
+        txn_->add_involved_replicas(replica);
+      }
+
+      MessageProto forward_txn_message_;
+      forward_txn_message_.set_destination_channel("sequencer_txn_receive_");
+      forward_txn_message_.set_type(MessageProto::TXN_FORWORD);
+
+      string txn_string;
+      txn_->SerializeToString(&txn_string);
+
+      if (txn_->involved_replicas_size() == 1) {
+        uint64 machine_sent = txn_->involved_replicas(0) * configuration_->nodes_per_replica() + rand() % configuration_->nodes_per_replica();
+        forward_txn_message_.clear_data();
+        forward_txn_message_.add_data(txn_string);
+        forward_txn_message_.set_destination_node(machine_sent);
+        connection_->Send(forward_txn_message_);
+      } else {
+        uint64 machine_sent = rand() % configuration_->nodes_per_replica();
+        forward_txn_message_.clear_data();
+        forward_txn_message_.add_data(txn_string);
+        forward_txn_message_.set_destination_node(machine_sent);
+        connection_->Send(forward_txn_message_);     
+      }
+    }
+    
+  }
+}
+
+void StorageManager::SendLocalResults() {
+  for (auto remote_writer : remote_replica_writers_) {
+    uint64 mds = remote_writer.first;
+    uint64 replica = remote_writer.second;
+    string destination_channel = IntToString(txn_->txn_id()) + "-" + IntToString(replica);
+    remote_result_message_.set_destination_channel(destination_channel);
+    remote_result_message_.set_destination_node(configuration_->LookupMachineID(mds, configuration_->local_replica_id()));
+    connection_->Send(remote_result_message_);        
+  }
+}
+
+bool StorageManager::AbortTxn() {
+  return commit_ == false;
+}
 bool StorageManager::ReadyToExecute() {
 //LOG(ERROR) <<configuration_->local_node_id()<< ":^^^^^^^^^ In StorageManager: bojects size is:  "<<static_cast<int>(objects_.size());
   return static_cast<int>(objects_.size()) == txn_->read_set_size() + txn_->read_write_set_size();
