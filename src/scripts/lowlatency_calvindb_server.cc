@@ -17,6 +17,7 @@ DEFINE_bool(calvin_version, false, "Print Calvin version information");
 DEFINE_string(binary, "lowlatency_calvindb_server", "Lowlatency Calvin binary executable program");
 DEFINE_string(config, "calvin.conf", "conf file of Calvin cluster");
 DEFINE_int32(machine_id, 0, "machine id");
+DEFINE_int32(mode, 0, "0: Origin CalvinDB; 1: Low latency CalvinDB; 2; Low latency CalvinDB with access pattern remaster");
 DEFINE_int32(experiment, 0, "the experiment that you want to run, default is microbenchmark");
 DEFINE_int32(percent_mp, 0, "percent of distributed txns");
 DEFINE_int32(percent_mr, 0, "percent of multi-replica txns");
@@ -95,7 +96,7 @@ int main(int argc, char** argv) {
                                      storage,
                                      application,
                                      multiplexer,
-                                     1);
+                                     FLAGS_mode);
   } else {
     // Other benchmark
   }

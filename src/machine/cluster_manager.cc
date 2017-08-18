@@ -122,7 +122,7 @@ void ClusterManager::DeployCluster(int experiment, int percent_mp, int percent_m
     string* ssh_command = new string(
          "ssh " + ssh_key(it->first)  + " "+ ssh_username_ + "@" + it->second.host() +
          "  'cd " + calvin_path_ + "; " + " bin/scripts/" + binary_ +
-         " --machine_id=" + IntToString(it->second.id()) +
+         " --machine_id=" + IntToString(it->second.id()) + " --mode=" + IntToString(mode_) +
          "  --config=" + config_file_ + " --experiment=" + IntToString(experiment) + " --percent_mp=" + IntToString(percent_mp) + " --percent_mr=" + IntToString(percent_mr) + 
          " --hot_records=" + IntToString(hot_records) + " --max_batch_size=" + IntToString(max_batch_size) + " ' &");
 
