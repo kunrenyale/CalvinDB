@@ -70,6 +70,8 @@ class StorageManager {
   // this node.
   bool writer;
 
+  uint32 mode_;
+
 // private:
   friend class DeterministicScheduler;
 
@@ -95,8 +97,6 @@ class StorageManager {
   uint64 relative_node_id_;
 
   uint32 local_replica_id_;
-
-  uint32 mode_;
 
   // For request chopping algorithm: pair<mds, replica_id>
   set<pair<uint64, uint32>> remote_replica_writers_;

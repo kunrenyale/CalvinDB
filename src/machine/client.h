@@ -48,7 +48,7 @@ class Client {
 class MClient : public Client {
  public:
   MClient(ClusterConfig* config, uint32 mp, uint32 hot_records)
-      : microbenchmark(config->nodes_per_replica(), hot_records, config->replicas_size()), config_(config), percent_mp_(mp),
+      : microbenchmark(config, hot_records), config_(config), percent_mp_(mp),
         nodes_per_replica_(config->nodes_per_replica()), replative_node_id_(config->relative_node_id()) {
   }
   virtual ~MClient() {}
@@ -78,7 +78,7 @@ class MClient : public Client {
 class Lowlatency_MClient : public Client {
  public:
   Lowlatency_MClient(ClusterConfig* config, uint32 mp, uint32 mr, uint32 hot_records)
-      : microbenchmark(config->nodes_per_replica(), hot_records, config->replicas_size()), config_(config), percent_mp_(mp), percent_mr_(mr),
+      : microbenchmark(config, hot_records), config_(config), percent_mp_(mp), percent_mr_(mr),
         nodes_per_replica_(config->nodes_per_replica()), replative_node_id_(config->relative_node_id()) {
     local_replica_ = config_->local_replica_id();
     num_replicas_ = config_->replicas_size();

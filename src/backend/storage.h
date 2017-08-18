@@ -11,8 +11,8 @@
 #include "common/types.h"
 
 #define REPLICA_SIZE 3
-#define LAST_N_TOUCH 1000
-#define ACCESS_PATTERN_THRESHOLD  0.75
+#define LAST_N_TOUCH 200
+#define ACCESS_PATTERN_THRESHOLD  0.80
 
 using std::vector;
 using std::pair;
@@ -23,6 +23,8 @@ struct Record {
     for (uint32 i = 0; i < REPLICA_SIZE; i++) {
       access_pattern[i] = 0;
     }
+    remastering = false;
+    access_cnt = 0;
   }
 
   // The actual value
@@ -32,6 +34,8 @@ struct Record {
 
   // access pattern
   uint32 access_pattern[REPLICA_SIZE];
+  bool remastering;
+  uint32 access_cnt;
 
 };
 

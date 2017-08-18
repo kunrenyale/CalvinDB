@@ -11,6 +11,8 @@
 #include <string>
 
 #include "applications/application.h"
+#include "machine/cluster_config.h"
+#include "machine/connection.h"
 
 using std::set;
 using std::string;
@@ -27,10 +29,22 @@ class Microbenchmark : public Application {
     MICROTXN_MRMP = 6,
   };
 
-  Microbenchmark(uint32 nodecount, uint32 hotcount, uint32 replicas) {
-    nparts = nodecount;
+  Microbenchmark(ClusterConfig* conf, uint32 hotcount) {
+    nparts = conf->nodes_per_replica();
     hot_records = hotcount;
-    replica_size = replicas;
+    replica_size = conf->replicas_size();
+    config_ = conf;
+    local_replica_ = config_->local_replica_id();
+  }
+
+  Microbenchmark(ClusterConfig* conf, ConnectionMultiplexer* multiplexer, uint32 hotcount) {
+    nparts = conf->nodes_per_replica();
+    hot_records = hotcount;
+    replica_size = conf->replicas_size();
+    config_ = conf;
+    local_replica_ = config_->local_replica_id();
+
+    connection_ = multiplexer;
   }
 
   virtual ~Microbenchmark() {}
@@ -50,6 +64,11 @@ class Microbenchmark : public Application {
   uint32 nparts;
   uint32 hot_records;
   uint32 replica_size;
+
+  ClusterConfig* config_;
+  uint32 local_replica_;
+  ConnectionMultiplexer* connection_;
+
   static const uint32 kRWSetSize = 10;  // MUST BE EVEN
   static const uint64 kDBSize = 10000000;
   static const uint32 kRecordSize = 100;
