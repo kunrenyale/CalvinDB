@@ -16,7 +16,7 @@ bool ComparePair(pair<uint64, uint32> p1, pair<uint64, uint32> p2)
 StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* connection,
                                Storage* actual_storage, TxnProto* txn, uint32 mode)
     : configuration_(config), connection_(connection),
-      actual_storage_(actual_storage), txn_(txn), relative_node_id_(config->relative_node_id()), mode_(mode) {
+      actual_storage_(actual_storage), txn_(txn), mode_(mode), relative_node_id_(config->relative_node_id()){
   local_replica_id_ = config->local_replica_id();
 
   // If reads are performed at this node, execute local reads and broadcast
@@ -125,7 +125,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
       min_involved_machine_ = (involved_machines_.begin())->first;
       min_involved_machine_origin_ = (involved_machines_.begin())->second;
 
-      if (min_involved_machine_ != relative_node_id_ || ((min_involved_machine_ == relative_node_id_) && min_involved_machine_origin_ != txn_origin_replica_)) {
+      if (!(min_involved_machine_ == relative_node_id_ && min_involved_machine_origin_ == txn_origin_replica_)) {
         // non-min machine: sent local entries to min machine
         uint64 machine_sent = configuration_->LookupMachineID(min_involved_machine_, local_replica_id_);
 

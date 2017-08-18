@@ -128,15 +128,16 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
       bool got_message = connection_->GotMessage("sequencer_txn_receive_", &message);
       if (got_message == true) {
         if (message.type() == MessageProto::TXN_FORWORD) {
+          // Got forwarded txn message
           TxnProto txn;
           txn.ParseFromString(message.data(0));
           txn.set_origin_replica(local_replica);
           
-          //txn_id_offset++;
           string txn_string;
           txn.SerializeToString(&txn_string);
           batch_message.add_data(txn_string);
         } else if (message.type() == MessageProto::MASTER_LOOKUP_RESULT) {
+          // Got master lookup result message
           KeyEntries remote_entries;
           remote_entries.ParseFromString(message.data(0));
           uint64 txn_id = message.misc_int(0);
@@ -182,7 +183,6 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
             involved_replicas.erase(txn_id);
 
             // ready to put into the batch
-            txn_id_offset++;
             string txn_string;
             txn->SerializeToString(&txn_string);
 
@@ -220,6 +220,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
 
         txn->set_origin_replica(local_replica);
         txn->set_client_replica(local_replica);
+        txn_id_offset++;
 
 #ifdef LATENCY_TEST
     if (txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES) {
@@ -227,17 +228,17 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
       txn->set_generated_machine(local_machine);
     }
 #endif
-
-        // Lookup the master
+        // Lookup the masters for keys
         map<uint64, set<string>> remote_keys;
         uint32 remote_expected = 0;
         uint64 txn_id = txn->txn_id();
+
         for (uint32 i = 0; i < (uint32)(txn->read_set_size()); i++) {
           KeyEntry key_entry = txn->read_set(i);
           uint64 mds = configuration_->LookupPartition(key_entry.key());
 
           if (mds == relative_machine) {
-            // Get <master, counter> pair
+            // Get <master, counter> pair for local keys
             pair<uint32, uint64> key_info = storage_->GetMasterCounter(key_entry.key());
             txn->mutable_read_set(i)->set_master(key_info.first);
             txn->mutable_read_set(i)->set_counter(key_info.second);
@@ -253,7 +254,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
           uint64 mds = configuration_->LookupPartition(key_entry.key());
 
           if (mds == relative_machine) {
-            // Get <master, counter> pair
+            // Get <master, counter> pair for local keys
             pair<uint32, uint64> key_info = storage_->GetMasterCounter(key_entry.key());
             txn->mutable_read_write_set(i)->set_master(key_info.first);
             txn->mutable_read_write_set(i)->set_counter(key_info.second);
@@ -264,6 +265,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
           }
         }
 
+        // All keys are on local machine
         if (remote_expected == 0) {
           // Add involved replicas
           for (uint32 replica : involved_replicas[txn_id]) {
@@ -272,7 +274,6 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
           involved_replicas.erase(txn_id);
 
           // ready to put into the batch
-          txn_id_offset++;
           string txn_string;
           txn->SerializeToString(&txn_string);
 

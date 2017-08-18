@@ -158,7 +158,7 @@ TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint64 part, uint32 replica
 
   // Set the transaction's standard attributes
   txn->set_txn_id(txn_id);
-  txn->set_txn_type(MICROTXN_SRSP);
+  txn->set_txn_type(MICROTXN_SP);
 
 //if (replica == 0)
 //LOG(ERROR) << ": In Microbenchmark::MicroTxnSRSP:  1";
@@ -223,7 +223,7 @@ TxnProto* Microbenchmark::MicroTxnSRMP(int64 txn_id, uint64 part1, uint64 part2,
 
   // Set the transaction's standard attributes
   txn->set_txn_id(txn_id);
-  txn->set_txn_type(MICROTXN_SRMP);
+  txn->set_txn_type(MICROTXN_MP);
 
   // Add two hot keys to read/write set---one in each partition.
   uint64 hotkey_order1 = (rand() % (hot_records/replica_size)) * replica_size + replica;
@@ -288,7 +288,7 @@ TxnProto* Microbenchmark::MicroTxnMRSP(int64 txn_id, uint64 part, uint32 replica
 
   // Set the transaction's standard attributes
   txn->set_txn_id(txn_id);
-  txn->set_txn_type(MICROTXN_MRSP);
+  txn->set_txn_type(MICROTXN_SP);
 
   if (replica1 > replica2) {
     uint32 tmp = replica1;
@@ -365,7 +365,7 @@ TxnProto* Microbenchmark::MicroTxnMRMP(int64 txn_id, uint64 part1, uint64 part2,
 
   // Set the transaction's standard attributes
   txn->set_txn_id(txn_id);
-  txn->set_txn_type(MICROTXN_MRMP);
+  txn->set_txn_type(MICROTXN_MP);
 
   if (replica1 > replica2) {
     uint32 tmp = replica1;
@@ -469,7 +469,7 @@ int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {
   // Normal txns, read the record and do some computations
   double factor = 1.0;
   uint32 txn_type = txn->txn_type();
-  if (txn_type == MICROTXN_MP || txn_type == MICROTXN_SRMP || txn_type == MICROTXN_MRSP || txn_type == MICROTXN_MRMP) {
+  if (txn_type == MICROTXN_MP || (txn_type == MICROTXN_SP && txn->involved_replicas_size() > 1)) {
     factor = 2.0;
   }
   double execution_start = GetTime();
@@ -481,7 +481,7 @@ int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {
     //   storage->PutObject(txn->read_write_set(i), val);
   
     // Check whether we need to remaster this record
-    if (storage->mode_ == 2 && local_replica_ == val->master && val->remastering == false) {
+    if (storage->GetMode() == 2 && local_replica_ == val->master && val->remastering == false) {
       val->access_pattern[txn->client_replica()] = val->access_pattern[txn->client_replica()] + 1;
       if (txn->client_replica() != local_replica_ && val->access_pattern[txn->client_replica()]/(LAST_N_TOUCH*1.0) > ACCESS_PATTERN_THRESHOLD) {
         // Reach the threadhold, do the remaster

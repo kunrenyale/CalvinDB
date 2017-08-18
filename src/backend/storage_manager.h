@@ -66,11 +66,11 @@ class StorageManager {
 
   Storage* GetStorage() { return actual_storage_; }
 
+  uint32 GetMode() {return mode_;}
+
   // Set by the constructor, indicating whether 'txn' involves any writes at
   // this node.
   bool writer;
-
-  uint32 mode_;
 
 // private:
   friend class DeterministicScheduler;
@@ -86,6 +86,8 @@ class StorageManager {
 
   // Transaction that corresponds to this instance of a StorageManager.
   TxnProto* txn_;
+
+  uint32 mode_;
 
   // Local copy of all data objects read/written by 'txn_', populated at
   // StorageManager construction time.
