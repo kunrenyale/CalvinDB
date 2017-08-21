@@ -68,8 +68,17 @@ message TxnProto {
   // Also should take some information about which records will be remaster
   // This is to measure latency
   optional uint64 generated_machine = 64 [default = 1000];
-
-
 }
+
+message LookupMasterEntry {
+  required uint64 txn_id = 1;
+  repeated bytes keys = 2;
+}
+
+message LookupMasterResultEntry {
+  required uint64 txn_id = 1;
+  repeated KeyEntry key_entries = 2;
+}
+
 
 
