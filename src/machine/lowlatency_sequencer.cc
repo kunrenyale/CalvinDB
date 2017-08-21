@@ -173,9 +173,8 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
             }
           }
 
-CHECK(expected_remote == 0);
           if (expected_remote == 0) {
-LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  received all master info;";
+//LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  received all master info;";
             expected_master_lookups.erase(txn_id);
 
             // Add involved replicas
@@ -321,7 +320,7 @@ LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  rece
       }  //if (txn_id_offset < max_batch_size_)
     }
 
-LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  batch size:"<<(uint32)(batch_message.data_size());
+//LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  batch size:"<<(uint32)(batch_message.data_size());
     if (batch_message.data_size() == 0) {
       continue;
     } 
