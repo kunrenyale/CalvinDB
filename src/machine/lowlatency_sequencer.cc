@@ -195,6 +195,8 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
               string txn_string;
               txn->SerializeToString(&txn_string);
 
+CHECK(txn->involved_replicas_size() == 1 && txn->involved_replicas(0) == local_replica);
+
               if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) == local_replica) {
                 batch_message.add_data(txn_string);
               } else if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) != local_replica) {
@@ -268,6 +270,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
             txn->mutable_read_write_set(i)->set_master(key_info.first);
             txn->mutable_read_write_set(i)->set_counter(key_info.second);
             involved_replicas[txn_id].insert(key_info.first);
+CHECK(key_info.first == local_replica);
           } else {
             remote_expected++;
             remote_keys[mds].insert(key_entry.key());
@@ -275,7 +278,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
         }
 
         // All keys are on local machine
-        if (true) {
+        if (remote_expected == 0) {
         //if (remote_expected == 0) {
           // Add involved replicas
           for (uint32 replica : involved_replicas[txn_id]) {
@@ -287,6 +290,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
           string txn_string;
           txn->SerializeToString(&txn_string);
 
+CHECK(txn->involved_replicas_size() == 1 && txn->involved_replicas(0) == local_replica);
           if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) == local_replica) {
             batch_message.add_data(txn_string);
           } else if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) != local_replica) {
