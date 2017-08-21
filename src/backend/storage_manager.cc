@@ -2,6 +2,7 @@
 //
 
 #include "backend/storage_manager.h"
+#include <algorithm> 
 
 // Compares two pairs
 bool ComparePair(pair<uint64, uint32> p1, pair<uint64, uint32> p2)
