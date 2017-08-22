@@ -16,6 +16,8 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
   txn_origin_replica_ = txn->origin_replica();
   commit_ = true;
 
+  reached_decision_ = false;
+
   bool reader = false;
   for (int i = 0; i < txn->readers_size(); i++) {
     if (txn->readers(i) == relative_node_id_)
@@ -228,11 +230,9 @@ void StorageManager::HandleRemoteEntries(const MessageProto& message) {
       connection_->Send(abort_or_commit_decision_message_); 
     }
 
-    if (commit_ == true) {
-      // commit this txns: begin sending out local reads to other writers
-      SendLocalResults();
-//LOG(ERROR) << configuration_->local_node_id()<<" :"<<txn_->txn_id() << ":In storageManager:  received remote entries (will commit and SendLocalResults) : ";
-    } else {
+    reached_decision_ = true;
+
+    if (commit_ == false) {
       // abort the txn and send it to the related replica.
       txn_->clear_involved_replicas();
       for (auto replica : involved_replicas) {

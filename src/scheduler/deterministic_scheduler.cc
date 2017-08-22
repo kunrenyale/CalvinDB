@@ -105,6 +105,8 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
         // Remote read result.
         CHECK(active_txns.count(message.destination_channel()) > 0);
         StorageManager* manager = active_txns[message.destination_channel()];
+        // Check whether it already got the decision
+        CHECK(manager->ReachedDecision() == true);
         manager->HandleReadResult(message);
 
         if (manager->ReadyToExecute()) {
@@ -135,6 +137,9 @@ CHECK(true == false);
           manager->txn_->set_status(TxnProto::ABORTED);
           done_queue_->Push(manager->txn_);
           delete manager;     
+        } else {
+          // will commit this txn and send local results
+          manager->SendLocalResults();       
         }
         
       } else if (message.type() == MessageProto::COMMIT_OR_ABORT_DECISION) {
@@ -142,6 +147,7 @@ CHECK(true == false);
         CHECK(active_txns.count(message.destination_channel()) > 0);
         StorageManager* manager = active_txns[message.destination_channel()];
 
+        manager->UpdateReachedDecision();
         bool commit = message.misc_bool(0);
         if (commit == true) {
           manager->SendLocalResults();
@@ -320,6 +326,7 @@ bool DeterministicScheduler::VerifyStorageCounters(TxnProto* txn, set<pair<strin
       
       if (key_entry.counter() > master_counter.second) {
         keys.insert(make_pair(key_entry.key(), key_entry.counter()));
+CHECK(true == false);
         can_execute_now = false;    
       }
     }

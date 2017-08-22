@@ -68,11 +68,15 @@ class StorageManager {
 
   uint32 GetMode() {return mode_;}
 
+  void UpdateReachedDecision() { reached_decision_ = true;}
+
+  bool ReachedDecision() { return reached_decision_; }
+
   // Set by the constructor, indicating whether 'txn' involves any writes at
   // this node.
   bool writer;
 
-// private:
+ private:
   friend class DeterministicScheduler;
 
   // Pointer to the configuration object for this node.
@@ -118,6 +122,8 @@ class StorageManager {
   // <key, <master, counter>>
   map<string, pair<uint32, uint64>> records_in_storege_;
   bool commit_;
+
+  bool reached_decision_;
 
 };
 
