@@ -339,7 +339,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
       }
     }
 
-LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  batch size:"<<(uint32)(batch_message.data_size());
+//LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  batch size:"<<(uint32)(batch_message.data_size());
     if (batch_message.data_size() == 0) {
       continue;
     } 
