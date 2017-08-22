@@ -275,8 +275,8 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
         }
 
         // All keys are on local machine
-        //if (remote_expected == 0) {
-        if (true) {
+        if (remote_expected == 0) {
+        //if (true) {
           // Add involved replicas
           for (uint32 replica : involved_replicas[txn_id]) {
             txn->add_involved_replicas(replica);
