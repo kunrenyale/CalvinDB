@@ -195,8 +195,6 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
               string txn_string;
               txn->SerializeToString(&txn_string);
 
-CHECK(txn->involved_replicas_size() == 1 && txn->involved_replicas(0) == local_replica);
-
               if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) == local_replica) {
                 batch_message.add_data(txn_string);
               } else if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) != local_replica) {
