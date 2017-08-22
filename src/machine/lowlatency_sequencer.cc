@@ -84,10 +84,16 @@ void LowlatencySequencer::RunWriter() {
     lookup_master_batch[i].set_source_node(local_machine);
   }
 
-  MessageProto txn_message;
-  txn_message.set_destination_channel("sequencer_txn_receive_");
-  txn_message.set_type(MessageProto::TXN_FORWORD);
-  txn_message.set_source_node(local_machine);
+  map<uint64, MessageProto> forward_txns_batch;
+
+  for (uint64 i = 0; i < configuration_->all_nodes_size();i++) {
+    if (configuration_->LookupReplica(i) != local_replica) {
+      forward_txns_batch[i].set_destination_channel("sequencer_txn_receive_");
+      forward_txns_batch[i].set_destination_node(i);
+      forward_txns_batch[i].set_type(MessageProto::TXN_FORWORD);
+      forward_txns_batch[i].set_source_node(local_machine);
+    }
+  }
 
 #ifdef LATENCY_TEST
 latency_counter = 0;
@@ -204,18 +210,12 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
                 batch_message.add_data(txn_string);
               } else if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) != local_replica) {
                 uint64 machine_sent = txn->involved_replicas(0) * nodes_per_replica + rand() % nodes_per_replica;
-                txn_message.clear_data();
-                txn_message.add_data(txn_string);
-                txn_message.set_destination_node(machine_sent);
-                connection_->Send(txn_message);
+                forward_txns_batch[machine_sent].add_data(txn_string);
               } else if (txn->involved_replicas_size() > 1 && local_replica == 0) {
                 batch_message.add_data(txn_string);
               } else {
                 uint64 machine_sent = rand() % nodes_per_replica;
-                txn_message.clear_data();
-                txn_message.add_data(txn_string);
-                txn_message.set_destination_node(machine_sent);
-                connection_->Send(txn_message);
+                forward_txns_batch[machine_sent].add_data(txn_string);
               }
 
               delete txn;
@@ -293,18 +293,13 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
             batch_message.add_data(txn_string);
           } else if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) != local_replica) {
             uint64 machine_sent = txn->involved_replicas(0) * nodes_per_replica + rand() % nodes_per_replica;
-            txn_message.clear_data();
-            txn_message.add_data(txn_string);
-            txn_message.set_destination_node(machine_sent);
-            connection_->Send(txn_message);
+
+            forward_txns_batch[machine_sent].add_data(txn_string);
           } else if (txn->involved_replicas_size() > 1 && local_replica == 0) {
             batch_message.add_data(txn_string);
           } else {
             uint64 machine_sent = rand() % nodes_per_replica;
-            txn_message.clear_data();
-            txn_message.add_data(txn_string);
-            txn_message.set_destination_node(machine_sent);
-            connection_->Send(txn_message);
+            forward_txns_batch[machine_sent].add_data(txn_string);
           }
 
           delete txn;
@@ -340,6 +335,14 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
             } 
           }
           sent_lookup_request = true;
+        }
+
+        // Forward txns 
+        for (map<uint64, MessageProto>::iterator it = forward_txns_batch.begin(); it != forward_txns_batch.end(); ++it) {
+            if (it->second.data_size() > 0) {
+              connection_->Send(it->second);
+              it->second.clear_data();
+            } 
         }
 
          if (got_message == false) {

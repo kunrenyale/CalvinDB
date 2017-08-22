@@ -60,8 +60,8 @@ class ClusterConfig {
   uint32 LookupMaster(const Key& key);
 
   // Returns the number of machines that appear in the config.
-  inline int all_nodes_size() const {
-    return static_cast<int>(machines_.size());
+  inline uint64 all_nodes_size() const {
+    return static_cast<uint64>(machines_.size());
   }
 
   inline uint64 nodes_per_replica() const {
