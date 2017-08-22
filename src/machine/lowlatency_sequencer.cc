@@ -270,7 +270,6 @@ CHECK(txn->involved_replicas_size() == 1 && txn->involved_replicas(0) == local_r
             txn->mutable_read_write_set(i)->set_master(key_info.first);
             txn->mutable_read_write_set(i)->set_counter(key_info.second);
             involved_replicas[txn_id].insert(key_info.first);
-CHECK(key_info.first == local_replica);
           } else {
             remote_expected++;
             remote_keys[mds].insert(key_entry.key());
