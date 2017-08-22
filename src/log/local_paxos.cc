@@ -88,7 +88,6 @@ void LocalPaxos::ReceiveMessage() {
       uint32 from_replica = message.misc_int(0);
       uint64 latest_version = message.misc_int(1);
 
-      latest_received_version_for_replicas_[from_replica] = latest_version;
       SequenceBatch sequence_batch;
       sequence_batch.ParseFromString(message.data(0));
         
@@ -96,7 +95,14 @@ void LocalPaxos::ReceiveMessage() {
         sequences_other_replicas_.Push(make_pair(sequence_batch.sequence_batch(i), from_replica));
       }
 
-      sent_sequence_ack[from_replica] = false;
+      MessageProto new_sequence_ack_message;
+
+      new_sequence_ack_message.set_destination_channel("paxos_log_");
+      new_sequence_ack_message.set_destination_node(from_replica * machines_per_replica_);
+      new_sequence_ack_message.set_type(MessageProto::NEW_SEQUENCE_ACK);
+      new_sequence_ack_message.add_misc_int(local_replica_);
+      new_sequence_ack_message.add_misc_int(latest_version);
+      connection_->Send(new_sequence_ack_message);
 //if (configuration_->local_node_id() == 0)
 //LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica_<<"  . latest_version is:"<<latest_version;
     } else if (message.type() == MessageProto::NEW_SEQUENCE_ACK) {
@@ -170,9 +176,6 @@ void LocalPaxos::RunLeader() {
     if (i == local_replica_) {
       continue;
     }
-    latest_received_version_for_replicas_[i] = 0;
-    latest_processed_version_for_replicas_[i] = 0;
-    sent_sequence_ack[i] = false;
   }
 
   while (go_) {
@@ -394,21 +397,6 @@ void LocalPaxos::RunLeader() {
 //if (configuration_->local_node_id() == 0)
 //LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<pending_replica * machines_per_replica_<<"  . latest_version is:"<<latest_version;  
 
-      }
-    } else if (isLocal == false) {
-      latest_processed_version_for_replicas_[remote_replica]++;
-      if (sent_sequence_ack[remote_replica] == false && latest_received_version_for_replicas_[remote_replica] - latest_processed_version_for_replicas_[remote_replica] < 10) {
-        sent_sequence_ack[remote_replica] = true;
-        MessageProto new_sequence_ack_message;
-
-        new_sequence_ack_message.set_destination_channel("paxos_log_");
-        new_sequence_ack_message.set_destination_node(remote_replica * machines_per_replica_);
-        new_sequence_ack_message.set_type(MessageProto::NEW_SEQUENCE_ACK);
-        new_sequence_ack_message.add_misc_int(local_replica_);
-        new_sequence_ack_message.add_misc_int(latest_received_version_for_replicas_[remote_replica]);
-        connection_->Send(new_sequence_ack_message);
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE_ACK to: "<<remote_replica * machines_per_replica_<<"  . latest_version is:"<<latest_received_version_for_replicas_[remote_replica];   
       }
     }
 
