@@ -166,8 +166,6 @@ void LocalPaxos::RunLeader() {
 
   bool isFirst = true;
 
-  bool local_turn = true;
-
   for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
     if (i == local_replica_) {
       continue;
@@ -187,7 +185,7 @@ void LocalPaxos::RunLeader() {
       ReceiveMessage();
     } // End while
     
-    if ((local_turn == true && local_count_.load() >  0) || (local_turn == false && sequences_other_replicas_.Size() == 0)) {
+    if (local_count_.load() >  0) {
       // Propose a new sequence.
       Lock l(&mutex_);
       local_next_version ++;
@@ -196,13 +194,10 @@ void LocalPaxos::RunLeader() {
       sequence_.Clear();
       local_count_ = 0;
       isLocal = true;
-
-      local_turn = false;
 //if (configuration_->local_node_id() == 0)
 //LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  will handle the version from local: "<<global_next_version;
-    } else if ((local_turn == false && sequences_other_replicas_.Size() > 0) || (local_turn == true && local_count_.load() == 0)) {
+    } else if (sequences_other_replicas_.Size() > 0) {
       isLocal = false;
-      local_turn = true;
       global_next_version ++;
       sequences_other_replicas_.Pop(&remote_sequence_pair);
       remote_sequence = remote_sequence_pair.first;
