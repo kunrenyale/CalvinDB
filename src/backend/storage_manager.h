@@ -109,7 +109,7 @@ class StorageManager {
   MessageProto local_key_entries_message_;
 
   // For request chopping with remaster
-  vector<pair<uint64, uint32>> involved_machines_;
+  set<pair<uint64, uint32>> involved_machines_;
   uint64 min_involved_machine_;
   uint32 min_involved_machine_origin_;
   KeyEntries local_entries_;

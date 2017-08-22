@@ -4,16 +4,6 @@
 #include "backend/storage_manager.h"
 #include <algorithm> 
 
-// Compares two pairs
-static bool ComparePair(const pair<uint64, uint32> p1, pair<const uint64, uint32> p2)
-{  
-    if (p1.first == p2.first) {
-      return (p1.second - p2.second);
-    } else {
-      return (p1.first - p2.first);
-    }
-}
-
 StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* connection,
                                Storage* actual_storage, TxnProto* txn, uint32 mode)
     : configuration_(config), connection_(connection),
@@ -42,7 +32,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
       uint64 mds = configuration_->LookupPartition(key);
       
       if (mode_ == 2) {
-        involved_machines_.push_back(make_pair(mds, key_entry.master()));     
+        involved_machines_.insert(make_pair(mds, key_entry.master()));     
       }
 
       if (mode_ != 0 && key_entry.master() != txn_origin_replica_) {
@@ -72,7 +62,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
       writers.insert(mds);
       
       if (mode_ == 2) {
-        involved_machines_.push_back(make_pair(mds, key_entry.master())); 
+        involved_machines_.insert(make_pair(mds, key_entry.master())); 
       }
 
       uint32 replica_id = key_entry.master();
@@ -120,11 +110,20 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
         connection_->Send(remote_result_message_);        
       }
     } else {
-      // Request chopping with remaster: do the one-phase commit protocol
-      sort(involved_machines_.begin(), involved_machines_.end(), ComparePair);
+      // Request chopping with remaster: do the one-phase commit protocol      
+      pair<uint64, uint32> min_machine = make_pair(INT_MAX, INT_MAX);
+      for (auto machine : involved_machines_) {
+        if (machine.first < min_machine.first) {
+          min_machine.first = machine.first;
+          min_machine.second = machine.second; 
+        } else if (machine.first == min_machine.first && machine.second < min_machine.second) {
+          min_machine.first = machine.first;
+          min_machine.second = machine.second;        
+        }
+      }
       
-      min_involved_machine_ = (involved_machines_.begin())->first;
-      min_involved_machine_origin_ = (involved_machines_.begin())->second;
+      min_involved_machine_ = min_machine.first;
+      min_involved_machine_origin_ = min_machine.second;
 
 CHECK(min_involved_machine_ % 2 == 0);
       if (!(min_involved_machine_ == relative_node_id_ && min_involved_machine_origin_ == txn_origin_replica_)) {
