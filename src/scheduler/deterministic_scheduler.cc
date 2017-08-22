@@ -109,7 +109,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
         if (manager->ReadyToExecute()) {
           // Execute and clean up.
           TxnProto* txn = manager->txn_;
-          application_->Execute(txn, manager);
+          //application_->Execute(txn, manager);
           delete manager;
 
           connection_->UnlinkChannel(message.destination_channel());
@@ -166,7 +166,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
         // Writes occur at this node.
         if (manager->ReadyToExecute()) {
           // No remote reads. Execute and clean up.
-          application_->Execute(txn, manager);
+          //application_->Execute(txn, manager);
           delete manager;
 
           // Respond to scheduler;
