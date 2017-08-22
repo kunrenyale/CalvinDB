@@ -483,7 +483,7 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_mess
         TxnProto* txn = new TxnProto();
         txn->ParseFromString(batch_message->data(batch_offset));
         batch_offset++;
-
+/**
         if (mode_ == 2 && txn->remaster_txn() == false) {
           blocking_txns_[txn->origin_replica()].push(txn);
           txn->set_wait_for_remaster_pros(true);
@@ -511,7 +511,7 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_mess
             }
           }
         } // end if (mode_ == 2)
-
+**/
         lock_manager_->Lock(txn);
         pending_txns++;
       }

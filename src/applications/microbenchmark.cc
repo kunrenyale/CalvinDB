@@ -484,6 +484,7 @@ int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {
     if (storage->GetMode() == 2 && local_replica_ == val->master && val->remastering == false) {
       val->access_pattern[txn->client_replica()] = val->access_pattern[txn->client_replica()] + 1;
       if (txn->client_replica() != local_replica_ && val->access_pattern[txn->client_replica()]/(LAST_N_TOUCH*1.0) > ACCESS_PATTERN_THRESHOLD) {
+CHECK(true == false);
         // Reach the threadhold, do the remaster
         val->remastering = true;
 
