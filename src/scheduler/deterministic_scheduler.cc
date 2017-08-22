@@ -101,7 +101,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
     bool got_message = connection_->GotMessage(channel, &message);
     if (got_message == true) {
       if (message.type() == MessageProto::READ_RESULT) {
-LOG(ERROR) <<configuration_->local_node_id()<<" :"<<message.destination_channel()<<" :In RunWorkerThread:  received READ_RESULT";
+//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<message.destination_channel()<<" :In RunWorkerThread:  received READ_RESULT";
         // Remote read result.
         CHECK(active_txns.count(message.destination_channel()) > 0);
         StorageManager* manager = active_txns[message.destination_channel()];
@@ -145,9 +145,9 @@ CHECK(true == false);
         bool commit = message.misc_bool(0);
         if (commit == true) {
           manager->SendLocalResults();
-LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :In RunWorkerThread:  will commit, will SendLocalResults()";
+//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :In RunWorkerThread:  will commit, will SendLocalResults()";
         } else {
-LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :In RunWorkerThread:  will abort";
+//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :In RunWorkerThread:  will abort";
           connection_->UnlinkChannel(message.destination_channel());
           active_txns.erase(message.destination_channel());
           // Respond to scheduler;

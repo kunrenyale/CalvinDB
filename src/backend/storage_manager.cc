@@ -125,7 +125,6 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
       min_involved_machine_ = min_machine.first;
       min_involved_machine_origin_ = min_machine.second;
 
-CHECK(min_involved_machine_ % 2 == 0);
       if (!(min_involved_machine_ == relative_node_id_ && min_involved_machine_origin_ == txn_origin_replica_)) {
         // non-min machine: sent local entries to min machine
         uint64 machine_sent = configuration_->LookupMachineID(min_involved_machine_, local_replica_id_);
@@ -177,7 +176,7 @@ void StorageManager::HandleRemoteEntries(const MessageProto& message) {
     key_entry->set_counter(remote_entries.entries(i).counter());
   }
 
-LOG(ERROR) << configuration_->local_node_id()<< " : "<<txn_->txn_id() <<":In storageManager:  received remote entries: ";
+//LOG(ERROR) << configuration_->local_node_id()<< " : "<<txn_->txn_id() <<":In storageManager:  received remote entries: ";
 
   if (local_entries_.entries_size() == txn_->read_set_size() + txn_->read_write_set_size()) {
     // Received all remote entries. check whether commit the txn or abort it
@@ -232,7 +231,7 @@ LOG(ERROR) << configuration_->local_node_id()<< " : "<<txn_->txn_id() <<":In sto
     if (commit_ == true) {
       // commit this txns: begin sending out local reads to other writers
       SendLocalResults();
-LOG(ERROR) << configuration_->local_node_id()<<" :"<<txn_->txn_id() << ":In storageManager:  received remote entries (will commit and SendLocalResults) : ";
+//LOG(ERROR) << configuration_->local_node_id()<<" :"<<txn_->txn_id() << ":In storageManager:  received remote entries (will commit and SendLocalResults) : ";
     } else {
       // abort the txn and send it to the related replica.
       txn_->clear_involved_replicas();
@@ -246,7 +245,7 @@ LOG(ERROR) << configuration_->local_node_id()<<" :"<<txn_->txn_id() << ":In stor
 
       string txn_string;
       txn_->SerializeToString(&txn_string);
-LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn_->txn_id() << ":In storageManager:  received remote entries (will abort this txn) : ";
+//LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn_->txn_id() << ":In storageManager:  received remote entries (will abort this txn) : ";
 CHECK(true == false);
       if (txn_->involved_replicas_size() == 1) {
         uint64 machine_sent = txn_->involved_replicas(0) * configuration_->nodes_per_replica() + rand() % configuration_->nodes_per_replica();
