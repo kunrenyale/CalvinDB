@@ -21,7 +21,7 @@ message TxnProto {
   optional uint32 txn_type = 10;
 
   // True if transaction is known to span multiple database nodes.
-  optional bool multipartition = 12;
+  //optional bool multipartition = 12;
 
   // Keys of objects read (but not modified) by this transaction.
   repeated KeyEntry read_set = 20;
