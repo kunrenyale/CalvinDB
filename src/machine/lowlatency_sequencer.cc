@@ -129,7 +129,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
     txn_id_offset = 0;
     while (!deconstructor_invoked_ && GetTime() < epoch_start + epoch_duration_) {
       // Check messages
-      bool got_message = connection_->GotMessage("sequencer_txn_receive_", &message);
+/**      bool got_message = connection_->GotMessage("sequencer_txn_receive_", &message);
       if (got_message == true) {
         if (message.type() == MessageProto::TXN_FORWORD) {
           // Got forwarded txn message
@@ -220,7 +220,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
           }  // end for
         } // end MASTER_LOOKUP_RESULT
       } // end if (got_message == true)
-
+**/
       // Add next txn request to batch.
       if (local_replica == 0 && txn_id_offset < max_batch_size_) {
         TxnProto* txn;
