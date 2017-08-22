@@ -222,7 +222,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
       } // end if (got_message == true)
 
       // Add next txn request to batch.
-      if (txn_id_offset < max_batch_size_) {
+     else if (txn_id_offset < max_batch_size_) {
         TxnProto* txn;
 
         client_->GetTxn(&txn, batch_number * max_batch_size_ + txn_id_offset);
@@ -266,12 +266,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
           delete txn;
       } else { //if (txn_id_offset < max_batch_size_) 
         // Send this epoch's lookup_master requests.
-        for (map<uint64, MessageProto>::iterator it = lookup_master_batch.begin(); it != lookup_master_batch.end(); ++it) {
-          if (it->second.data_size() > 0) {
-            connection_->Send(it->second);
-            it->second.clear_data();
-          } 
-         }
+        usleep(50);
       }
     }
 
