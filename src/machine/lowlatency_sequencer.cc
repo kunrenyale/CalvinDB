@@ -222,7 +222,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
       } // end if (got_message == true)
 **/
       // Add next txn request to batch.
-      if (local_replica == 0 && txn_id_offset < max_batch_size_) {
+      if (txn_id_offset < max_batch_size_) {
         TxnProto* txn;
 
         client_->GetTxn(&txn, batch_number * max_batch_size_ + txn_id_offset);
