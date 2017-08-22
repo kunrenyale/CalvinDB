@@ -290,7 +290,6 @@ CHECK(key_info.first == local_replica);
           string txn_string;
           txn->SerializeToString(&txn_string);
 
-CHECK(txn->involved_replicas_size() == 1 && txn->involved_replicas(0) == local_replica);
           if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) == local_replica) {
             batch_message.add_data(txn_string);
           } else if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) != local_replica) {
