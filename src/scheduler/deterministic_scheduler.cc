@@ -106,9 +106,9 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
         CHECK(active_txns.count(message.destination_channel()) > 0);
         StorageManager* manager = active_txns[message.destination_channel()];
         // Check whether it already got the decision
-        /**if (mode_ == 2) {
+        if (mode_ == 2) {
           CHECK(manager->ReachedDecision() == true);
-        }**/
+        }
 
         manager->HandleReadResult(message);
 
@@ -380,7 +380,7 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
   uint64 pending_txns = 0;
   int batch_offset = 0;
   uint64 machine_id = configuration_->local_node_id();
-  uint64 maximum_txns = 200000000;
+  uint64 maximum_txns = 2000;
   
 
   while (true) {

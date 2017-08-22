@@ -101,7 +101,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
           connection_->Send(remote_result_message_);
         }
       }
-    } else if (mode_ == 1 || mode_ == 2){
+    } else if (mode_ == 1){
       // Basic request chopping: Broadcast local reads to (other) writers.
       for (auto remote_writer : remote_replica_writers_) {
         uint64 mds = remote_writer.first;
