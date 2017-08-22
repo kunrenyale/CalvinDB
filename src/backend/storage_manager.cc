@@ -130,7 +130,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
         // non-min machine: sent local entries to min machine
         uint64 machine_sent = configuration_->LookupMachineID(min_involved_machine_, local_replica_id_);
 
-        local_key_entries_message_.set_type(MessageProto::LOCAL_ENTRIES_TO_MIM_MACHINE);
+        local_key_entries_message_.set_type(MessageProto::LOCAL_ENTRIES_TO_MIN_MACHINE);
 
         string destination_channel = IntToString(txn->txn_id()) + "-" + IntToString(min_involved_machine_origin_);
         local_key_entries_message_.set_destination_channel(destination_channel);
@@ -165,7 +165,7 @@ void StorageManager::HandleReadResult(const MessageProto& message) {
 }
 
 void StorageManager::HandleRemoteEntries(const MessageProto& message) {
-  CHECK(message.type() == MessageProto::LOCAL_ENTRIES_TO_MIM_MACHINE);
+  CHECK(message.type() == MessageProto::LOCAL_ENTRIES_TO_MIN_MACHINE);
 
   KeyEntries remote_entries;
   remote_entries.ParseFromString(message.data(0));

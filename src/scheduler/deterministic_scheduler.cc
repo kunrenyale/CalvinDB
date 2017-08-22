@@ -119,7 +119,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
           txn->set_status(TxnProto::COMMITTED);
           done_queue_->Push(txn);
         }
-      } else if (message.type() == MessageProto::LOCAL_ENTRIES_TO_MIM_MACHINE) {
+      } else if (message.type() == MessageProto::LOCAL_ENTRIES_TO_MIN_MACHINE) {
         // message sent from non-min machines to min-machine
         CHECK(active_txns.count(message.destination_channel()) > 0);
         StorageManager* manager = active_txns[message.destination_channel()];
