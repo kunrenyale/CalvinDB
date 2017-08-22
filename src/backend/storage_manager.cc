@@ -139,7 +139,8 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
         string local_entries_string;
         local_entries_.SerializeToString(&local_entries_string);
         local_key_entries_message_.add_data(local_entries_string);
-        connection_->Send(local_key_entries_message_);   
+        connection_->Send(local_key_entries_message_);
+LOG(ERROR) << configuration_->local_node_id()<< ":In storageManager:  send local entries to : "<<machine_sent;
       }
     }
 
@@ -175,6 +176,8 @@ void StorageManager::HandleRemoteEntries(const MessageProto& message) {
     key_entry->set_master(remote_entries.entries(i).master());
     key_entry->set_counter(remote_entries.entries(i).counter());
   }
+
+LOG(ERROR) << configuration_->local_node_id()<< " : "<<txn_->txn_id() <<":In storageManager:  received remote entries to : ";
 
   if (local_entries_.entries_size() == txn_->read_set_size() + txn_->read_write_set_size()) {
     // Received all remote entries. check whether commit the txn or abort it
@@ -229,6 +232,7 @@ void StorageManager::HandleRemoteEntries(const MessageProto& message) {
     if (commit_ == true) {
       // commit this txns: begin sending out local reads to other writers
       SendLocalResults();
+LOG(ERROR) << configuration_->local_node_id()<<" :"<<txn_->txn_id() << ":In storageManager:  received remote entries (will commit and SendLocalResults) : ";
     } else {
       // abort the txn and send it to the related replica.
       txn_->clear_involved_replicas();
@@ -242,7 +246,7 @@ void StorageManager::HandleRemoteEntries(const MessageProto& message) {
 
       string txn_string;
       txn_->SerializeToString(&txn_string);
-
+LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn_->txn_id() << ":In storageManager:  received remote entries (will abort this txn) : ";
       if (txn_->involved_replicas_size() == 1) {
         uint64 machine_sent = txn_->involved_replicas(0) * configuration_->nodes_per_replica() + rand() % configuration_->nodes_per_replica();
         forward_txn_message_.clear_data();
