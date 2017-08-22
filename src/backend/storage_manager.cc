@@ -5,12 +5,12 @@
 #include <algorithm> 
 
 // Compares two pairs
-bool ComparePair(pair<uint64, uint32> p1, pair<uint64, uint32> p2)
+static bool ComparePair(const pair<uint64, uint32> p1, pair<const uint64, uint32> p2)
 {  
-    if (p1.first != p2.first) {
-      return (p1.first - p2.first);
-    } else {
+    if (p1.first == p2.first) {
       return (p1.second - p2.second);
+    } else {
+      return (p1.first - p2.first);
     }
 }
 
