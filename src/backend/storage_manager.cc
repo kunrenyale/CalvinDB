@@ -126,6 +126,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
       min_involved_machine_ = (involved_machines_.begin())->first;
       min_involved_machine_origin_ = (involved_machines_.begin())->second;
 
+CHECK(min_involved_machine_ % 2 == 0);
       if (!(min_involved_machine_ == relative_node_id_ && min_involved_machine_origin_ == txn_origin_replica_)) {
         // non-min machine: sent local entries to min machine
         uint64 machine_sent = configuration_->LookupMachineID(min_involved_machine_, local_replica_id_);
