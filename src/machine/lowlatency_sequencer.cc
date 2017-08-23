@@ -146,9 +146,9 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
           txn.SerializeToString(&txn_string);
           batch_message.add_data(txn_string);
 if (txn.remaster_txn() == true)
-LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  received a remaster txn;";
+LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  received a remaster txn: "<<txn.txn_id();
 else 
-LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  received a aborted txn;";
+LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  received a aborted txn;"<<txn.txn_id();
         } else if (message.type() == MessageProto::MASTER_LOOKUP_RESULT) {
           // Got master lookup result message
           LookupMasterResultEntry lookup_result_entry;

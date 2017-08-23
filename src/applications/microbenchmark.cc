@@ -486,7 +486,6 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<tx
       val->access_pattern[txn->client_replica()] = val->access_pattern[txn->client_replica()] + 1;
 
       if (txn->client_replica() != local_replica_ && val->access_pattern[txn->client_replica()]/(LAST_N_TOUCH*1.0) > ACCESS_PATTERN_THRESHOLD) {
-LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, on record: "<<key_entry.key();
         // Reach the threadhold, do the remaster
         val->remastering = true;
 
@@ -515,6 +514,7 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, 
         txn_message.add_data(txn_string);
 
         connection_->Send(txn_message);
+LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, on record: "<<key_entry.key()<<"  txn id:"<<remaster_txn->txn_id();
       }
 /**
       if (++val->access_cnt > LAST_N_TOUCH) {

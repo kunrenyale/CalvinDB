@@ -245,7 +245,7 @@ void StorageManager::HandleRemoteEntries(const MessageProto& message) {
 
       string txn_string;
       txn_->SerializeToString(&txn_string);
-LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn_->txn_id() << ":In storageManager:  received remote entries (will abort this txn) : ";
+//LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn_->txn_id() << ":In storageManager:  received remote entries (will abort this txn) : ";
 
       if (txn_->involved_replicas_size() == 1) {
         uint64 machine_sent = txn_->involved_replicas(0) * configuration_->nodes_per_replica() + rand() % configuration_->nodes_per_replica();

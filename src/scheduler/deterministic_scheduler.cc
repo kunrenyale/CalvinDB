@@ -132,7 +132,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
         manager->HandleRemoteEntries(message);
 
         if (manager->AbortTxn()) {
-CHECK(true == false);
+LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :In RunWorkerThread:  will abort txn, channel:"<<message.destination_channel();
           connection_->UnlinkChannel(message.destination_channel());
           active_txns.erase(message.destination_channel());
           // Respond to scheduler;
@@ -156,7 +156,7 @@ CHECK(true == false);
           manager->SendLocalResults();
 //LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :In RunWorkerThread:  will commit, will SendLocalResults()";
         } else {
-//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :In RunWorkerThread:  will abort";
+LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :In RunWorkerThread:  will abort txn, channel:"<<message.destination_channel();
           connection_->UnlinkChannel(message.destination_channel());
           active_txns.erase(message.destination_channel());
           // Respond to scheduler;
@@ -409,8 +409,9 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
               if (blocking_txns_[a->origin_replica()].front() == a) {
                 ready_txns_->push_back(a); 
                 blocking_txns_[a->origin_replica()].pop();
-
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn: "<<a->txn_id();
                 while (!blocking_txns_[a->origin_replica()].empty() && blocking_txns_[a->origin_replica()].front()->wait_for_remaster_pros() == false) {
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn: "<<blocking_txns_[a->origin_replica()].front()->txn_id();
                   ready_txns_->push_back(blocking_txns_[a->origin_replica()].front()); 
                   blocking_txns_[a->origin_replica()].pop();
                 }
@@ -493,6 +494,7 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_mess
           set<pair<string,uint64>> keys;
           bool can_execute_now = VerifyStorageCounters(txn, keys);
           if (can_execute_now == false) {
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id();
             // Put it into the queue and wait for the remaster action come
             waiting_txns_by_txnid_[txn->txn_id()] = keys;
             for (auto it = keys.begin(); it != keys.end(); it++) {
