@@ -185,8 +185,9 @@ LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" 
           // Respond to scheduler;
           txn->set_status(TxnProto::COMMITTED);
           done_queue_->Push(txn);
-LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :now single replica txn";
+//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :now single replica txn";
         } else {
+LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" : multi-replica txn";
           string origin_channel = IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica());
           connection_->LinkChannel(origin_channel, channel);
           // There are outstanding remote reads.
