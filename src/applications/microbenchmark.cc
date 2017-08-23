@@ -512,11 +512,12 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, 
         string txn_string;
         remaster_txn->SerializeToString(&txn_string);
         connection_->Send(txn_message);
+LOG(ERROR) <<local_replica_<< ":*********In Execute 2:  Generate a remaster  txn, on record: "<<key_entry.key();
       }
 
       if (++val->access_cnt > LAST_N_TOUCH) {
-        for (uint32 i = 0; i < REPLICA_SIZE;i++) {
-          val->access_pattern[i] = 0;
+        for (uint32 j = 0; j < REPLICA_SIZE;i++) {
+          val->access_pattern[j] = 0;
         }
         val->access_cnt = 0;
       }      

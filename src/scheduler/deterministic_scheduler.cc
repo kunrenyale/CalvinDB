@@ -185,6 +185,7 @@ CHECK(true == false);
           // Respond to scheduler;
           txn->set_status(TxnProto::COMMITTED);
           done_queue_->Push(txn);
+LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :now single replica txn";
         } else {
           string origin_channel = IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica());
           connection_->LinkChannel(origin_channel, channel);
