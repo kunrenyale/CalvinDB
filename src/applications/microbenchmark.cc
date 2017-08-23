@@ -450,6 +450,7 @@ TxnProto* Microbenchmark::NewTxn(int64 txn_id, int txn_type,
 int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {  
   // Remaster txn
   if (txn->remaster_txn() == true) {
+LOG(ERROR) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<txn->txn_id();
     KeyEntry key_entry = txn->read_write_set(0);
     Record* val = storage->ReadObject(key_entry.key());
 
@@ -504,23 +505,24 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, 
 
         remaster_txn->add_involved_replicas(local_replica_);
 
+        string txn_string;
+        remaster_txn->SerializeToString(&txn_string);
+
         MessageProto txn_message;
         txn_message.set_destination_channel("sequencer_txn_receive_");
         txn_message.set_type(MessageProto::TXN_FORWORD);
         txn_message.set_destination_node(config_->local_node_id());
+        txn_message.add_data(txn_string);
 
-        string txn_string;
-        remaster_txn->SerializeToString(&txn_string);
         connection_->Send(txn_message);
-LOG(ERROR) <<local_replica_<< ":*********In Execute 2:  Generate a remaster  txn, on record: "<<key_entry.key();
       }
-
+/**
       if (++val->access_cnt > LAST_N_TOUCH) {
         for (uint32 j = 0; j < REPLICA_SIZE;i++) {
           val->access_pattern[j] = 0;
         }
         val->access_cnt = 0;
-      }      
+      }      **/
     }
 
     for (int j = 0; j < 8; j++) {
