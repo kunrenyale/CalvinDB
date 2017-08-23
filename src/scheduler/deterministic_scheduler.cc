@@ -331,7 +331,6 @@ bool DeterministicScheduler::VerifyStorageCounters(TxnProto* txn, set<pair<strin
       
       if (key_entry.counter() > master_counter.second) {
         keys.insert(make_pair(key_entry.key(), key_entry.counter()));
-CHECK(true == false);
         can_execute_now = false;    
       }
     }
