@@ -483,14 +483,16 @@ int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {
     // Check whether we need to remaster this record
     if (storage->GetMode() == 2 && local_replica_ == val->master && val->remastering == false) {
       val->access_pattern[txn->client_replica()] = val->access_pattern[txn->client_replica()] + 1;
+
       if (txn->client_replica() != local_replica_ && val->access_pattern[txn->client_replica()]/(LAST_N_TOUCH*1.0) > ACCESS_PATTERN_THRESHOLD) {
-CHECK(true == false);
+LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, on record: "<<key_entry.key();
         // Reach the threadhold, do the remaster
         val->remastering = true;
 
         // Create the remaster transction and sent to local sequencer
         TxnProto* remaster_txn = new TxnProto();
-
+ 
+        remaster_txn->set_txn_id(config_->GetGUID());
         KeyEntry* remaster_key_entry = remaster_txn->add_read_write_set();
         remaster_key_entry->set_key(key_entry.key());
         remaster_key_entry->set_master(val->master);

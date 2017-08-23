@@ -109,7 +109,7 @@ other_replica = 0;
       } else {
         // Multi-replica single-partition txn
         *txn = microbenchmark.MicroTxnMRSP(txn_id, replative_node_id_, local_replica_, other_replica);    
-        //*txn = microbenchmark.MicroTxnMRSP(txn_id, rand()%2, 0, 1);   
+*txn = microbenchmark.MicroTxnMRSP(txn_id, 0, 0, 1);   
       }
     } else {
       // Single-replica txn.
