@@ -194,10 +194,6 @@ void StorageManager::HandleRemoteEntries(const MessageProto& message) {
       pair<uint32, uint64> map_counter = records_in_storege_[key_entry.key()];
       if (key_entry.master() != map_counter.first || key_entry.counter() != map_counter.second) {
         commit_ = false;
-   
-        // update to the latest master/counter
-        txn_->mutable_read_set(i)->set_master(map_counter.first);
-        txn_->mutable_read_set(i)->set_counter(map_counter.second);
       }
     }
 
@@ -206,10 +202,6 @@ void StorageManager::HandleRemoteEntries(const MessageProto& message) {
       pair<uint32, uint64> map_counter = records_in_storege_[key_entry.key()];
       if (key_entry.master() != map_counter.first || key_entry.counter() != map_counter.second) {
         commit_ = false;
-   
-        // update to the latest master/counter
-        txn_->mutable_read_write_set(i)->set_master(map_counter.first);
-        txn_->mutable_read_write_set(i)->set_counter(map_counter.second);
       }     
     }
     
@@ -234,27 +226,49 @@ void StorageManager::HandleRemoteEntries(const MessageProto& message) {
 
     if (local_replica_id_ == txn_origin_replica_ && commit_ == false) {
       // abort the txn and send it to the related replica.
-      txn_->clear_involved_replicas();
+      TxnProto txn;
+      txn.CopyFrom(*txn_);
+      txn.clear_involved_replicas();
       for (auto replica : involved_replicas) {
-        txn_->add_involved_replicas(replica);
+        txn.add_involved_replicas(replica);
       }
-CHECK(txn_->involved_replicas_size() == 1);
+
+      for (int i = 0; i < txn.read_set_size(); i++) {
+        KeyEntry key_entry = txn.read_set(i);
+        pair<uint32, uint64> map_counter = records_in_storege_[key_entry.key()];
+        if (key_entry.master() != map_counter.first || key_entry.counter() != map_counter.second) {  
+          // update to the latest master/counter
+          txn.mutable_read_set(i)->set_master(map_counter.first);
+          txn.mutable_read_set(i)->set_counter(map_counter.second);
+        }
+      }
+
+      for (int i = 0; i < txn.read_write_set_size(); i++) {
+        KeyEntry key_entry = txn.read_write_set(i);
+        pair<uint32, uint64> map_counter = records_in_storege_[key_entry.key()];
+        if (key_entry.master() != map_counter.first || key_entry.counter() != map_counter.second) {   
+          // update to the latest master/counter
+          txn.mutable_read_write_set(i)->set_master(map_counter.first);
+          txn.mutable_read_write_set(i)->set_counter(map_counter.second);
+        }     
+      }
+
       MessageProto forward_txn_message_;
       forward_txn_message_.set_destination_channel("sequencer_txn_receive_");
       forward_txn_message_.set_type(MessageProto::TXN_FORWORD);
 
       string txn_string;
-      txn_->SerializeToString(&txn_string);
+      txn.SerializeToString(&txn_string);
 
-      if (txn_->involved_replicas_size() == 1) {
-LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn_->txn_id() << ":In storageManager:  received remote entries (will abort this txn) , replica size == 1: ";
-        uint64 machine_sent = txn_->involved_replicas(0) * configuration_->nodes_per_replica() + rand() % configuration_->nodes_per_replica();
+      if (txn.involved_replicas_size() == 1) {
+LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn.txn_id() << ":In storageManager:  received remote entries (will abort this txn) , replica size == 1: ";
+        uint64 machine_sent = txn.involved_replicas(0) * configuration_->nodes_per_replica() + rand() % configuration_->nodes_per_replica();
         forward_txn_message_.clear_data();
         forward_txn_message_.add_data(txn_string);
         forward_txn_message_.set_destination_node(machine_sent);
         connection_->Send(forward_txn_message_);
       } else {
-LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn_->txn_id() << ":In storageManager:  received remote entries (will abort this txn) , replica size == 2: ";
+LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn.txn_id() << ":In storageManager:  received remote entries (will abort this txn) , replica size == 2: ";
         uint64 machine_sent = rand() % configuration_->nodes_per_replica();
         forward_txn_message_.clear_data();
         forward_txn_message_.add_data(txn_string);
