@@ -232,7 +232,7 @@ void StorageManager::HandleRemoteEntries(const MessageProto& message) {
 
     reached_decision_ = true;
 
-    if (commit_ == false) {
+    if (local_replica_id_ == txn_origin_replica_ && commit_ == false) {
       // abort the txn and send it to the related replica.
       txn_->clear_involved_replicas();
       for (auto replica : involved_replicas) {
