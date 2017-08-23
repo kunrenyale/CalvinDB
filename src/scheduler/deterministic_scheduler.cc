@@ -132,7 +132,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
         manager->HandleRemoteEntries(message);
 
         if (manager->AbortTxn()) {
-LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :In RunWorkerThread:  will abort txn, channel:"<<message.destination_channel();
+//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :In RunWorkerThread:  will abort txn, channel:"<<message.destination_channel();
           connection_->UnlinkChannel(message.destination_channel());
           active_txns.erase(message.destination_channel());
           // Respond to scheduler;
@@ -156,7 +156,7 @@ LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" 
           manager->SendLocalResults();
 //LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :In RunWorkerThread:  will commit, will SendLocalResults()";
         } else {
-LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :In RunWorkerThread:  will abort txn, channel:"<<message.destination_channel();
+//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :In RunWorkerThread:  will abort txn, channel:"<<message.destination_channel();
           connection_->UnlinkChannel(message.destination_channel());
           active_txns.erase(message.destination_channel());
           // Respond to scheduler;
@@ -187,7 +187,7 @@ LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" 
           done_queue_->Push(txn);
 //LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :now single replica txn";
         } else {
-LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" : multi-replica txn";
+//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" : multi-replica txn";
           string origin_channel = IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica());
           connection_->LinkChannel(origin_channel, channel);
           // There are outstanding remote reads.
@@ -390,6 +390,8 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
     while (done_queue_->Pop(&done_txn) == true) {
       // Handle remaster transactions     
       if (mode_ == 2 && done_txn->remaster_txn() == true) {
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  release remaster txn: "<<done_txn->txn_id();
+
         uint64 txn_id = done_txn->txn_id();
       
         // Check whether remaster txn can wake up some blocking txns
@@ -487,6 +489,9 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_mess
         txn->ParseFromString(batch_message->data(batch_offset));
         batch_offset++;
 
+if (txn->remaster_txn() == true) {
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn: "<<txn->txn_id();
+}
         if (mode_ == 2 && txn->remaster_txn() == false) {
           blocking_txns_[txn->origin_replica()].push(txn);
           txn->set_wait_for_remaster_pros(true);
@@ -511,6 +516,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn
               blocking_txns_[txn->origin_replica()].pop();
             } else {
               // Working on next txn
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id();
               continue;
             }
           }
