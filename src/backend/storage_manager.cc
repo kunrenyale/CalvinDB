@@ -245,15 +245,16 @@ CHECK(txn_->involved_replicas_size() == 1);
 
       string txn_string;
       txn_->SerializeToString(&txn_string);
-//LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn_->txn_id() << ":In storageManager:  received remote entries (will abort this txn) : ";
 
       if (txn_->involved_replicas_size() == 1) {
+LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn_->txn_id() << ":In storageManager:  received remote entries (will abort this txn) , replica size == 1: ";
         uint64 machine_sent = txn_->involved_replicas(0) * configuration_->nodes_per_replica() + rand() % configuration_->nodes_per_replica();
         forward_txn_message_.clear_data();
         forward_txn_message_.add_data(txn_string);
         forward_txn_message_.set_destination_node(machine_sent);
         connection_->Send(forward_txn_message_);
       } else {
+LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn_->txn_id() << ":In storageManager:  received remote entries (will abort this txn) , replica size == 2: ";
         uint64 machine_sent = rand() % configuration_->nodes_per_replica();
         forward_txn_message_.clear_data();
         forward_txn_message_.add_data(txn_string);
