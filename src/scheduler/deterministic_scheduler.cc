@@ -428,7 +428,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up
       // We have received a finished transaction back, release the lock
       lock_manager_->Release(done_txn);
       executing_txns--;
-
+LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  realeasing txn: "<<done_txn->txn_id();
       if((done_txn->status() == TxnProto::COMMITTED) && 
          (done_txn->writers_size() == 0 || (rand() % done_txn->writers_size() == 0 && rand() % done_txn->involved_replicas_size() == 0))) {
         txns++;       
@@ -523,6 +523,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn
 
         lock_manager_->Lock(txn);
         pending_txns++;
+LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locking txn: "<<txn->txn_id();
       }
     }
 
