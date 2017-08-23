@@ -238,7 +238,7 @@ void StorageManager::HandleRemoteEntries(const MessageProto& message) {
       for (auto replica : involved_replicas) {
         txn_->add_involved_replicas(replica);
       }
-
+CHECK(txn_->involved_replicas_size() == 1);
       MessageProto forward_txn_message_;
       forward_txn_message_.set_destination_channel("sequencer_txn_receive_");
       forward_txn_message_.set_type(MessageProto::TXN_FORWORD);
