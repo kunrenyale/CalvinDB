@@ -400,7 +400,7 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
   uint64 pending_txns = 0;
   int batch_offset = 0;
   uint64 machine_id = configuration_->local_node_id();
-  uint64 maximum_txns = 2000000;
+  uint64 maximum_txns = 20000;
   
 
   while (true) {
@@ -545,9 +545,9 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn
           } else {
             if (txn->status() == TxnProto::ABORTED_WITHOUT_LOCK) {
             // If the status is: ABORTED_WITHOUT_LOCK, we can run this txn without locking
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  find a  ABORTED_WITHOUT_LOCK txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
               ready_txns_->Push(txn);
               continue;
-LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  find a  ABORTED_WITHOUT_LOCK txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
             } else {
               txn->set_wait_for_remaster_pros(false);
               // It is the first txn and can be executed right now
