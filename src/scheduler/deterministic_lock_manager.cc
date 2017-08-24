@@ -133,6 +133,7 @@ void DeterministicLockManager::Release(TxnProto* txn) {
     }
 
     if (IsLocal(key_entry.key())) {
+LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :$$$$$$ In Release: release key:"<<key_entry.key();
       Release(key_entry.key(), txn);
     }
   }
