@@ -397,9 +397,12 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  release remaster txn
         KeyEntry key_entry = done_txn->read_write_set(0);
         pair <string, uint64> key_info = make_pair(key_entry.key(), key_entry.counter()+1);
 
+        // For txns that are now ready to request locks
+        vector<TxnProto*> ready_to_lock_txns;
+
         if (waiting_txns_by_key_.find(key_info) != waiting_txns_by_key_.end()) {
           vector<TxnProto*> blocked_txns = waiting_txns_by_key_[key_info];
-
+ 
           for (auto it = blocked_txns.begin(); it != blocked_txns.end(); it++) {
             TxnProto* a = *it;
             (waiting_txns_by_txnid_[txn_id]).erase(key_info);
@@ -409,12 +412,12 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  release remaster txn
               waiting_txns_by_txnid_.erase(txn_id);
 
               if (blocking_txns_[a->origin_replica()].front() == a) {
-                ready_txns_->push_back(a); 
+                ready_to_lock_txns.push_back(a); 
                 blocking_txns_[a->origin_replica()].pop();
 LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn: "<<a->txn_id();
                 while (!blocking_txns_[a->origin_replica()].empty() && blocking_txns_[a->origin_replica()].front()->wait_for_remaster_pros() == false) {
 LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn: "<<blocking_txns_[a->origin_replica()].front()->txn_id();
-                  ready_txns_->push_back(blocking_txns_[a->origin_replica()].front()); 
+                  ready_to_lock_txns.push_back(blocking_txns_[a->origin_replica()].front()); 
                   blocking_txns_[a->origin_replica()].pop();
                 }
               }
@@ -423,6 +426,12 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up
 
           waiting_txns_by_key_.erase(key_info);
         } 
+
+
+        for (uint32 i = 0; i < ready_to_lock_txns.size(); i++) {
+          lock_manager_->Lock(ready_to_lock_txns[i]);
+          pending_txns++; 
+        }
       } // end  if (mode_ == 2 && done_txn->remaster_txn() == true) 
 
       // We have received a finished transaction back, release the lock
