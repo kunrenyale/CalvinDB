@@ -235,6 +235,7 @@ void StorageManager::HandleRemoteEntries(const MessageProto& message) {
 
 
       txn.set_txn_id(configuration_->GetGUID());
+      txn.set_status(TxnProto::NEW);
 
       for (int i = 0; i < txn.read_set_size(); i++) {
         KeyEntry key_entry = txn.read_set(i);
