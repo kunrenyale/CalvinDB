@@ -450,6 +450,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up
         for (uint32 i = 0; i < ready_to_lock_txns.size(); i++) {
           lock_manager_->Lock(ready_to_lock_txns[i]);
           pending_txns++; 
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn(acquire lock): "<<ready_to_lock_txns[i]->txn_id();
         }
       } // end  if (mode_ == 2 && done_txn->remaster_txn() == true) 
 
