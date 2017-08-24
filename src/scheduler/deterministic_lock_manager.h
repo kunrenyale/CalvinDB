@@ -22,7 +22,7 @@ class TxnProto;
 
 class DeterministicLockManager {
  public:
-  DeterministicLockManager(deque<TxnProto*>* ready_txns,
+  DeterministicLockManager(AtomicQueue<TxnProto*>* ready_txns,
                            ClusterConfig* config, uint32 mode);
   virtual ~DeterministicLockManager() {}
   virtual int Lock(TxnProto* txn);
@@ -71,7 +71,7 @@ class DeterministicLockManager {
   // for a specified key.
   //
   // Owned by the DeterministicScheduler.
-  deque<TxnProto*>* ready_txns_;
+  AtomicQueue<TxnProto*>* ready_txns_;
 
   // Configuration object (needed to avoid locking non-local keys).
   ClusterConfig* configuration_;

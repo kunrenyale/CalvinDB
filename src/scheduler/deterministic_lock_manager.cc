@@ -12,7 +12,7 @@
 using std::vector;
 
 DeterministicLockManager::DeterministicLockManager(
-    deque<TxnProto*>* ready_txns,
+    AtomicQueue<TxnProto*>* ready_txns,
     ClusterConfig* config, uint32 mode)
   : ready_txns_(ready_txns), configuration_(config), mode_(mode) {
   for (int i = 0; i < TABLE_SIZE; i++) {
@@ -101,7 +101,7 @@ int DeterministicLockManager::Lock(TxnProto* txn) {
   if (not_acquired > 0) {
     txn_waits_[txn] = not_acquired;
   } else {
-    ready_txns_->push_back(txn);
+    ready_txns_->Push(txn);
   }
   return not_acquired;
 }
@@ -198,7 +198,7 @@ void DeterministicLockManager::Release(const Key& key, TxnProto* txn) {
         if (txn_waits_[new_owners[j]] == 0) {
           // The txn that just acquired the released lock is no longer waiting
           // on any lock requests.
-          ready_txns_->push_back(new_owners[j]);
+          ready_txns_->Push(new_owners[j]);
           txn_waits_.erase(new_owners[j]);
         }
       }

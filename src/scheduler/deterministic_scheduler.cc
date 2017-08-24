@@ -27,7 +27,7 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
                                                uint32 mode)
     : configuration_(conf), storage_(storage), application_(application),connection_(connection), mode_(mode) {
   
-  ready_txns_ = new std::deque<TxnProto*>();
+  ready_txns_ = new AtomicQueue<TxnProto*>();
   lock_manager_ = new DeterministicLockManager(ready_txns_, configuration_, mode_);
   txns_queue_ = new AtomicQueue<TxnProto*>();
   done_queue_ = new AtomicQueue<TxnProto*>();
@@ -136,8 +136,11 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
           connection_->UnlinkChannel(message.destination_channel());
           active_txns.erase(message.destination_channel());
           // Respond to scheduler;
+          
+          if (manager->txn_->status() != TxnProto::ABORTED_WITHOUT_LOCK) {
+            manager->txn_->set_status(TxnProto::ABORTED);
+          }
 
-          manager->txn_->set_status(TxnProto::ABORTED);
           done_queue_->Push(manager->txn_);
           delete manager;     
         } else {
@@ -161,7 +164,10 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
           active_txns.erase(message.destination_channel());
           // Respond to scheduler;
 
-          manager->txn_->set_status(TxnProto::ABORTED);
+          if (manager->txn_->status() != TxnProto::ABORTED_WITHOUT_LOCK) {
+            manager->txn_->set_status(TxnProto::ABORTED);
+          }
+
           done_queue_->Push(manager->txn_);
           delete manager;        
         }
@@ -178,13 +184,17 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
 
         // Writes occur at this node.
         if (manager->ReadyToExecute()) {
-          // No remote reads. Execute and clean up.
-          application_->Execute(txn, manager);
-          delete manager;
+          if (txn->status() == TxnProto::ABORTED_WITHOUT_LOCK) {
+            done_queue_->Push(txn);
+          } else {
+            // No remote reads. Execute and clean up.
+            application_->Execute(txn, manager);
+            delete manager;
 
-          // Respond to scheduler;
-          txn->set_status(TxnProto::COMMITTED);
-          done_queue_->Push(txn);
+            // Respond to scheduler;
+            txn->set_status(TxnProto::COMMITTED);
+            done_queue_->Push(txn);
+          }
 //LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :now single replica txn";
         } else {
 //LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" : multi-replica txn";
@@ -311,6 +321,7 @@ bool  DeterministicScheduler::IsLocal(const Key& key) {
 bool DeterministicScheduler::VerifyStorageCounters(TxnProto* txn, set<pair<string,uint64>>& keys) {
   bool can_execute_now = true;
   uint32 origin = txn->origin_replica();
+  bool aborted = false;
 
   for (int i = 0; i < txn->read_set_size(); i++) {
     KeyEntry key_entry = txn->read_set(i);
@@ -320,6 +331,8 @@ bool DeterministicScheduler::VerifyStorageCounters(TxnProto* txn, set<pair<strin
       if (key_entry.counter() > master_counter.second) {
         keys.insert(make_pair(key_entry.key(), key_entry.counter()));
         can_execute_now = false;    
+      } else if (key_entry.counter() < master_counter.second) {
+        aborted = true;
       }
     }
   }
@@ -332,8 +345,14 @@ bool DeterministicScheduler::VerifyStorageCounters(TxnProto* txn, set<pair<strin
       if (key_entry.counter() > master_counter.second) {
         keys.insert(make_pair(key_entry.key(), key_entry.counter()));
         can_execute_now = false;    
+      } else if (key_entry.counter() < master_counter.second) {
+        aborted = true;
       }
     }
+  }
+
+  if (aborted == true) {
+    txn->set_status(TxnProto::ABORTED_WITHOUT_LOCK);
   }
 
   return can_execute_now;
@@ -435,8 +454,12 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up
       } // end  if (mode_ == 2 && done_txn->remaster_txn() == true) 
 
       // We have received a finished transaction back, release the lock
-      lock_manager_->Release(done_txn);
+      if (done_txn->status() != TxnProto::ABORTED_WITHOUT_LOCK) {
+        lock_manager_->Release(done_txn);
+      }
+
       executing_txns--;
+
 LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  realeasing txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
       if((done_txn->status() == TxnProto::COMMITTED) && 
          (done_txn->writers_size() == 0 || (rand() % done_txn->writers_size() == 0 && rand() % done_txn->involved_replicas_size() == 0))) {
@@ -518,14 +541,19 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn
              // Working on next txn
              continue;
           } else {
-            txn->set_wait_for_remaster_pros(false);
-            // It is the first txn and can be executed right now
-            if (txn == blocking_txns_[txn->origin_replica()].front()) {
-              blocking_txns_[txn->origin_replica()].pop();
+            if (txn->status() == TxnProto::ABORTED_WITHOUT_LOCK) {
+            // If the status is: ABORTED_WITHOUT_LOCK, we can run this txn without locking
+              ready_txns_->Push(txn);
             } else {
-              // Working on next txn
+              txn->set_wait_for_remaster_pros(false);
+              // It is the first txn and can be executed right now
+              if (txn == blocking_txns_[txn->origin_replica()].front()) {
+                blocking_txns_[txn->origin_replica()].pop();
+              } else {
+                // Working on next txn
 LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id();
-              continue;
+                continue;
+              }
             }
           }
         } // end if (mode_ == 2)
@@ -537,14 +565,13 @@ LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locking txn: "<<tx
     }
 
     // Start executing any and all ready transactions to get them off our plate
-    while (!ready_txns_->empty()) {
-      TxnProto* txn = ready_txns_->front();
-      ready_txns_->pop_front();
+   TxnProto* ready_txn;
+    while (ready_txns_->Pop(&ready_txn)) {
       pending_txns--;
       executing_txns++;
 
-      txns_queue_->Push(txn);
-LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  acquired locks txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
+      txns_queue_->Push(ready_txn);
+LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  acquired locks txn: "<<ready_txn->txn_id()<<" origin:"<<ready_txn->origin_replica()<<"  involved_replicas:"<<ready_txn->involved_replicas_size();
 //LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id()<<"  origin:"<<txn->origin_replica();
     }
 

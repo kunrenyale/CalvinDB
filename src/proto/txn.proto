@@ -44,8 +44,9 @@ message TxnProto {
     ACTIVE = 1;
     COMMITTED = 2;
     ABORTED = 3;
+    ABORTED_WITHOUT_LOCK = 4;
   };
-  optional Status status = 30;
+  optional Status status = 30 [default = NEW];
 
   // Node ids of nodes that participate as readers and writers in this txn.
   repeated uint64 readers = 40;

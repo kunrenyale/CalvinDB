@@ -87,7 +87,7 @@ class DeterministicScheduler : public Scheduler {
 
   // Queue of transaction ids of transactions that have acquired all locks that
   // they have requested.
-  std::deque<TxnProto*>* ready_txns_;
+  AtomicQueue<TxnProto*>* ready_txns_;
 
   
   AtomicQueue<TxnProto*>* txns_queue_;
