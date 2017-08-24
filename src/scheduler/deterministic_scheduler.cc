@@ -456,6 +456,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up
       // We have received a finished transaction back, release the lock
       if (done_txn->status() != TxnProto::ABORTED_WITHOUT_LOCK) {
         lock_manager_->Release(done_txn);
+LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  no need to release txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
       }
 
       executing_txns--;
