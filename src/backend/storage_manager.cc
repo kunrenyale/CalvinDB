@@ -49,10 +49,14 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
 
         // For remaster: collect local entries
         if (mode_ == 2) {
-          KeyEntry* key_entry = local_entries_.add_entries();
-          key_entry->set_key(key);
-          key_entry->set_master(val->master);
-          key_entry->set_counter(val->counter);
+          KeyEntry* key_entry_val = local_entries_.add_entries();
+          key_entry_val->set_key(key);
+          key_entry_val->set_master(val->master);
+          key_entry_val->set_counter(val->counter);
+
+          if (val->master != key_entry.master() || val->counter != key_entry.counter()) {
+            commit_ = false;
+          }
         }
       }
     }
@@ -84,10 +88,14 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
 
         // For remaster: collect local entries
         if (mode_ == 2) {
-          KeyEntry* key_entry = local_entries_.add_entries();
-          key_entry->set_key(key);
-          key_entry->set_master(val->master);
-          key_entry->set_counter(val->counter);
+          KeyEntry* key_entry_val = local_entries_.add_entries();
+          key_entry_val->set_key(key);
+          key_entry_val->set_master(val->master);
+          key_entry_val->set_counter(val->counter);
+
+          if (val->master != key_entry.master() || val->counter != key_entry.counter()) {
+            commit_ = false;
+          }
         }
       } 
     }
@@ -112,36 +120,108 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
         connection_->Send(remote_result_message_);        
       }
     } else {
-      // Request chopping with remaster: do the one-phase commit protocol      
-      pair<uint64, uint32> min_machine = make_pair(INT_MAX, INT_MAX);
-      for (auto machine : involved_machines_) {
-        if (machine.first < min_machine.first) {
-          min_machine.first = machine.first;
-          min_machine.second = machine.second; 
-        } else if (machine.first == min_machine.first && machine.second < min_machine.second) {
-          min_machine.first = machine.first;
-          min_machine.second = machine.second;        
+
+      if (involved_machines_.size() == 1 && txn->status() != TxnProto::ABORTED_WITHOUT_LOCK && commit_ == false) {
+        // single partition single master txn.
+        txn_->set_status(TxnProto::ABORTED);
+
+        if (local_replica_id_ == txn_origin_replica_) {
+
+          set<uint32> involved_replicas;
+          for (uint32 i = 0; i < (uint32)local_entries_.entries_size(); i++) {
+            KeyEntry key_entry = local_entries_.entries(i);
+            records_in_storege_[key_entry.key()] = make_pair(key_entry.master(), key_entry.counter());
+            involved_replicas.insert(key_entry.master());
+          }
+
+          // abort the txn and send it to the related replica.
+          TxnProto txn;
+          txn.CopyFrom(*txn_);
+          txn.clear_involved_replicas();
+          for (auto replica : involved_replicas) {
+            txn.add_involved_replicas(replica);
+          }
+
+
+          txn.set_txn_id(configuration_->GetGUID());
+          txn.set_status(TxnProto::NEW);
+
+          for (int i = 0; i < txn.read_set_size(); i++) {
+            KeyEntry key_entry = txn.read_set(i);
+            pair<uint32, uint64> map_counter = records_in_storege_[key_entry.key()];
+            if (key_entry.master() != map_counter.first || key_entry.counter() != map_counter.second) {  
+              // update to the latest master/counter
+              txn.mutable_read_set(i)->set_master(map_counter.first);
+              txn.mutable_read_set(i)->set_counter(map_counter.second);
+            }
+          }
+
+          for (int i = 0; i < txn.read_write_set_size(); i++) {
+            KeyEntry key_entry = txn.read_write_set(i);
+            pair<uint32, uint64> map_counter = records_in_storege_[key_entry.key()];
+            if (key_entry.master() != map_counter.first || key_entry.counter() != map_counter.second) {   
+              // update to the latest master/counter
+              txn.mutable_read_write_set(i)->set_master(map_counter.first);
+              txn.mutable_read_write_set(i)->set_counter(map_counter.second);
+            }     
+          }
+
+          MessageProto forward_txn_message_;
+          forward_txn_message_.set_destination_channel("sequencer_txn_receive_");
+          forward_txn_message_.set_type(MessageProto::TXN_FORWORD);
+
+          string txn_string;
+          txn.SerializeToString(&txn_string);
+
+          if (txn.involved_replicas_size() == 1) {
+LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn.txn_id() << ":In storageManager: will abort this txn) , replica size == 1: old txn id:"<<txn_->txn_id()<<"  new id:"<<txn.txn_id();
+            uint64 machine_sent = txn.involved_replicas(0) * configuration_->nodes_per_replica() + rand() % configuration_->nodes_per_replica();
+            forward_txn_message_.clear_data();
+            forward_txn_message_.add_data(txn_string);
+            forward_txn_message_.set_destination_node(machine_sent);
+            connection_->Send(forward_txn_message_);
+          } else {
+LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn.txn_id() << ":In storageManager:  received remote entries (will abort this txn) , replica size == 2: ";
+            uint64 machine_sent = rand() % configuration_->nodes_per_replica();
+            forward_txn_message_.clear_data();
+            forward_txn_message_.add_data(txn_string);
+            forward_txn_message_.set_destination_node(machine_sent);
+            connection_->Send(forward_txn_message_);     
+          }
         }
-      }
+
+      } else {
+        // (for mp or mr txns) Request chopping with remaster: do the one-phase commit protocol      
+        pair<uint64, uint32> min_machine = make_pair(INT_MAX, INT_MAX);
+        for (auto machine : involved_machines_) {
+          if (machine.first < min_machine.first) {
+            min_machine.first = machine.first;
+            min_machine.second = machine.second; 
+          } else if (machine.first == min_machine.first && machine.second < min_machine.second) {
+            min_machine.first = machine.first;
+            min_machine.second = machine.second;        
+          }
+        }
       
-      min_involved_machine_ = min_machine.first;
-      min_involved_machine_origin_ = min_machine.second;
+        min_involved_machine_ = min_machine.first;
+        min_involved_machine_origin_ = min_machine.second;
 
-      if (!(min_involved_machine_ == relative_node_id_ && min_involved_machine_origin_ == txn_origin_replica_)) {
-        // non-min machine: sent local entries to min machine
-        uint64 machine_sent = configuration_->LookupMachineID(min_involved_machine_, local_replica_id_);
+        if (!(min_involved_machine_ == relative_node_id_ && min_involved_machine_origin_ == txn_origin_replica_)) {
+          // non-min machine: sent local entries to min machine
+          uint64 machine_sent = configuration_->LookupMachineID(min_involved_machine_, local_replica_id_);
 
-        local_key_entries_message_.set_type(MessageProto::LOCAL_ENTRIES_TO_MIN_MACHINE);
+          local_key_entries_message_.set_type(MessageProto::LOCAL_ENTRIES_TO_MIN_MACHINE);
 
-        string destination_channel = IntToString(txn->txn_id()) + "-" + IntToString(min_involved_machine_origin_);
-        local_key_entries_message_.set_destination_channel(destination_channel);
-        local_key_entries_message_.set_destination_node(machine_sent);
+          string destination_channel = IntToString(txn->txn_id()) + "-" + IntToString(min_involved_machine_origin_);
+          local_key_entries_message_.set_destination_channel(destination_channel);
+          local_key_entries_message_.set_destination_node(machine_sent);
 
-        string local_entries_string;
-        local_entries_.SerializeToString(&local_entries_string);
-        local_key_entries_message_.add_data(local_entries_string);
-        connection_->Send(local_key_entries_message_);
+          string local_entries_string;
+          local_entries_.SerializeToString(&local_entries_string);
+          local_key_entries_message_.add_data(local_entries_string);
+          connection_->Send(local_key_entries_message_);
 //LOG(ERROR) << configuration_->local_node_id()<< ":In storageManager:  send local entries to : "<<machine_sent;
+        }
       }
     }
 

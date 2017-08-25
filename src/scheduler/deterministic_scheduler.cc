@@ -185,6 +185,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
         // Writes occur at this node.
         if (manager->ReadyToExecute()) {
           if (txn->status() == TxnProto::ABORTED_WITHOUT_LOCK) {
+            delete manager;
             done_queue_->Push(txn);
           } else {
             // No remote reads. Execute and clean up.
