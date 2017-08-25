@@ -316,7 +316,7 @@ void StorageManager::HandleRemoteEntries(const MessageProto& message) {
 
       txn.set_txn_id(configuration_->GetGUID());
       txn.set_status(TxnProto::NEW);
-
+txn.set_client_replica(0);
       for (int i = 0; i < txn.read_set_size(); i++) {
         KeyEntry key_entry = txn.read_set(i);
         pair<uint32, uint64> map_counter = records_in_storege_[key_entry.key()];
