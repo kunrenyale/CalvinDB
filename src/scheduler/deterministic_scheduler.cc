@@ -182,19 +182,17 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
                                       connection_,
                                       storage_, txn, mode_);
 
-if (configuration_->local_node_id() == 0)
-LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :got the txn";
 
         // Writes occur at this node.
         if (manager->ReadyToExecute()) {
           if (txn->status() == TxnProto::ABORTED_WITHOUT_LOCK || txn->status() == TxnProto::ABORTED) {
             delete manager;
             done_queue_->Push(txn);
-if (configuration_->local_node_id() == 0)
-LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :abort the txn";
+//if (configuration_->local_node_id() == 0)
+//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :abort the txn";
           } else {
-if (configuration_->local_node_id() == 0)
-LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :will commit the txn";
+//if (configuration_->local_node_id() == 0)
+//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :will commit the txn";
             // No remote reads. Execute and clean up.
             application_->Execute(txn, manager);
             delete manager;
@@ -203,11 +201,11 @@ LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :will comm
             txn->set_status(TxnProto::COMMITTED);
             done_queue_->Push(txn);
           }
-if (configuration_->local_node_id() == 0)
-LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :now single replica txn";
+//if (configuration_->local_node_id() == 0)
+//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :now single replica txn";
         } else {
-if (configuration_->local_node_id() == 0)
-LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" : multi-replica txn";
+//if (configuration_->local_node_id() == 0)
+//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" : multi-replica txn";
           string origin_channel = IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica());
           connection_->LinkChannel(origin_channel, channel);
           // There are outstanding remote reads.
@@ -467,8 +465,8 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up
       // We have received a finished transaction back, release the lock
       if (done_txn->status() != TxnProto::ABORTED_WITHOUT_LOCK) {
         lock_manager_->Release(done_txn);
-if (machine_id == 0)
-LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  realeasing txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
+//if (machine_id == 0)
+//LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  realeasing txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
       } else {
 LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  no need to release txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
       }
@@ -577,8 +575,8 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn
 
         lock_manager_->Lock(txn);
         pending_txns++;
-if (machine_id == 0)
-LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locking txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
+//if (machine_id == 0)
+//LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locking txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
       }
     }
 
@@ -589,8 +587,8 @@ LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locking txn: "<<tx
       executing_txns++;
 
       txns_queue_->Push(ready_txn);
-if (machine_id == 0)
-LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  acquired locks txn: "<<ready_txn->txn_id()<<" origin:"<<ready_txn->origin_replica()<<"  involved_replicas:"<<ready_txn->involved_replicas_size();
+//if (machine_id == 0)
+//LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  acquired locks txn: "<<ready_txn->txn_id()<<" origin:"<<ready_txn->origin_replica()<<"  involved_replicas:"<<ready_txn->involved_replicas_size();
     }
 
     // Report throughput.
