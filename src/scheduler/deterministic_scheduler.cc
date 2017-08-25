@@ -457,7 +457,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up
       // We have received a finished transaction back, release the lock
       if (done_txn->status() != TxnProto::ABORTED_WITHOUT_LOCK) {
         lock_manager_->Release(done_txn);
-LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  realeasing txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
+//LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  realeasing txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
       } else {
 LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  no need to release txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
       }
@@ -566,7 +566,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn
 
         lock_manager_->Lock(txn);
         pending_txns++;
-LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locking txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
+//LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locking txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
       }
     }
 
@@ -577,8 +577,7 @@ LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locking txn: "<<tx
       executing_txns++;
 
       txns_queue_->Push(ready_txn);
-LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  acquired locks txn: "<<ready_txn->txn_id()<<" origin:"<<ready_txn->origin_replica()<<"  involved_replicas:"<<ready_txn->involved_replicas_size();
-//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  Start executing the ready txn: "<<txn->txn_id()<<"  origin:"<<txn->origin_replica();
+//LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  acquired locks txn: "<<ready_txn->txn_id()<<" origin:"<<ready_txn->origin_replica()<<"  involved_replicas:"<<ready_txn->involved_replicas_size();
     }
 
     // Report throughput.

@@ -516,13 +516,13 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<tx
         connection_->Send(txn_message);
 LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, on record: "<<key_entry.key()<<"  txn id:"<<remaster_txn->txn_id();
       }
-/**
+
       if (++val->access_cnt > LAST_N_TOUCH) {
         for (uint32 j = 0; j < REPLICA_SIZE;i++) {
           val->access_pattern[j] = 0;
         }
         val->access_cnt = 0;
-      }      **/
+      }      
     }
 
     for (int j = 0; j < 8; j++) {
