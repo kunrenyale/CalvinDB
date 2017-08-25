@@ -184,7 +184,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
 
         // Writes occur at this node.
         if (manager->ReadyToExecute()) {
-          if (txn->status() == TxnProto::ABORTED_WITHOUT_LOCK) {
+          if (txn->status() == TxnProto::ABORTED_WITHOUT_LOCK || txn->status() == TxnProto::ABORTED) {
             delete manager;
             done_queue_->Push(txn);
           } else {
@@ -196,7 +196,8 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
             txn->set_status(TxnProto::COMMITTED);
             done_queue_->Push(txn);
           }
-//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :now single replica txn";
+if (configuration_->local_node_id() == 0)
+LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :now single replica txn";
         } else {
 //LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" : multi-replica txn";
           string origin_channel = IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica());
