@@ -483,10 +483,14 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  will execute  txn id:"<<tx
     Record* val = storage->ReadObject(key_entry.key());
     // Not necessary since storage already has a pointer to val.
     //   storage->PutObject(txn->read_write_set(i), val);
-  
+if (local_replica_ == 0)
+LOG(ERROR) <<local_replica_<< ":*********In Execute:   (begin)work on  txn, on record: "<<key_entry.key()<<"  txn id:"<<txn->txn_id();
+ 
     // Check whether we need to remaster this record
     if (storage->GetMode() == 2 && local_replica_ == val->master && val->remastering == false) {
       val->access_pattern[txn->client_replica()] = val->access_pattern[txn->client_replica()] + 1;
+if (local_replica_ == 0)
+LOG(ERROR) <<local_replica_<< ":*********In Execute:   (begin)work on  txn, on record(check remaster): "<<key_entry.key()<<"  txn id:"<<txn->txn_id();
 
       if (txn->client_replica() != local_replica_ && val->access_pattern[txn->client_replica()]/(LAST_N_TOUCH*1.0) > ACCESS_PATTERN_THRESHOLD) {
         // Reach the threadhold, do the remaster
@@ -517,7 +521,7 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  will execute  txn id:"<<tx
         txn_message.add_data(txn_string);
 
         connection_->Send(txn_message);
-LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, on record: "<<key_entry.key()<<"  txn id:"<<remaster_txn->txn_id();
+LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, on record: "<<key_entry.key()<<"  txn id:"<<txn->txn_id();
       }
 
       if (++val->access_cnt > LAST_N_TOUCH) {
@@ -525,11 +529,11 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, 
           val->access_pattern[j] = 0;
         }
         val->access_cnt = 0;
-      }      
+      }
     }
 
 if (local_replica_ == 0)
-LOG(ERROR) <<local_replica_<< ":*********In Execute:  after execute  txn id:"<<txn->txn_id();
+LOG(ERROR) <<local_replica_<< ":*********In Execute:   (after)work on  txn, on record: "<<key_entry.key()<<"  txn id:"<<txn->txn_id();
 
     for (int j = 0; j < 8; j++) {
       if ((val->value)[j] + 1 > 'z') {
@@ -540,6 +544,9 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  after execute  txn id:"<<t
     }
 
   }
+
+if (local_replica_ == 0)
+LOG(ERROR) <<local_replica_<< ":*********In Execute:  after execute  txn id:"<<txn->txn_id();
 
   // The following code is for microbenchmark "long" transaction, uncomment it if for "long" transaction
   while (GetTime() - execution_start < 0.00008/factor) {
