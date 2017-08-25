@@ -182,12 +182,19 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
                                       connection_,
                                       storage_, txn, mode_);
 
+if (configuration_->local_node_id() == 0)
+LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :got the txn";
+
         // Writes occur at this node.
         if (manager->ReadyToExecute()) {
           if (txn->status() == TxnProto::ABORTED_WITHOUT_LOCK || txn->status() == TxnProto::ABORTED) {
             delete manager;
             done_queue_->Push(txn);
+if (configuration_->local_node_id() == 0)
+LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :abort the txn";
           } else {
+if (configuration_->local_node_id() == 0)
+LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :will commit the txn";
             // No remote reads. Execute and clean up.
             application_->Execute(txn, manager);
             delete manager;
@@ -199,7 +206,8 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
 if (configuration_->local_node_id() == 0)
 LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :now single replica txn";
         } else {
-//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" : multi-replica txn";
+if (configuration_->local_node_id() == 0)
+LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" : multi-replica txn";
           string origin_channel = IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica());
           connection_->LinkChannel(origin_channel, channel);
           // There are outstanding remote reads.
