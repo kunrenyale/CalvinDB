@@ -490,7 +490,7 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:   (begin)work on  txn, on r
     if (storage->GetMode() == 2 && local_replica_ == val->master && val->remastering == false) {
       val->access_pattern[txn->client_replica()] = val->access_pattern[txn->client_replica()] + 1;
 if (local_replica_ == 0)
-LOG(ERROR) <<local_replica_<< ":*********In Execute:   (begin)work on  txn, on record(check remaster): "<<key_entry.key()<<"  txn id:"<<txn->txn_id();
+LOG(ERROR) <<local_replica_<< ":*********In Execute:   (begin)work on  txn, on record(check remaster): "<<key_entry.key()<<"  txn id:"<<txn->txn_id()<<" client replica is:"<<txn->client_replica();
 
       if (txn->client_replica() != local_replica_ && val->access_pattern[txn->client_replica()]/(LAST_N_TOUCH*1.0) > ACCESS_PATTERN_THRESHOLD) {
         // Reach the threadhold, do the remaster
@@ -524,12 +524,16 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:   (begin)work on  txn, on r
 LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, on record: "<<key_entry.key()<<"  txn id:"<<txn->txn_id();
       }
 
+if (local_replica_ == 0)
+LOG(ERROR) <<local_replica_<< ":*********In Execute:   (begin)work on  txn, on record(check remaster)---1: "<<key_entry.key()<<"  txn id:"<<txn->txn_id()<<" client replica is:"<<txn->client_replica();
       if (++val->access_cnt > LAST_N_TOUCH) {
-        for (uint32 j = 0; j < REPLICA_SIZE;i++) {
+        for (uint32 j = 0; j < REPLICA_SIZE; j++) {
           val->access_pattern[j] = 0;
         }
         val->access_cnt = 0;
       }
+if (local_replica_ == 0)
+LOG(ERROR) <<local_replica_<< ":*********In Execute:   (begin)work on  txn, on record(check remaster)---2: "<<key_entry.key()<<"  txn id:"<<txn->txn_id()<<" client replica is:"<<txn->client_replica();
     }
 
 if (local_replica_ == 0)
