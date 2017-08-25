@@ -468,7 +468,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up
 //if (machine_id == 0)
 //LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  realeasing txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
       } else {
-LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  no need to release txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
+//LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  no need to release txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
       }
 
       executing_txns--;
