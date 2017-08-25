@@ -175,6 +175,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
 
           if (txn.involved_replicas_size() == 1) {
 //LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn.txn_id() << ":In storageManager(single): will abort this txn) , replica size == 1: old txn id:"<<txn_->txn_id()<<"  new id:"<<txn.txn_id();
+            txn.set_client_replica(txn.involved_replicas(0));
             uint64 machine_sent = txn.involved_replicas(0) * configuration_->nodes_per_replica() + rand() % configuration_->nodes_per_replica();
             forward_txn_message_.clear_data();
             forward_txn_message_.add_data(txn_string);
@@ -182,6 +183,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
             connection_->Send(forward_txn_message_);
           } else {
 //LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn.txn_id() << ":In storageManager(single):  received remote entries (will abort this txn) , replica size == 2: ";
+            txn.set_client_replica(0);
             uint64 machine_sent = rand() % configuration_->nodes_per_replica();
             forward_txn_message_.clear_data();
             forward_txn_message_.add_data(txn_string);
@@ -316,7 +318,7 @@ void StorageManager::HandleRemoteEntries(const MessageProto& message) {
 
       txn.set_txn_id(configuration_->GetGUID());
       txn.set_status(TxnProto::NEW);
-txn.set_client_replica(0);
+
       for (int i = 0; i < txn.read_set_size(); i++) {
         KeyEntry key_entry = txn.read_set(i);
         pair<uint32, uint64> map_counter = records_in_storege_[key_entry.key()];
@@ -346,6 +348,7 @@ txn.set_client_replica(0);
 
       if (txn.involved_replicas_size() == 1) {
 //LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn.txn_id() << ":In storageManager: will abort this txn) , replica size == 1: old txn id:"<<txn_->txn_id()<<"  new id:"<<txn.txn_id();
+        txn.set_client_replica(txn.involved_replicas(0));
         uint64 machine_sent = txn.involved_replicas(0) * configuration_->nodes_per_replica() + rand() % configuration_->nodes_per_replica();
         forward_txn_message_.clear_data();
         forward_txn_message_.add_data(txn_string);
@@ -353,6 +356,7 @@ txn.set_client_replica(0);
         connection_->Send(forward_txn_message_);
       } else {
 //LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn.txn_id() << ":In storageManager:  received remote entries (will abort this txn) , replica size == 2: ";
+        txn.set_client_replica(0);
         uint64 machine_sent = rand() % configuration_->nodes_per_replica();
         forward_txn_message_.clear_data();
         forward_txn_message_.add_data(txn_string);
