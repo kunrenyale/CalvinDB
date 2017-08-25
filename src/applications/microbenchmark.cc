@@ -475,6 +475,9 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<tx
   }
   double execution_start = GetTime();
 
+if (local_replica_ == 0)
+LOG(ERROR) <<local_replica_<< ":*********In Execute:  will execute  txn id:"<<txn->txn_id();
+
   for (uint32 i = 0; i < kRWSetSize; i++) {
     KeyEntry key_entry = txn->read_write_set(i);
     Record* val = storage->ReadObject(key_entry.key());
@@ -524,6 +527,9 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, 
         val->access_cnt = 0;
       }      
     }
+
+if (local_replica_ == 0)
+LOG(ERROR) <<local_replica_<< ":*********In Execute:  after execute  txn id:"<<txn->txn_id();
 
     for (int j = 0; j < 8; j++) {
       if ((val->value)[j] + 1 > 'z') {
