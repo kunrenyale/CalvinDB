@@ -229,7 +229,7 @@ LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  rece
           }  // end for
         } // end MASTER_LOOKUP_RESULT  
 //      } else if (txn_id_offset < max_batch_size_) {  // end if (got_message == true)
-      } else if (local_machine == 0 && txn_id_offset < max_batch_size_) {  // end if (got_message == true)
+      } else if (/**local_machine == 0 && **/ txn_id_offset < max_batch_size_) {  // end if (got_message == true)
         // Add next txn request to batch.
         TxnProto* txn;
 
