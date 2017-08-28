@@ -107,7 +107,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
         StorageManager* manager = active_txns[message.destination_channel()];
         // Check whether it already got the decision
         if (mode_ == 2) {
-//          CHECK(manager->ReachedDecision() == true);
+          CHECK(manager->ReachedDecision() == true);
         }
 
         manager->HandleReadResult(message);
