@@ -13,6 +13,17 @@ message KeyEntries {
   repeated KeyEntry entries = 1;
 }
 
+message RemoteResultsEntry {
+  required bytes key = 1;
+  required bytes value = 2;
+  required uint32 master = 3;
+  required uint64 counter = 4;
+}
+
+message RemoteResultsEntries {
+  repeated RemoteResultsEntry entries = 1;
+}
+
 message TxnProto {
   // Globally unique transaction id, specifying global order.
   required uint64 txn_id = 1;

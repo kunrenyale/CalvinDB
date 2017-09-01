@@ -109,19 +109,17 @@ class StorageManager {
 
   // remote results message
   MessageProto remote_result_message_;
-  // For request chopping with remaster: non-min machine ----->min machine
-  MessageProto local_key_entries_message_;
 
   // For request chopping with remaster
   set<pair<uint64, uint32>> involved_machines_;
   uint64 min_involved_machine_;
   uint32 min_involved_machine_origin_;
-  KeyEntries local_entries_;
+  RemoteResultsEntry local_entries_;
   uint32 txn_origin_replica_;
  
   // <key, <master, counter>>
   map<string, pair<uint32, uint64>> records_in_storege_;
-  bool commit_;
+  bool local_commit_;
 
   bool reached_decision_;
 

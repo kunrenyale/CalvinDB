@@ -27,6 +27,14 @@ struct Record {
     access_cnt = 0;
   }
 
+  Record(Value v, uint32 m, uint64 c) : value(v), master(m), counter(c) {
+    for (uint32 i = 0; i < REPLICA_SIZE; i++) {
+      access_pattern[i] = 0;
+    }
+    remastering = false;
+    access_cnt = 0;
+  }
+
   // The actual value
   Value value;
   uint32 master;

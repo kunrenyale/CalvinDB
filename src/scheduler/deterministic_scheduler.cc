@@ -185,7 +185,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
 
         // Writes occur at this node.
         if (manager->ReadyToExecute()) {
-          if (txn->status() == TxnProto::ABORTED_WITHOUT_LOCK || txn->status() == TxnProto::ABORTED) {
+          if (mode_ == 2 && manager->CheckCommitOrAbort() == false) {
             delete manager;
             done_queue_->Push(txn);
 //if (configuration_->local_node_id() == 0)
