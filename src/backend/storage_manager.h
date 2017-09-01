@@ -60,17 +60,11 @@ class StorageManager {
   void HandleReadResult(const MessageProto& message);
   bool ReadyToExecute();
 
-  void HandleRemoteEntries(const MessageProto& message);
-  bool AbortTxn();
-  void SendLocalResults();
+  bool CheckCommitOrAbort();
 
   Storage* GetStorage() { return actual_storage_; }
 
   uint32 GetMode() {return mode_;}
-
-  void UpdateReachedDecision() { reached_decision_ = true;}
-
-  bool ReachedDecision() { return reached_decision_; }
 
   // Set by the constructor, indicating whether 'txn' involves any writes at
   // this node.
@@ -114,14 +108,12 @@ class StorageManager {
   set<pair<uint64, uint32>> involved_machines_;
   uint64 min_involved_machine_;
   uint32 min_involved_machine_origin_;
-  RemoteResultsEntry local_entries_;
+
+  RemoteResultsEntries local_entries_;
   uint32 txn_origin_replica_;
  
-  // <key, <master, counter>>
-  map<string, pair<uint32, uint64>> records_in_storege_;
   bool local_commit_;
 
-  bool reached_decision_;
 
 };
 

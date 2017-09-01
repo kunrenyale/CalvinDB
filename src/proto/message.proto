@@ -39,8 +39,6 @@ message MessageProto {
     NEW_SEQUENCE_ACK = 18;
     MASTER_LOOKUP = 19;
     MASTER_LOOKUP_RESULT = 20;
-    LOCAL_ENTRIES_TO_MIN_MACHINE = 21;
-    COMMIT_OR_ABORT_DECISION = 22;
   };
   required MessageType type = 9;
 

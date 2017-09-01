@@ -105,73 +105,33 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
         // Remote read result.
         CHECK(active_txns.count(message.destination_channel()) > 0);
         StorageManager* manager = active_txns[message.destination_channel()];
-        // Check whether it already got the decision
-        if (mode_ == 2) {
-          CHECK(manager->ReachedDecision() == true);
-        }
 
         manager->HandleReadResult(message);
 
         if (manager->ReadyToExecute()) {
-          // Execute and clean up.
-          TxnProto* txn = manager->txn_;
-          application_->Execute(txn, manager);
-          delete manager;
+          if (mode_ == 2 && manager->CheckCommitOrAbort() == false) {
+            connection_->UnlinkChannel(message.destination_channel());
+            active_txns.erase(message.destination_channel());
 
-          connection_->UnlinkChannel(message.destination_channel());
-          active_txns.erase(message.destination_channel());
+            done_queue_->Push(manager->txn_);
+            delete manager;
+//if (configuration_->local_node_id() == 0)
+//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :abort the txn";
+          } else {
+            // Execute and clean up.
+            TxnProto* txn = manager->txn_;
+            application_->Execute(txn, manager);
+            delete manager;
 
-          // Respond to scheduler;
-          txn->set_status(TxnProto::COMMITTED);
-          done_queue_->Push(txn);
-        }
-      } else if (message.type() == MessageProto::LOCAL_ENTRIES_TO_MIN_MACHINE) {
-        // message sent from non-min machines to min-machine
-        CHECK(active_txns.count(message.destination_channel()) > 0);
-        StorageManager* manager = active_txns[message.destination_channel()];
-        manager->HandleRemoteEntries(message);
+            connection_->UnlinkChannel(message.destination_channel());
+            active_txns.erase(message.destination_channel());
 
-        if (manager->AbortTxn()) {
-//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :In RunWorkerThread:  will abort txn, channel:"<<message.destination_channel();
-          connection_->UnlinkChannel(message.destination_channel());
-          active_txns.erase(message.destination_channel());
-          // Respond to scheduler;
-          
-          if (manager->txn_->status() != TxnProto::ABORTED_WITHOUT_LOCK) {
-            manager->txn_->set_status(TxnProto::ABORTED);
+            // Respond to scheduler;
+            txn->set_status(TxnProto::COMMITTED);
+            done_queue_->Push(txn);
           }
-
-          done_queue_->Push(manager->txn_);
-          delete manager;     
-        } else {
-          // will commit this txn and send local results
-          manager->SendLocalResults();       
         }
-        
-      } else if (message.type() == MessageProto::COMMIT_OR_ABORT_DECISION) {
-        // min-machine sent decision messages to all non-min machines
-        CHECK(active_txns.count(message.destination_channel()) > 0);
-        StorageManager* manager = active_txns[message.destination_channel()];
-
-        manager->UpdateReachedDecision();
-        bool commit = message.misc_bool(0);
-        if (commit == true) {
-          manager->SendLocalResults();
-//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :In RunWorkerThread:  will commit, will SendLocalResults()";
-        } else {
-//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :In RunWorkerThread:  will abort txn, channel:"<<message.destination_channel();
-          connection_->UnlinkChannel(message.destination_channel());
-          active_txns.erase(message.destination_channel());
-          // Respond to scheduler;
-
-          if (manager->txn_->status() != TxnProto::ABORTED_WITHOUT_LOCK) {
-            manager->txn_->set_status(TxnProto::ABORTED);
-          }
-
-          done_queue_->Push(manager->txn_);
-          delete manager;        
-        }
-      }
+      } 
     } else {
       // No remote read result found, start on next txn if one is waiting.
       TxnProto* txn;

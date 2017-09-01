@@ -16,8 +16,6 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
   txn_origin_replica_ = txn->origin_replica();
   local_commit_ = true;
 
-  reached_decision_ = false;
-
   bool reader = false;
   for (int i = 0; i < txn->readers_size(); i++) {
     if (txn->readers(i) == relative_node_id_)
@@ -101,7 +99,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
     if (mode_ == 0) {
       // Original CalvinDB: Broadcast local reads to (other) writers.
       string local_entries_string;
-      local_entries_->SerializeToString(&local_entries_string);
+      local_entries_.SerializeToString(&local_entries_string);
       remote_result_message_.add_data(local_entries_string);
 
       remote_result_message_.set_destination_channel(IntToString(txn->txn_id()) + "-" + IntToString(txn_origin_replica_));
@@ -114,7 +112,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
     } else if (mode_ == 1){
       // Basic request chopping: Broadcast local reads to (other) writers.
       string local_entries_string;
-      local_entries_->SerializeToString(&local_entries_string);
+      local_entries_.SerializeToString(&local_entries_string);
       remote_result_message_.add_data(local_entries_string);
 
       for (auto remote_writer : remote_replica_writers_) {
@@ -142,7 +140,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
       min_involved_machine_origin_ = min_machine.second;
 
       string local_entries_string;
-      local_entries_->SerializeToString(&local_entries_string);
+      local_entries_.SerializeToString(&local_entries_string);
       remote_result_message_.add_data(local_entries_string);
 
       for (auto remote_writer : remote_replica_writers_) {
@@ -171,7 +169,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
 bool StorageManager::CheckCommitOrAbort() {
   bool decision = true;
 
-  if (txn->status() == TxnProto::ABORTED_WITHOUT_LOCK) {
+  if (txn_->status() == TxnProto::ABORTED_WITHOUT_LOCK) {
     decision = false;
   } else if (local_commit_ == false) {
     txn_->set_status(TxnProto::ABORTED);
@@ -198,6 +196,10 @@ bool StorageManager::CheckCommitOrAbort() {
           break;
         }   
       }
+    }
+
+    if (decision == false) {
+      txn_->set_status(TxnProto::ABORTED);
     }
 
   } // end if else
@@ -281,10 +283,6 @@ void StorageManager::HandleReadResult(const MessageProto& message) {
     objects_[key_entry.key()] = val;
     remote_reads_.push_back(val);
   }
-}
-
-bool StorageManager::AbortTxn() {
-  return commit_ == false;
 }
 
 bool StorageManager::ReadyToExecute() {
