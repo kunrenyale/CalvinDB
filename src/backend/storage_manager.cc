@@ -44,17 +44,16 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
         objects_[key] = val;
 
         // For remaster: collect local entries
-        if (mode_ == 2) {
-          RemoteResultsEntry* results_entry = local_entries_.add_entries();
-          results_entry->set_key(key);
-          results_entry->set_value(val->value);
-          results_entry->set_master(val->master);
-          results_entry->set_counter(val->counter);
+        RemoteResultsEntry* results_entry = local_entries_.add_entries();
+        results_entry->set_key(key);
+        results_entry->set_value(val->value);
+        results_entry->set_master(val->master);
+        results_entry->set_counter(val->counter);
 
-          if (val->master != key_entry.master() || val->counter != key_entry.counter()) {
-            local_commit_ = false;
-          }
+        if (val->master != key_entry.master() || val->counter != key_entry.counter()) {
+          local_commit_ = false;
         }
+
       }
     }
 
@@ -82,16 +81,14 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
         objects_[key] = val;
 
         // For remaster: collect local entries
-        if (mode_ == 2) {
-          RemoteResultsEntry* results_entry = local_entries_.add_entries();
-          results_entry->set_key(key);
-          results_entry->set_value(val->value);
-          results_entry->set_master(val->master);
-          results_entry->set_counter(val->counter);
+        RemoteResultsEntry* results_entry = local_entries_.add_entries();
+        results_entry->set_key(key);
+        results_entry->set_value(val->value);
+        results_entry->set_master(val->master);
+        results_entry->set_counter(val->counter);
 
-          if (val->master != key_entry.master() || val->counter != key_entry.counter()) {
-            local_commit_ = false;
-          }
+        if (val->master != key_entry.master() || val->counter != key_entry.counter()) {
+          local_commit_ = false;
         }
       } 
     }
