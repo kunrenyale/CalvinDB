@@ -109,7 +109,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
         manager->HandleReadResult(message);
 
         if (manager->ReadyToExecute()) {
-          if (mode_ == 2 && manager->CheckCommitOrAbort() == false) {
+ /**         if (mode_ == 2 && manager->CheckCommitOrAbort() == false) {
             connection_->UnlinkChannel(message.destination_channel());
             active_txns.erase(message.destination_channel());
 //if (configuration_->local_node_id() == 0)
@@ -117,7 +117,7 @@ LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" 
             done_queue_->Push(manager->txn_);
             delete manager;
 
-          } else { 
+          } else { **/
             // Execute and clean up.
             TxnProto* txn = manager->txn_;
             application_->Execute(txn, manager);
@@ -130,7 +130,7 @@ LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" 
             txn->set_status(TxnProto::COMMITTED);
             done_queue_->Push(txn);
           }
-        }
+        //}
       } 
     } else {
       // No remote read result found, start on next txn if one is waiting.
@@ -495,6 +495,7 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_mess
 /**if (txn->remaster_txn() == true) {
 LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn: "<<txn->txn_id();
 }**/
+/**
         if (mode_ == 2 && txn->remaster_txn() == false) {
           blocking_txns_[txn->origin_replica()].push(txn);
           txn->set_wait_for_remaster_pros(true);
@@ -532,7 +533,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  find a  ABORTED_WITH
             }
           }
         } // end if (mode_ == 2)
-
+**/
         lock_manager_->Lock(txn);
         pending_txns++;
 //if (machine_id == 0)
