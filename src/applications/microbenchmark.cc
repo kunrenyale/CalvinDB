@@ -450,7 +450,7 @@ TxnProto* Microbenchmark::NewTxn(int64 txn_id, int txn_type,
 int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {  
   // Remaster txn
   if (txn->remaster_txn() == true) {
-//LOG(ERROR) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<txn->txn_id();
+LOG(ERROR) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<txn->txn_id();
     KeyEntry key_entry = txn->read_write_set(0);
     Record* val = storage->ReadObject(key_entry.key());
 
