@@ -69,7 +69,7 @@ class Microbenchmark : public Application {
   uint32 local_replica_;
   ConnectionMultiplexer* connection_;
 
-  static const uint32 kRWSetSize = 10;  // MUST BE EVEN
+  static const uint32 kRWSetSize = 2;  // MUST BE EVEN
   static const uint64 kDBSize = 10000000;
   static const uint32 kRecordSize = 100;
 
