@@ -497,13 +497,12 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
 }**/
 
         if (mode_ == 2 && txn->remaster_txn() == false) {
-          blocking_txns_[txn->origin_replica()].push(txn);
-          txn->set_wait_for_remaster_pros(true);
-
           // Check the mastership of the records without locking
           set<pair<string,uint64>> keys;
           bool can_execute_now = VerifyStorageCounters(txn, keys);
           if (can_execute_now == false) {
+            blocking_txns_[txn->origin_replica()].push(txn);
+            txn->set_wait_for_remaster_pros(true);
 LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id()<<"  on key:"<<keys.begin()->first;
             // Put it into the queue and wait for the remaster action come
             waiting_txns_by_txnid_[txn->txn_id()] = keys;
@@ -520,16 +519,14 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  find a  ABORTED_WITH
               ready_txns_->Push(txn);
               pending_txns++;
               continue;
-            } else {
-              txn->set_wait_for_remaster_pros(false);
+            } else { 
               // It is the first txn and can be executed right now
-              if (txn == blocking_txns_[txn->origin_replica()].front()) {
-                blocking_txns_[txn->origin_replica()].pop();
-              } else {
-                // Working on next txn
+              if (!blocking_txns_[txn->origin_replica()].empty()) {
+                blocking_txns_[txn->origin_replica()].push(txn);
 LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id();
                 continue;
               }
+      
             }
           }
         } // end if (mode_ == 2)
