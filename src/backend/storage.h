@@ -11,7 +11,7 @@
 #include "common/types.h"
 
 #define REPLICA_SIZE 3
-#define LAST_N_TOUCH 5000
+#define LAST_N_TOUCH 30
 #define ACCESS_PATTERN_THRESHOLD  0.90
 
 using std::vector;
