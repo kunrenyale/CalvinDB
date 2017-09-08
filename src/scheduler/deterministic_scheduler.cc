@@ -113,7 +113,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
             connection_->UnlinkChannel(message.destination_channel());
             active_txns.erase(message.destination_channel());
 //if (configuration_->local_node_id() == 0)
-//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :abort the txn";
+LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :abort the txn";
             done_queue_->Push(manager->txn_);
             delete manager;
 
@@ -149,7 +149,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
             delete manager;
             done_queue_->Push(txn);
 //if (configuration_->local_node_id() == 0)
-//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :abort the txn";
+LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :abort the txn (single replica txn)";
           } else {
 //if (configuration_->local_node_id() == 0)
 //LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :will commit the txn";
@@ -376,7 +376,7 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
     while (done_queue_->Pop(&done_txn) == true) {
       // Handle remaster transactions     
       if (mode_ == 2 && done_txn->remaster_txn() == true) {
-//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  release remaster txn: "<<done_txn->txn_id();
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  release remaster txn: "<<done_txn->txn_id();
 
         uint64 txn_id = done_txn->txn_id();
       
@@ -401,9 +401,9 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
               if (blocking_txns_[a->origin_replica()].front() == a) {
                 ready_to_lock_txns.push_back(a); 
                 blocking_txns_[a->origin_replica()].pop();
-//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn: "<<a->txn_id();
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn: "<<a->txn_id();
                 while (!blocking_txns_[a->origin_replica()].empty() && blocking_txns_[a->origin_replica()].front()->wait_for_remaster_pros() == false) {
-//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn: "<<blocking_txns_[a->origin_replica()].front()->txn_id();
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn: "<<blocking_txns_[a->origin_replica()].front()->txn_id();
                   ready_to_lock_txns.push_back(blocking_txns_[a->origin_replica()].front()); 
                   blocking_txns_[a->origin_replica()].pop();
                 }
@@ -428,7 +428,7 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
 //if (machine_id == 0)
 //LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  realeasing txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
       } else {
-//LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  no need to release txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
+LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  no need to release txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
       }
 
       executing_txns--;
@@ -504,7 +504,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
           set<pair<string,uint64>> keys;
           bool can_execute_now = VerifyStorageCounters(txn, keys);
           if (can_execute_now == false) {
-//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id();
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id();
             // Put it into the queue and wait for the remaster action come
             waiting_txns_by_txnid_[txn->txn_id()] = keys;
             for (auto it = keys.begin(); it != keys.end(); it++) {
@@ -516,7 +516,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
           } else {
             if (txn->status() == TxnProto::ABORTED_WITHOUT_LOCK) {
             // If the status is: ABORTED_WITHOUT_LOCK, we can run this txn without locking
-//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  find a  ABORTED_WITHOUT_LOCK txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  find a  ABORTED_WITHOUT_LOCK txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
               ready_txns_->Push(txn);
               pending_txns++;
               continue;
@@ -527,7 +527,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
                 blocking_txns_[txn->origin_replica()].pop();
               } else {
                 // Working on next txn
-//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id();
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id();
                 continue;
               }
             }
@@ -549,7 +549,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
 
       txns_queue_->Push(ready_txn);
 //if (machine_id == 0)
-//LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  acquired locks txn: "<<ready_txn->txn_id()<<" origin:"<<ready_txn->origin_replica()<<"  involved_replicas:"<<ready_txn->involved_replicas_size();
+LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  acquired locks txn: "<<ready_txn->txn_id()<<" origin:"<<ready_txn->origin_replica()<<"  involved_replicas:"<<ready_txn->involved_replicas_size();
     }
 
     // Report throughput.
