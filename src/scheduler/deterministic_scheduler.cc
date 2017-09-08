@@ -113,7 +113,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
             connection_->UnlinkChannel(message.destination_channel());
             active_txns.erase(message.destination_channel());
 //if (configuration_->local_node_id() == 0)
-LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :abort the txn";
+//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :abort the txn";
             done_queue_->Push(manager->txn_);
             delete manager;
 
@@ -149,7 +149,7 @@ LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" 
             delete manager;
             done_queue_->Push(txn);
 //if (configuration_->local_node_id() == 0)
-LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :abort the txn (single replica txn)";
+//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :abort the txn (single replica txn)";
           } else {
 //if (configuration_->local_node_id() == 0)
 //LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :will commit the txn";
@@ -368,7 +368,7 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
   uint64 pending_txns = 0;
   int batch_offset = 0;
   uint64 machine_id = configuration_->local_node_id();
-  uint64 maximum_txns = 1000000;
+  uint64 maximum_txns = 90000000;
   
 
   while (true) {
@@ -428,7 +428,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up
 //if (machine_id == 0)
 //LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  realeasing txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
       } else {
-LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  no need to release txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
+//LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  no need to release txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
       }
 
       executing_txns--;
@@ -515,7 +515,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn
           } else {
             if (txn->status() == TxnProto::ABORTED_WITHOUT_LOCK) {
             // If the status is: ABORTED_WITHOUT_LOCK, we can run this txn without locking
-LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  find a  ABORTED_WITHOUT_LOCK txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
+//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  find a  ABORTED_WITHOUT_LOCK txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
               ready_txns_->Push(txn);
               pending_txns++;
               continue;
