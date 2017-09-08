@@ -401,9 +401,9 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  release remaster txn
               if (blocking_txns_[a->origin_replica()].front() == a) {
                 ready_to_lock_txns.push_back(a); 
                 blocking_txns_[a->origin_replica()].pop();
-LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn: "<<a->txn_id();
+//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn: "<<a->txn_id();
                 while (!blocking_txns_[a->origin_replica()].empty() && blocking_txns_[a->origin_replica()].front()->wait_for_remaster_pros() == false) {
-LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn: "<<blocking_txns_[a->origin_replica()].front()->txn_id();
+//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn: "<<blocking_txns_[a->origin_replica()].front()->txn_id();
                   ready_to_lock_txns.push_back(blocking_txns_[a->origin_replica()].front()); 
                   blocking_txns_[a->origin_replica()].pop();
                 }
@@ -481,7 +481,7 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(1): "<<batch_mess
 LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
 }**/ 
     // Current batch has remaining txns, grab up to 10.
-    } else if (executing_txns + pending_txns < maximum_txns) {
+    } else if (true/**executing_txns + pending_txns < maximum_txns**/) {
       for (int i = 0; i < 100; i++) {
         if (batch_offset >= batch_message->data_size()) {
           // Oops we ran out of txns in this batch. Stop adding txns for now.
@@ -503,7 +503,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
           if (can_execute_now == false) {
             blocking_txns_[txn->origin_replica()].push(txn);
             txn->set_wait_for_remaster_pros(true);
-LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id()<<"  on key:"<<keys.begin()->first;
+//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id()<<"  on key:"<<keys.begin()->first;
             // Put it into the queue and wait for the remaster action come
             waiting_txns_by_txnid_[txn->txn_id()] = keys;
             for (auto it = keys.begin(); it != keys.end(); it++) {
@@ -523,7 +523,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn
               // It is the first txn and can be executed right now
               if (!blocking_txns_[txn->origin_replica()].empty()) {
                 blocking_txns_[txn->origin_replica()].push(txn);
-LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id();
+//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id();
                 continue;
               }
       
