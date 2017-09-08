@@ -368,7 +368,7 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
   uint64 pending_txns = 0;
   int batch_offset = 0;
   uint64 machine_id = configuration_->local_node_id();
-  uint64 maximum_txns = 10000000;
+  uint64 maximum_txns = 1000;
   
 
   while (true) {
@@ -426,7 +426,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up
       if (done_txn->status() != TxnProto::ABORTED_WITHOUT_LOCK) {
         lock_manager_->Release(done_txn);
 //if (machine_id == 0)
-//LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  realeasing txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
+LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  realeasing txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
       } else {
 LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  no need to release txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
       }
@@ -504,7 +504,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
           set<pair<string,uint64>> keys;
           bool can_execute_now = VerifyStorageCounters(txn, keys);
           if (can_execute_now == false) {
-LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id();
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id()<<"  on key:"<<keys.begin()->first;
             // Put it into the queue and wait for the remaster action come
             waiting_txns_by_txnid_[txn->txn_id()] = keys;
             for (auto it = keys.begin(); it != keys.end(); it++) {
@@ -549,7 +549,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn
 
       txns_queue_->Push(ready_txn);
 //if (machine_id == 0)
-LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  acquired locks txn: "<<ready_txn->txn_id()<<" origin:"<<ready_txn->origin_replica()<<"  involved_replicas:"<<ready_txn->involved_replicas_size();
+//LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  acquired locks txn: "<<ready_txn->txn_id()<<" origin:"<<ready_txn->origin_replica()<<"  involved_replicas:"<<ready_txn->involved_replicas_size();
     }
 
     // Report throughput.
