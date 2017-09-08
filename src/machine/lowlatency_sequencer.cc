@@ -145,10 +145,10 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
           string txn_string;
           txn.SerializeToString(&txn_string);
           batch_message.add_data(txn_string);
-/**if (txn.remaster_txn() == true)
+if (txn.remaster_txn() == true)
 LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  received a remaster txn: "<<txn.txn_id();
 else 
-LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  received a aborted txn;"<<txn.txn_id()<<" replica size:"<<txn.involved_replicas_size();**/
+LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  received a aborted txn;"<<txn.txn_id()<<" replica size:"<<txn.involved_replicas_size();
         } else if (message.type() == MessageProto::MASTER_LOOKUP_RESULT) {
           // Got master lookup result message
           LookupMasterResultEntry lookup_result_entry;
