@@ -101,7 +101,6 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
     bool got_message = connection_->GotMessage(channel, &message);
     if (got_message == true) {
       if (message.type() == MessageProto::READ_RESULT) {
-//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<message.destination_channel()<<" :In RunWorkerThread:  received READ_RESULT";
         // Remote read result.
         CHECK(active_txns.count(message.destination_channel()) > 0);
         StorageManager* manager = active_txns[message.destination_channel()];
@@ -112,8 +111,6 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
          if (mode_ == 2 && manager->CheckCommitOrAbort() == false) {
             connection_->UnlinkChannel(message.destination_channel());
             active_txns.erase(message.destination_channel());
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<manager->txn_->txn_id() <<" :abort the txn";
             done_queue_->Push(manager->txn_);
             delete manager;
 
@@ -148,11 +145,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
           if (mode_ == 2 && manager->CheckCommitOrAbort() == false) {
             delete manager;
             done_queue_->Push(txn);
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :abort the txn (single replica txn)";
           } else {
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :will commit the txn";
             // No remote reads. Execute and clean up.
             application_->Execute(txn, manager);
             delete manager;
@@ -161,11 +154,8 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
             txn->set_status(TxnProto::COMMITTED);
             done_queue_->Push(txn);
           }
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :now single replica txn";
         } else {
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" : multi-replica txn";
+
           string origin_channel = IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica());
           connection_->LinkChannel(origin_channel, channel);
           // There are outstanding remote reads.
