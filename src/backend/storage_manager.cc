@@ -43,7 +43,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
         Record* val = actual_storage_->ReadObject(key);
         objects_[key] = val;
 
-        // For remaster: collect local entries
+        // Collect local entries
         RemoteResultsEntry* results_entry = local_entries_.add_entries();
         results_entry->set_key(key);
         results_entry->set_value(val->value);
@@ -69,9 +69,11 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
 
       uint32 replica_id = key_entry.master();
       if (mode_ != 0 && replica_id != txn_origin_replica_) {
+        // Record remote writers
         remote_replica_writers_.insert(make_pair(mds, replica_id));
         continue;
       } else if (mode_ != 0 && mds != relative_node_id_) {
+        // Record remote writers
         remote_replica_writers_.insert(make_pair(mds, txn_origin_replica_));
         continue;
       }
@@ -80,7 +82,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
         Record* val = actual_storage_->ReadObject(key);
         objects_[key] = val;
 
-        // For remaster: collect local entries
+        // Collect local entries
         RemoteResultsEntry* results_entry = local_entries_.add_entries();
         results_entry->set_key(key);
         results_entry->set_value(val->value);
@@ -107,7 +109,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
         }
       }
     } else if (mode_ == 1){
-      // Basic request chopping: Broadcast local reads to (other) writers.
+      // Basic request chopping: Broadcast local reads to (other) writers(on the same machine but with different master or on different machine but with same replica).
       string local_entries_string;
       local_entries_.SerializeToString(&local_entries_string);
       remote_result_message_.add_data(local_entries_string);
@@ -162,19 +164,21 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
   // Scheduler is responsible for calling HandleReadResponse. We're done here.
 }
 
-// Return true if it will commit, or return false if it will abort
+// For bachground remaster: Return true if it will commit, or return false if it will abort and set the status to ABORTED
 bool StorageManager::CheckCommitOrAbort() {
   bool decision = true;
 
   if (txn_->status() == TxnProto::ABORTED_WITHOUT_LOCK) {
+    // If we already know this txn will be aborted in the locking thread(without acquiring locks), then we will abort it.
     decision = false;
   } else if (local_commit_ == false) {
+    // If we know it will be aborted based on the local information
     txn_->set_status(TxnProto::ABORTED);
     decision = false;
   } else if (involved_machines_.size() == 1) {
     decision = true;
   } else {
-    // check the master/counter
+    // check the all the master/counter
     for (int i = 0; i < txn_->read_set_size(); i++) {
       KeyEntry key_entry = txn_->read_set(i);
       Record* val = objects_[key_entry.key()];
@@ -268,6 +272,7 @@ bool StorageManager::CheckCommitOrAbort() {
   return decision;
 }
 
+// Handle remote results
 void StorageManager::HandleReadResult(const MessageProto& message) {
   CHECK(message.type() == MessageProto::READ_RESULT);
 

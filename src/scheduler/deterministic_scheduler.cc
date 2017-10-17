@@ -108,7 +108,8 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
         manager->HandleReadResult(message);
 
         if (manager->ReadyToExecute()) {
-         if (mode_ == 2 && manager->CheckCommitOrAbort() == false) {
+          // For background remaster, we should check whether we need to abort this transaction
+          if (mode_ == 2 && manager->CheckCommitOrAbort() == false) {
             connection_->UnlinkChannel(message.destination_channel());
             active_txns.erase(message.destination_channel());
             done_queue_->Push(manager->txn_);
@@ -142,6 +143,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
 
         // Writes occur at this node.
         if (manager->ReadyToExecute()) {
+          // For background remaster, we should check whether we need to abort this transaction
           if (mode_ == 2 && manager->CheckCommitOrAbort() == false) {
             delete manager;
             done_queue_->Push(txn);
