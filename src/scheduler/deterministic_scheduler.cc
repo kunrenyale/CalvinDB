@@ -360,7 +360,7 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
   uint64 pending_txns = 0;
   int batch_offset = 0;
   uint64 machine_id = configuration_->local_node_id();
-  uint64 maximum_txns = 9000000;
+  uint64 maximum_txns = 200;
   
 
   while (true) {
