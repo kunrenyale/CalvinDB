@@ -60,6 +60,9 @@ $ bin/scripts/cluster --command="put-config" // Send the config file to all the 
 $ bin/scripts/cluster --command="start" --lowlatency=0 --experiment=0  --percent_mp=0  --percent_mr=0  --hot_records=10000 --max_batch_size=100  // Run Original CalvinDB
 $ bin/scripts/cluster --command="start" --lowlatency=1 --experiment=0  --percent_mp=0  --percent_mr=0  --hot_records=10000 --max_batch_size=100  // Run Lowlatency CalvinDB
 
+You probably need another terminal to terminate the db process when complete your test by running:
+$ bin/scripts/cluster --command="kill" --lowlatency=0  // 0: CalvinDB; 1 or 2: Low latency CavlinDB
+
 Will be continued.
 
 
