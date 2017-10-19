@@ -360,8 +360,11 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
   uint64 pending_txns = 0;
   int batch_offset = 0;
   uint64 machine_id = configuration_->local_node_id();
-  uint64 maximum_txns = 10000000;
   
+  // For original CalvinDB high contention: Get better performance if set it smaller
+  // For AsyCalvinDB with multi-replica txns: should set maximum_txns much bigger
+  uint64 maximum_txns = 10000000;
+  uint64 num_txns_once = 100;
 
   while (true) {
     TxnProto* done_txn;
@@ -472,9 +475,9 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(1): "<<batch_mess
 /**if (batch_message != NULL) {
 LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
 }**/ 
-    // Current batch has remaining txns, grab up to 10.
+    // Current batch has remaining txns, grab up to num_txns_once.
     } else if (executing_txns + pending_txns < maximum_txns) {
-      for (int i = 0; i < 100; i++) {
+      for (uint i = 0; i < num_txns_once; i++) {
         if (batch_offset >= batch_message->data_size()) {
           // Oops we ran out of txns in this batch. Stop adding txns for now.
           break;
