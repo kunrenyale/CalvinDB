@@ -364,7 +364,7 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
   // For original CalvinDB high contention: Get better performance if set it smaller
   // For AsyCalvinDB with multi-replica txns: should set maximum_txns much bigger
   uint64 maximum_txns = 20000; // 10000000
-  uint64 num_txns_once = 10;
+  uint64 num_txns_once = 100;
 
   while (true) {
     TxnProto* done_txn;
