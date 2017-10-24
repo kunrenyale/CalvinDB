@@ -370,6 +370,7 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
     TxnProto* done_txn;
     while (done_queue_->Pop(&done_txn) == true) {
       // Handle remaster transactions     
+/**
       if (mode_ == 2 && done_txn->remaster_txn() == true) {
 LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  release remaster txn: "<<done_txn->txn_id();
 
@@ -416,7 +417,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  release remaster txn
 //LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn(acquire lock): "<<ready_to_lock_txns[i]->txn_id();
         }
       } // end  if (mode_ == 2 && done_txn->remaster_txn() == true) 
-
+**/
       // We have received a finished transaction back, release the lock
       if (done_txn->status() != TxnProto::ABORTED_WITHOUT_LOCK) {
         lock_manager_->Release(done_txn);
