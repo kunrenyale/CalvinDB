@@ -483,7 +483,7 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<tx
     //   storage->PutObject(txn->read_write_set(i), val);
  
     // Check whether we need to remaster this record
-    if (storage->GetMode() == 2 && local_replica_ == val->master && val->remastering == false) {
+/**    if (storage->GetMode() == 2 && local_replica_ == val->master && val->remastering == false) {
       val->access_pattern[txn->client_replica()] = val->access_pattern[txn->client_replica()] + 1;
 
       if (txn->client_replica() != local_replica_ && val->access_pattern[txn->client_replica()]/(LAST_N_TOUCH*1.0) > ACCESS_PATTERN_THRESHOLD) {
@@ -526,7 +526,7 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, 
         val->access_cnt = 0;
       }
 
-    } 
+    } **/
 
 
     for (int j = 0; j < 8; j++) {
