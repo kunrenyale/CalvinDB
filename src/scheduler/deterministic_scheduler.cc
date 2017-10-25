@@ -490,7 +490,7 @@ LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_mess
 /**if (txn->remaster_txn() == true) {
 LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn: "<<txn->txn_id();
 }**/
-
+/**
         if (mode_ == 2 && txn->remaster_txn() == false) {
           // Check the mastership of the records without locking
           set<pair<string,uint64>> keys;
@@ -525,7 +525,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
             }
           }
         } // end if (mode_ == 2)
-
+**/
         lock_manager_->Lock(txn);
         pending_txns++;
 //if (machine_id == 0)

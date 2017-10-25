@@ -163,11 +163,11 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
 
   // Scheduler is responsible for calling HandleReadResponse. We're done here.
 }
-
+/**
 bool StorageManager::CheckCommitOrAbort() {
   return true;
-}
-/**
+} **/
+
 // For bachground remaster: Return true if it will commit, or return false if it will abort and set the status to ABORTED
 bool StorageManager::CheckCommitOrAbort() {
   bool decision = true;
@@ -275,7 +275,7 @@ bool StorageManager::CheckCommitOrAbort() {
 
   return decision;
 }
-**/
+
 // Handle remote results
 void StorageManager::HandleReadResult(const MessageProto& message) {
   CHECK(message.type() == MessageProto::READ_RESULT);
