@@ -88,10 +88,10 @@ class Lowlatency_MClient : public Client {
     if ((uint32)(rand() % 100) < percent_mr_) {
       // Multi-replica txn.
       uint32 other_replica;
-      /**do {
+      do {
         other_replica = (uint32)(rand() % num_replicas_);
-      } while (other_replica == local_replica_); **/
-other_replica = (local_replica_ + 1)%3;
+      } while (other_replica == local_replica_); 
+//other_replica = (local_replica_ + 1)%3;
       if (nodes_per_replica_ > 1 && uint32(rand() % 100) < percent_mp_) {
         // Multi-replica multi-partition txn
         uint64 other_node;
