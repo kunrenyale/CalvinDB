@@ -447,7 +447,7 @@ TxnProto* Microbenchmark::NewTxn(int64 txn_id, int txn_type,
   return NULL;
 }
 
-int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {  /**
+int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {  
   // Remaster txn
   if (txn->remaster_txn() == true) {
 LOG(ERROR) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<txn->txn_id();
@@ -540,13 +540,13 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, 
   }
 
   // The following code is for microbenchmark "long" transaction, uncomment it if for "long" transaction
-  /**while (GetTime() - execution_start < 0.00008/factor) {
+  while (GetTime() - execution_start < 0.00016/factor) {
     int x = 1;
     for(int i = 0; i < 10000; i++) {
       x = x+10;
       x = x-2;
     }
-  }**/
+  }
 
   return 0;
 }
