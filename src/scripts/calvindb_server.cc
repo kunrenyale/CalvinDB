@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
   Client* client = NULL;
   // Artificial loadgen clients. Right now only microbenchmark
   if (FLAGS_experiment == 0) {
-    client = reinterpret_cast<Client*>(new MClient(config, FLAGS_percent_mp, FLAGS_hot_records));
+    client = reinterpret_cast<Client*>(new Lowlatency_MClient(config, FLAGS_percent_mp, FLAGS_percent_mr, FLAGS_hot_records));
   }
 
   Storage* storage;
