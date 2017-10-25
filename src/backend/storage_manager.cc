@@ -193,7 +193,7 @@ LOG(ERROR) << configuration_->local_node_id()<< ":wrong------------------------"
         break;
       }
     }
-/**
+
     if (decision == true) {
       for (int i = 0; i < txn_->read_write_set_size(); i++) {
         KeyEntry key_entry = txn_->read_write_set(i);
@@ -203,7 +203,7 @@ LOG(ERROR) << configuration_->local_node_id()<< ":wrong------------------------"
           break;
         }   
       }
-    } **/
+    } 
 
     if (decision == false) {
       txn_->set_status(TxnProto::ABORTED);
