@@ -540,7 +540,7 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, 
   }
 
   // The following code is for microbenchmark "long" transaction, uncomment it if for "long" transaction
-  while (GetTime() - execution_start < 0.00008/factor) {
+  while (GetTime() - execution_start < 0.00012/factor) {
     int x = 1;
     for(int i = 0; i < 10000; i++) {
       x = x+10;
