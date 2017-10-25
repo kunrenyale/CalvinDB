@@ -447,7 +447,7 @@ TxnProto* Microbenchmark::NewTxn(int64 txn_id, int txn_type,
   return NULL;
 }
 
-int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {  
+int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {  /**
   // Remaster txn
   if (txn->remaster_txn() == true) {
 LOG(ERROR) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<txn->txn_id();
