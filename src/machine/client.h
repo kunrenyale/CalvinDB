@@ -25,7 +25,7 @@ using std::map;
 #define SAMPLES  600
 #define SAMPLE_RATE 149
 
-#define LATENCY_TEST
+//#define LATENCY_TEST
 
 #ifdef LATENCY_TEST
 extern map<uint64, double> sequencer_recv;
