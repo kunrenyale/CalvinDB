@@ -175,12 +175,12 @@ bool StorageManager::CheckCommitOrAbort() {
   if (txn_->status() == TxnProto::ABORTED_WITHOUT_LOCK) {
     // If we already know this txn will be aborted in the locking thread(without acquiring locks), then we will abort it.
     decision = false;
-LOG(ERROR) << configuration_->local_node_id()<< ":wrong------------------------";
+//LOG(ERROR) << configuration_->local_node_id()<< ":wrong------------------------";
   } else if (local_commit_ == false) {
     // If we know it will be aborted based on the local information
     txn_->set_status(TxnProto::ABORTED);
     decision = false;
-LOG(ERROR) << configuration_->local_node_id()<< ":wrong------------------------";
+//LOG(ERROR) << configuration_->local_node_id()<< ":wrong------------------------";
   } else if (involved_machines_.size() == 1) {
     decision = true;
   } else {
@@ -213,7 +213,7 @@ LOG(ERROR) << configuration_->local_node_id()<< ":wrong------------------------"
 
   // If we need to generate new transction for the aborted txn
   if (decision == false && local_replica_id_ == txn_origin_replica_ && min_involved_machine_ == relative_node_id_ && min_involved_machine_origin_ == txn_origin_replica_) {
-LOG(ERROR) << configuration_->local_node_id()<< ":wrong------------------------";
+LOG(ERROR) << configuration_->local_node_id()<< ":Generate new transaction for the aborted txn------------------------:"<<txn_->txn_id();
     // abort the txn and send it to the related replica.
     TxnProto txn;
     txn.CopyFrom(*txn_);
