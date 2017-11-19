@@ -451,7 +451,7 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<tx
     //   storage->PutObject(txn->read_write_set(i), val);
     
     val->access_cnt++;
-    if (val->access_cnt == 200 && local_replica_ == val->master && StringToInt(key_entry.key()) == 0) {
+    if (StringToInt(key_entry.key()) == 0 && val->access_cnt == 200 && local_replica_ == val->master) {
         val->remastering = true;
 
         // Create the remaster transction and sent to local sequencer
@@ -465,7 +465,7 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<tx
 
         remaster_txn->set_remaster_txn(true);
         remaster_txn->set_remaster_from(local_replica_);
-        remaster_txn->set_remaster_to(txn->client_replica());
+        remaster_txn->set_remaster_to(1);
 
         remaster_txn->add_involved_replicas(local_replica_);
 
