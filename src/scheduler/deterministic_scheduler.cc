@@ -360,6 +360,8 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
   uint64 pending_txns = 0;
   int batch_offset = 0;
   uint64 machine_id = configuration_->local_node_id();
+
+uint64 aborted_txns = 0;
   
   // For original CalvinDB high contention: Get better performance if set it smaller
   // For AsyCalvinDB with multi-replica txns: should set maximum_txns much bigger
@@ -432,6 +434,10 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  release remaster txn
          (done_txn->writers_size() == 0 || (rand() % done_txn->writers_size() == 0 && rand() % done_txn->involved_replicas_size() == 0))) {
         txns++;       
       }
+
+if (done_txn->status() != TxnProto::COMMITTED)
+aborted_txns++;
+
 //LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id()<<"  origin:"<<done_txn->origin_replica();
 #ifdef LATENCY_TEST
     if (done_txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES && done_txn->origin_replica() == local_replica && done_txn->generated_machine() == local_machine) {
@@ -545,10 +551,10 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
     }
 
     // Report throughput.
-    if (GetTime() > time + 1) {
+    if (GetTime() > time + 0.5) {
       double total_time = GetTime() - time;
       LOG(ERROR) << "Machine: "<<machine_id<<" Completed "<< (static_cast<double>(txns) / total_time)
-                 << " txns/sec, "<< executing_txns << " executing, "<< pending_txns << " pending";
+                 << " txns/sec, "<< executing_txns << " executing, "<< pending_txns << " pending"<<aborted_txns<<" total_aborted";
 
       // Reset txn count.
       time = GetTime();
