@@ -213,7 +213,7 @@ bool StorageManager::CheckCommitOrAbort() {
 
   // If we need to generate new transction for the aborted txn
   if (decision == false && local_replica_id_ == txn_origin_replica_ && min_involved_machine_ == relative_node_id_ && min_involved_machine_origin_ == txn_origin_replica_) {
-LOG(ERROR) << configuration_->local_node_id()<< ":Generate new transaction for the aborted txn------------------------:"<<txn_->txn_id();
+//LOG(ERROR) << configuration_->local_node_id()<< ":Generate new transaction for the aborted txn------------------------:"<<txn_->txn_id();
     // abort the txn and send it to the related replica.
     TxnProto txn;
     txn.CopyFrom(*txn_);
