@@ -166,16 +166,48 @@ TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint64 part, uint32 replica
   // Add two hot keys to read/write set.
   uint64 hotkey_order1 = (rand() % (hot_records/replica_size)) * replica_size + replica;
 
+  uint64 hotkey_order2 = (rand() % (hot_records/replica_size)) * replica_size + replica;
+  while (hotkey_order2 == hotkey_order1) {
+    hotkey_order2 = (rand() % (hot_records/replica_size)) * replica_size + replica;
+  };
+
 
 //if (replica == 0)
 //LOG(ERROR) << ": In Microbenchmark::MicroTxnSRSP:  2";
 
   uint64 hotkey1 = part + nparts * hotkey_order1;
+  uint64 hotkey2 = part + nparts * hotkey_order2;
 
   KeyEntry* key_entry = txn->add_read_write_set();
   key_entry->set_key(IntToString(hotkey1));
   key_entry->set_master(replica);
   key_entry->set_counter(0);
+
+  key_entry = txn->add_read_write_set();
+  key_entry->set_key(IntToString(hotkey2));
+  key_entry->set_master(replica);
+  key_entry->set_counter(0);
+
+  // Insert set of kRWSetSize - 1 random cold keys from specified partition into
+  // read/write set.
+  uint64 key_start = nparts * hot_records;
+  if (key_start % (replica_size*nparts) != 0) {
+    key_start = key_start + (replica_size*nparts - (key_start % (replica_size*nparts)));
+  }
+
+  set<uint64> keys;
+  GetRandomKeysReplica(&keys,
+                       kRWSetSize - 2,
+                       key_start,
+                       nparts * kDBSize,
+                       part,
+                       replica);
+  for (set<uint64>::iterator it = keys.begin(); it != keys.end(); ++it) {
+    key_entry = txn->add_read_write_set();
+    key_entry->set_key(IntToString(*it));
+    key_entry->set_master(replica);
+    key_entry->set_counter(0);
+  }
 
 //if (replica == 0)
 //LOG(ERROR) << ": In Microbenchmark::MicroTxnSRSP:  3";
@@ -444,14 +476,18 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<tx
   double execution_start = GetTime();
 
 
-  for (uint32 i = 0; i < txn->read_write_set_size(); i++) {
+  for (uint32 i = 0; i < kRWSetSize; i++) {
     KeyEntry key_entry = txn->read_write_set(i);
     Record* val = storage->ReadObject(key_entry.key());
     // Not necessary since storage already has a pointer to val.
     //   storage->PutObject(txn->read_write_set(i), val);
-    
-    val->access_cnt++;
-    if (StringToInt(key_entry.key()) == 0 && val->access_cnt == 10000 && local_replica_ == val->master) {
+ 
+    // Check whether we need to remaster this record
+    if (storage->GetMode() == 2 && local_replica_ == val->master && val->remastering == false) {
+      val->access_pattern[txn->client_replica()] = val->access_pattern[txn->client_replica()] + 1;
+
+      if (txn->client_replica() != local_replica_ && val->access_pattern[txn->client_replica()]/(LAST_N_TOUCH*1.0) > ACCESS_PATTERN_THRESHOLD) {
+        // Reach the threadhold, do the remaster
         val->remastering = true;
 
         // Create the remaster transction and sent to local sequencer
@@ -465,7 +501,7 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<tx
 
         remaster_txn->set_remaster_txn(true);
         remaster_txn->set_remaster_from(local_replica_);
-        remaster_txn->set_remaster_to(1);
+        remaster_txn->set_remaster_to(txn->client_replica());
 
         remaster_txn->add_involved_replicas(local_replica_);
 
@@ -480,7 +516,18 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<tx
 
         connection_->Send(txn_message);
 LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, on record: "<<key_entry.key()<<"  txn id:"<<txn->txn_id();
-    }
+      }
+
+
+      if (++val->access_cnt > LAST_N_TOUCH) {
+        for (uint32 j = 0; j < REPLICA_SIZE; j++) {
+          val->access_pattern[j] = 0;
+        }
+        val->access_cnt = 0;
+      }
+
+    } 
+
 
     for (int j = 0; j < 8; j++) {
       if ((val->value)[j] + 1 > 'z') {
