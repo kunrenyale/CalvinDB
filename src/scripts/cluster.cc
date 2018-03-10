@@ -14,6 +14,9 @@ DEFINE_string(lowlatency_binary, "lowlatency_calvindb_server", "Lowlatency Calvi
 DEFINE_string(ssh_key1, "-i ~/Virginia.pem", "ssh_key for the first data center(Virginia)");
 DEFINE_string(ssh_key2, "-i ~/Oregon.pem", "ssh_key for the second data center(Oregon)");
 DEFINE_string(ssh_key3, "-i ~/Ireland.pem", "ssh_key for the third data center(Ireland)");
+DEFINE_string(ssh_key4, "-i ~/Ohio.pem", "ssh_key for the first data center(Virginia)");
+DEFINE_string(ssh_key5, "-i ~/California.pem", "ssh_key for the second data center(Oregon)");
+DEFINE_string(ssh_key6, "-i ~/London.pem", "ssh_key for the third data center(Ireland)");
 DEFINE_int32(lowlatency, 0, "0: Original CalvinDB ; 1: low latency version of CalvinDB; 2: low latency with access pattern remasters");
 DEFINE_int32(experiment, 0, "the experiment that you want to run, default is microbenchmark");
 DEFINE_int32(percent_mp, 0, "percent of distributed txns");
