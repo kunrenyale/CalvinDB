@@ -28,7 +28,7 @@ using std::set;
 
 class LocalPaxos {
  public:
-  LocalPaxos(ClusterConfig* config, ConnectionMultiplexer* connection);
+  LocalPaxos(ClusterConfig* config, ConnectionMultiplexer* connection, uint32 type);
 
   ~LocalPaxos();
 
@@ -44,11 +44,15 @@ class LocalPaxos {
   static void* RunLeaderThread(void *arg);
   static void* RunFollowerThread(void *arg);
 
+  static void* RunLeaderThreadStrong(void *arg);
+
   // Returns true iff leader.
   bool IsLeader();
 
   // Leader's main loop.
   void RunLeader();
+
+  void RunLeaderStrong();
 
   // Followers' main loop.
   void RunFollower();
@@ -58,6 +62,9 @@ class LocalPaxos {
 
   // True iff main thread SHOULD run.
   bool go_;
+
+  // check if it is strong availability or not
+  uint32 type_;
 
   // Current request sequence that will get replicated.
   Sequence sequence_;

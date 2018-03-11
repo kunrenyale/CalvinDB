@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
     if (FLAGS_type == 0) {
       // 3 replicas original CalvinDB
       cm = new ClusterManager(FLAGS_config, FLAGS_calvin_path, FLAGS_binary, FLAGS_lowlatency, FLAGS_type, FLAGS_ssh_key1, FLAGS_ssh_key2, FLAGS_ssh_key3);
-    } else if (FLAGS_type == 1) {
+    } else {
       cm = new ClusterManager(FLAGS_config, FLAGS_calvin_path, FLAGS_binary, FLAGS_lowlatency, FLAGS_type, FLAGS_ssh_key1, FLAGS_ssh_key2, FLAGS_ssh_key3,
                               FLAGS_ssh_key4, FLAGS_ssh_key5, FLAGS_ssh_key6); 
     }

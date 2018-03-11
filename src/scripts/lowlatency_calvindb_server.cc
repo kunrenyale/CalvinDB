@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
   // Create Paxos
   LocalPaxos* paxos = NULL;
   if (FLAGS_machine_id % config->nodes_per_replica() < 3) {
-    paxos = new LocalPaxos(config, multiplexer);
+    paxos = new LocalPaxos(config, multiplexer, FLAGS_type);
   }
 
   LOG(ERROR) << FLAGS_machine_id << ":Created paxos log "; 
