@@ -22,6 +22,7 @@ const string& ClusterManager::ssh_key(uint64 m) {
     return ssh_key1_;
   }
   int repsize = config_.all_nodes_size() / num_replicas_;
+
   if (m / repsize == 0) {
     return ssh_key1_;
   } else if (m / repsize == 1) {

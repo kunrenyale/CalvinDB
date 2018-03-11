@@ -34,7 +34,7 @@ class ClusterManager {
                  const string& ssh_key4, const string& ssh_key5, const string& ssh_key6)
       : config_file_(config_file), calvin_path_(calvin_path), binary_(binary), mode_(mode), type_(type),
         ssh_username_("ubuntu"), ssh_key1_(ssh_key1), ssh_key2_(ssh_key2), ssh_key3_(ssh_key3),
-        ssh_key4_(ssh_key4), ssh_key5_(ssh_key5), ssh_key3_(ssh_key6) {
+        ssh_key4_(ssh_key4), ssh_key5_(ssh_key5), ssh_key6_(ssh_key6) {
     config_.FromFile(config_file_);
     num_replicas_ = 6;
   }
