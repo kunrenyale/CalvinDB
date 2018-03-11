@@ -18,7 +18,7 @@ DEFINE_string(ssh_key4, "-i ~/Ohio.pem", "ssh_key for the first data center(Virg
 DEFINE_string(ssh_key5, "-i ~/California.pem", "ssh_key for the second data center(Oregon)");
 DEFINE_string(ssh_key6, "-i ~/London.pem", "ssh_key for the third data center(Ireland)");
 DEFINE_int32(lowlatency, 0, "0: Original CalvinDB ; 1: low latency version of CalvinDB; 2: low latency with access pattern remasters");
-DEFINE_int32(type, "0", "[CalvinDB: 0: 3 replicas; 1: 6 replicas]; [Low latency: 0: 3 replicas normal; 1: 6 replicas normal; 2: 6 replicas strong availbility ] ");
+DEFINE_int32(type, 0, "[CalvinDB: 0: 3 replicas; 1: 6 replicas]; [Low latency: 0: 3 replicas normal; 1: 6 replicas normal; 2: 6 replicas strong availbility ] ");
 DEFINE_int32(experiment, 0, "the experiment that you want to run, default is microbenchmark");
 DEFINE_int32(percent_mp, 0, "percent of distributed txns");
 DEFINE_int32(percent_mr, 0, "percent of multi-replica txns");
