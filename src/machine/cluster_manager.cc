@@ -21,14 +21,21 @@ const string& ClusterManager::ssh_key(uint64 m) {
   if (config_.all_nodes_size() < 3) {
     return ssh_key1_;
   }
-  int repsize = config_.all_nodes_size() / 3;
+  int repsize = config_.all_nodes_size() / num_replicas_;
   if (m / repsize == 0) {
     return ssh_key1_;
   } else if (m / repsize == 1) {
     return ssh_key2_;
   } else if (m / repsize == 2) {
     return ssh_key3_;
+  } else if (m / repsize == 3) {
+    return ssh_key4_;
+  } else if (m / repsize == 4) {
+    return ssh_key5_;
+  } else if (m / repsize == 5) {
+    return ssh_key6_;
   }
+
   LOG(FATAL) << "bad machine id: " << m;
 }
 
@@ -122,7 +129,7 @@ void ClusterManager::DeployCluster(int experiment, int percent_mp, int percent_m
     string* ssh_command = new string(
          "ssh " + ssh_key(it->first)  + " "+ ssh_username_ + "@" + it->second.host() +
          "  'cd " + calvin_path_ + "; " + " bin/scripts/" + binary_ +
-         " --machine_id=" + IntToString(it->second.id()) + " --mode=" + IntToString(mode_) +
+         " --machine_id=" + IntToString(it->second.id()) + " --mode=" + IntToString(mode_) + " --type=" + IntToString(type_) +
          "  --config=" + config_file_ + " --experiment=" + IntToString(experiment) + " --percent_mp=" + IntToString(percent_mp) + " --percent_mr=" + IntToString(percent_mr) + 
          " --hot_records=" + IntToString(hot_records) + " --max_batch_size=" + IntToString(max_batch_size) + " ' &");
 

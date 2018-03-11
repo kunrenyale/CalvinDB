@@ -18,6 +18,7 @@ DEFINE_string(ssh_key4, "-i ~/Ohio.pem", "ssh_key for the first data center(Virg
 DEFINE_string(ssh_key5, "-i ~/California.pem", "ssh_key for the second data center(Oregon)");
 DEFINE_string(ssh_key6, "-i ~/London.pem", "ssh_key for the third data center(Ireland)");
 DEFINE_int32(lowlatency, 0, "0: Original CalvinDB ; 1: low latency version of CalvinDB; 2: low latency with access pattern remasters");
+DEFINE_int32(type, "0", "[CalvinDB: 0: 3 replicas; 1: 6 replicas]; [Low latency: 0: 3 replicas normal; 1: 6 replicas normal; 2: 6 replicas strong availbility ] ");
 DEFINE_int32(experiment, 0, "the experiment that you want to run, default is microbenchmark");
 DEFINE_int32(percent_mp, 0, "percent of distributed txns");
 DEFINE_int32(percent_mr, 0, "percent of multi-replica txns");
@@ -29,9 +30,20 @@ int main(int argc, char** argv) {
 
   ClusterManager* cm;
   if (FLAGS_lowlatency == 0) {
-    cm = new ClusterManager(FLAGS_config, FLAGS_calvin_path, FLAGS_binary, FLAGS_lowlatency, FLAGS_ssh_key1, FLAGS_ssh_key2, FLAGS_ssh_key3);
+    if (FLAGS_type == 0) {
+      // 3 replicas original CalvinDB
+      cm = new ClusterManager(FLAGS_config, FLAGS_calvin_path, FLAGS_binary, FLAGS_lowlatency, FLAGS_type, FLAGS_ssh_key1, FLAGS_ssh_key2, FLAGS_ssh_key3);
+    } else if (FLAGS_type == 1) {
+      cm = new ClusterManager(FLAGS_config, FLAGS_calvin_path, FLAGS_binary, FLAGS_lowlatency, FLAGS_type, FLAGS_ssh_key1, FLAGS_ssh_key2, FLAGS_ssh_key3,
+                              FLAGS_ssh_key4, FLAGS_ssh_key5, FLAGS_ssh_key6); 
+    }
   } else {
-    cm = new ClusterManager(FLAGS_config, FLAGS_calvin_path, FLAGS_lowlatency_binary, FLAGS_lowlatency, FLAGS_ssh_key1, FLAGS_ssh_key2, FLAGS_ssh_key3);    
+    if (FLAGS_type == 0) {
+        cm = new ClusterManager(FLAGS_config, FLAGS_calvin_path, FLAGS_lowlatency_binary, FLAGS_lowlatency, FLAGS_type, FLAGS_ssh_key1, FLAGS_ssh_key2, FLAGS_ssh_key3);
+    } else {
+        cm = new ClusterManager(FLAGS_config, FLAGS_calvin_path, FLAGS_lowlatency_binary, FLAGS_lowlatency, FLAGS_type, FLAGS_ssh_key1, FLAGS_ssh_key2, FLAGS_ssh_key3,
+                 FLAGS_ssh_key4, FLAGS_ssh_key5, FLAGS_ssh_key6);    
+    } 
   }
 
   if (FLAGS_command == "update") {
