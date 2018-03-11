@@ -33,7 +33,7 @@ class ClusterManager {
                  const string& ssh_key1, const string& ssh_key2, const string& ssh_key3,
                  const string& ssh_key4, const string& ssh_key5, const string& ssh_key6)
       : config_file_(config_file), calvin_path_(calvin_path), binary_(binary), mode_(mode), type_(type),
-        ssh_username_("ubuntu"), ssh_key1_(ssh_key1), ssh_key2_(ssh_key2), ssh_key3_(ssh_key3)
+        ssh_username_("ubuntu"), ssh_key1_(ssh_key1), ssh_key2_(ssh_key2), ssh_key3_(ssh_key3),
         ssh_key4_(ssh_key4), ssh_key5_(ssh_key5), ssh_key3_(ssh_key6) {
     config_.FromFile(config_file_);
     num_replicas_ = 6;
@@ -92,6 +92,9 @@ class ClusterManager {
   string binary_;
 
   uint32 mode_;
+
+  uint32 type_;
+
   // Username with which to ssh to machines.
   // Default: 'ubuntu'
   // TODO(kun): Make this more easily configurable.
@@ -108,8 +111,6 @@ class ClusterManager {
 
   // Number of replicas
   uint32 num_replicas_;
-
-  uint32 type_;
 
   // DISALLOW_DEFAULT_CONSTRUCTOR
   ClusterManager();
