@@ -437,6 +437,8 @@ void LocalPaxos::RunLeader() {
 //LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<pending_replica * machines_per_replica_<<"  . latest_version is:"<<latest_version;  
 
       }
+      // clear the new_sequence_todo
+      new_sequence_todo.clear();
     }
 
     // Receive messages
@@ -693,6 +695,8 @@ void LocalPaxos::RunLeaderStrong() {
 //LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<pending_replica * machines_per_replica_<<"  . latest_version is:"<<latest_version;  
 
       }
+      // clear new-sequence_todo
+      new_sequence_todo.clear();
     }
 
     // Forward the local sequence to closed replica
