@@ -39,6 +39,8 @@ message MessageProto {
     NEW_SEQUENCE_ACK = 18;
     MASTER_LOOKUP = 19;
     MASTER_LOOKUP_RESULT = 20;
+    SYNCHRONIZE = 21;
+    SYNCHRONIZE_ACK = 22;
   };
   required MessageType type = 9;
 

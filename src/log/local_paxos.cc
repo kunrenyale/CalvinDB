@@ -15,15 +15,24 @@ LocalPaxos::LocalPaxos(ClusterConfig* config, ConnectionMultiplexer* connection,
   global_log_ = new LocalMemLog();
 
   this_machine_id_ = configuration_->local_node_id();
-  this_replica_id_ = configuration_->local_replica_id();
-
   machines_per_replica_ = configuration_->nodes_per_replica();
   local_replica_ = configuration_->local_replica_id();
 
-  for (uint32 i = 0; i < 3; i++) {
-    uint64 id = this_replica_id_ * configuration_->nodes_per_replica() + i;
-    if (id < (this_replica_id_ + 1) * configuration_->nodes_per_replica()) {
-      participants_.push_back(this_replica_id_ * configuration_->nodes_per_replica() + i);
+  received_synchronize_ack = false;
+
+  if (type_ != 2) {
+    for (uint32 i = 0; i < 3; i++) {
+      uint64 id = local_replica_ * configuration_->nodes_per_replica() + i;
+      if (id < (local_replica_ + 1) * configuration_->nodes_per_replica()) {
+        participants_.push_back(local_replica_ * configuration_->nodes_per_replica() + i);
+      }
+    }
+  } else {
+    for (uint32 i = 0; i < 6; i++) {
+      uint64 id = local_replica_ * configuration_->nodes_per_replica() + i;
+      if (id < (local_replica_ + 1) * configuration_->nodes_per_replica()) {
+        participants_.push_back(local_replica_ * configuration_->nodes_per_replica() + i);
+      }
     }
   }
   
@@ -150,6 +159,23 @@ void LocalPaxos::ReceiveMessage() {
 //if (configuration_->local_node_id() == 0)
 //LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<from_replica * machines_per_replica_<<"  . latest_version is:"<<latest_version;
       }
+    } else if (message.type() == MessageProto::SYNCHRONIZE) {
+      uint32 from_replica = message.misc_int(0);
+
+      Sequence current_sequence;
+      current_sequence.ParseFromString(message.data(0));
+        
+      sequences_other_replicas_.Push(make_pair(current_sequence, from_replica));
+
+      MessageProto synchronize_ack_message;
+
+      nsynchronize_ack_message.set_destination_channel("paxos_log_");
+      synchronize_ack_message.set_destination_node(from_replica * machines_per_replica_);
+      synchronize_ack_message.set_type(MessageProto::SYNCHRONIZE_ACK);
+      connection_->Send(synchronize_ack_message);
+      
+    } else if (message.type() == MessageProto::SYNCHRONIZE_ACK) {
+      received_synchronize_ack = true;
     }
   } // End receiving messages
 }
@@ -446,11 +472,16 @@ void LocalPaxos::RunLeaderStrong() {
 
   bool isFirst = true;
 
-  for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
-    if (i == local_replica_) {
-      continue;
-    }
+  uint32 closed_replica;
+
+
+  if (local_replica_ < 3) {
+    closed_replica = local_replica + 3; 
+  } else {
+    closed_replica = local_replica - 3;
   }
+
+  uint64 closed_replica_head = machines_per_replica_ * closed_replica;
 
   while (go_) {
     
@@ -595,20 +626,10 @@ void LocalPaxos::RunLeaderStrong() {
    
     sequence_message.Clear();
 
-    // Actually append the request into the log
-    if (isLocal == true) {
-      local_log_->Append(local_next_version, encoded);
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to local log. version: "<<local_next_version;
-    }
-    global_log_->Append(global_next_version, encoded);
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to global log. version: "<<global_next_version;
-
     // Send its local sequences to other replicas for the first time.
     if (isLocal == true && isFirst == true) {
       for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
-        if (i == local_replica_) {
+        if (i == local_replica_ || i == closed_replica) {
           continue;
         }
         SequenceBatch sequence_batch;
@@ -673,6 +694,35 @@ void LocalPaxos::RunLeaderStrong() {
 
       }
     }
+
+    // Forward the local sequence to closed replica
+    // Receive the ACK
+    if(isLocal == true) {
+      sequence_message.add_data(encoded);
+      sequence_message.set_type(MessageProto::SYNCHRONIZE);
+      sequence_message.set_destination_channel("paxos_log_");
+
+      sequence_message.set_destination_node(closed_replica_head);
+      sequence_message.add_mist_int(local_replica_);
+      connection_->Send(sequence_message);
+      sequence_message.Clear();
+
+      while (received_synchronize_ack == false) {
+        ReceiveMessage();
+        usleep(10);
+      }
+LOG(ERROR) << configuration_->local_node_id()<<"----  received the SYNCHRONIZE_ACK";
+    }
+
+    // Actually append the request into the log
+    if (isLocal == true) {
+      local_log_->Append(local_next_version, encoded);
+//if (configuration_->local_node_id() == 0)
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to local log. version: "<<local_next_version;
+    }
+    global_log_->Append(global_next_version, encoded);
+//if (configuration_->local_node_id() == 0)
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to global log. version: "<<global_next_version;
 
     // Receive messages
     ReceiveMessage();

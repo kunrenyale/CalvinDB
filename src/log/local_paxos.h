@@ -75,7 +75,6 @@ class LocalPaxos {
   Log* global_log_;
   ClusterConfig* configuration_;
   uint64 this_machine_id_;
-  uint64 this_replica_id_;
 
   ConnectionMultiplexer* connection_;
 
@@ -95,6 +94,8 @@ class LocalPaxos {
 
   uint64 machines_per_replica_;
   uint32 local_replica_;
+
+  bool received_synchronize_ack;
 };
 
 #endif  // CALVIN_LOG_LOCALPAXOS_H_
