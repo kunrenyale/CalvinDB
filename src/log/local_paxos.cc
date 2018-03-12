@@ -169,7 +169,7 @@ void LocalPaxos::ReceiveMessage() {
 
       MessageProto synchronize_ack_message;
 
-      nsynchronize_ack_message.set_destination_channel("paxos_log_");
+      synchronize_ack_message.set_destination_channel("paxos_log_");
       synchronize_ack_message.set_destination_node(from_replica * machines_per_replica_);
       synchronize_ack_message.set_type(MessageProto::SYNCHRONIZE_ACK);
       connection_->Send(synchronize_ack_message);
@@ -476,9 +476,9 @@ void LocalPaxos::RunLeaderStrong() {
 
 
   if (local_replica_ < 3) {
-    closed_replica = local_replica + 3; 
+    closed_replica = local_replica_ + 3; 
   } else {
-    closed_replica = local_replica - 3;
+    closed_replica = local_replica_ - 3;
   }
 
   uint64 closed_replica_head = machines_per_replica_ * closed_replica;
@@ -703,7 +703,7 @@ void LocalPaxos::RunLeaderStrong() {
       sequence_message.set_destination_channel("paxos_log_");
 
       sequence_message.set_destination_node(closed_replica_head);
-      sequence_message.add_mist_int(local_replica_);
+      sequence_message.add_misc_int(local_replica_);
       connection_->Send(sequence_message);
       sequence_message.Clear();
 
