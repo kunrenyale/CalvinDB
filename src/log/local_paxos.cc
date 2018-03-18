@@ -451,7 +451,7 @@ void LocalPaxos::RunLeader() {
 void LocalPaxos::RunLeaderStrong() {
   local_next_version = 0;
   global_next_version = 0;
-
+LOG(ERROR)<<"----replica size is: "<< configuration_->replicas_size();
   for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
     readers_for_local_log_[i] = local_log_->GetReader();
   }
@@ -715,7 +715,7 @@ void LocalPaxos::RunLeaderStrong() {
         ReceiveMessage();
         usleep(10);
       }
-LOG(ERROR) << configuration_->local_node_id()<<"----  received the SYNCHRONIZE_ACK";
+//LOG(ERROR) << configuration_->local_node_id()<<"----  received the SYNCHRONIZE_ACK";
     }
 
     // Actually append the request into the log
