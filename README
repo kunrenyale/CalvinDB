@@ -57,8 +57,18 @@ $ cd ~/CalvinDB
 $ bin/scripts/cluster --command="status"  // Check the status of the cluster
 $ bin/scripts/cluster --command="update"  // Use git to get the latest code, and compile it on each machine 
 $ bin/scripts/cluster --command="put-config" // Send the config file to all the machines in the cluster
-$ bin/scripts/cluster --command="start" --lowlatency=0 --experiment=0  --percent_mp=0  --percent_mr=0  --hot_records=10000 --max_batch_size=100  // Run Original CalvinDB
-$ bin/scripts/cluster --command="start" --lowlatency=1 --experiment=0  --percent_mp=0  --percent_mr=0  --hot_records=10000 --max_batch_size=100  // Run Lowlatency CalvinDB
+
+// Run Original CalvinDB with 3 replicas
+$ bin/scripts/cluster --command="start" --lowlatency=0 --type=0 --experiment=0  --percent_mp=0  --percent_mr=0  --hot_records=10000 --max_batch_size=100
+// Run Original CalvinDB with 6 replicas
+$ bin/scripts/cluster --command="start" --lowlatency=0 --type=1 --experiment=0  --percent_mp=0  --percent_mr=0  --hot_records=10000 --max_batch_size=100 
+
+// Run Lowlatency CalvinDB with 3 replicas
+$ bin/scripts/cluster --command="start" --lowlatency=1 --type=0 --experiment=0  --percent_mp=0  --percent_mr=0  --hot_records=10000 --max_batch_size=100  
+// Run Lowlatency CalvinDB with 6 replicas
+$ bin/scripts/cluster --command="start" --lowlatency=1 --type=1 --experiment=0  --percent_mp=0  --percent_mr=0  --hot_records=10000 --max_batch_size=100
+// Run Lowlatency CalvinDB with 6 replicas (strong availbility)
+$ bin/scripts/cluster --command="start" --lowlatency=1 --type=2 --experiment=0  --percent_mp=0  --percent_mr=0  --hot_records=10000 --max_batch_size=100  
 
 You probably need another terminal to terminate the db process when complete your test by running:
 $ bin/scripts/cluster --command="kill" --lowlatency=0  // 0: CalvinDB; 1 or 2: Low latency CavlinDB
