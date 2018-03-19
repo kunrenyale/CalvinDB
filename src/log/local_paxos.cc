@@ -620,6 +620,38 @@ LOG(ERROR)<<"----replica size is: "<< configuration_->replicas_size();
    
     sequence_message.Clear();
 
+
+    // Forward the local sequence to closed replica
+    // Receive the ACK
+    if(isLocal == true) {
+      sequence_message.add_data(encoded);
+      sequence_message.set_type(MessageProto::SYNCHRONIZE);
+      sequence_message.set_destination_channel("paxos_log_");
+
+      sequence_message.set_destination_node(closed_replica_head);
+      sequence_message.add_misc_int(local_replica_);
+      connection_->Send(sequence_message);
+      sequence_message.Clear();
+
+      while (received_synchronize_ack == false) {
+        ReceiveMessage();
+        usleep(10);
+      }
+
+      received_synchronize_ack = false;
+//LOG(ERROR) << configuration_->local_node_id()<<"----  received the SYNCHRONIZE_ACK";
+    }
+
+    // Actually append the request into the log
+    if (isLocal == true) {
+      local_log_->Append(local_next_version, encoded);
+//if (configuration_->local_node_id() == 0)
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to local log. version: "<<local_next_version;
+    }
+    global_log_->Append(global_next_version, encoded);
+//if (configuration_->local_node_id() == 0)
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to global log. version: "<<global_next_version;
+
     // Send its local sequences to other replicas for the first time.
     if (isLocal == true && isFirst == true) {
       for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
@@ -672,7 +704,7 @@ LOG(ERROR)<<"----replica size is: "<< configuration_->replicas_size();
 
 if (latest_version == 0)
 LOG(ERROR) << "--------------- this replica is: "<<local_replica_<<",,,,,, plan to send to replica:"<<pending_replica;
-//        CHECK(latest_version != 0);
+        CHECK(latest_version != 0);
         
         string sequence_batch_string;
         sequence_batch.SerializeToString(&sequence_batch_string);
@@ -692,37 +724,6 @@ LOG(ERROR) << "--------------- this replica is: "<<local_replica_<<",,,,,, plan 
       // clear new-sequence_todo
       new_sequence_todo.clear();
     }
-
-    // Forward the local sequence to closed replica
-    // Receive the ACK
-    if(isLocal == true) {
-      sequence_message.add_data(encoded);
-      sequence_message.set_type(MessageProto::SYNCHRONIZE);
-      sequence_message.set_destination_channel("paxos_log_");
-
-      sequence_message.set_destination_node(closed_replica_head);
-      sequence_message.add_misc_int(local_replica_);
-      connection_->Send(sequence_message);
-      sequence_message.Clear();
-
-      while (received_synchronize_ack == false) {
-        ReceiveMessage();
-        usleep(10);
-      }
-
-      received_synchronize_ack = false;
-//LOG(ERROR) << configuration_->local_node_id()<<"----  received the SYNCHRONIZE_ACK";
-    }
-
-    // Actually append the request into the log
-    if (isLocal == true) {
-      local_log_->Append(local_next_version, encoded);
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to local log. version: "<<local_next_version;
-    }
-    global_log_->Append(global_next_version, encoded);
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to global log. version: "<<global_next_version;
 
     // Receive messages
     ReceiveMessage();
