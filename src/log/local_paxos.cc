@@ -631,7 +631,7 @@ LOG(ERROR)<<"----replica size is: "<< configuration_->replicas_size();
     // Send its local sequences to other replicas for the first time.
     if (isLocal == true && isFirst == true) {
       for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
-        if (i == local_replica_ || i == closed_replica) {
+        if (i == local_replica_/** || i == closed_replica**/) {
           continue;
         }
         SequenceBatch sequence_batch;
@@ -700,7 +700,7 @@ LOG(ERROR) << "--------------- this replica is: "<<local_replica_<<",,,,,, plan 
       // clear new-sequence_todo
       new_sequence_todo.clear();
     }
-
+/**
     // Forward the local sequence to closed replica
     // Receive the ACK
     if(isLocal == true) {
@@ -721,7 +721,7 @@ LOG(ERROR) << "--------------- this replica is: "<<local_replica_<<",,,,,, plan 
       received_synchronize_ack = false;
 //LOG(ERROR) << configuration_->local_node_id()<<"----  received the SYNCHRONIZE_ACK";
     }
-
+**/
     // Actually append the request into the log
     if (isLocal == true) {
       local_log_->Append(local_next_version, encoded);
