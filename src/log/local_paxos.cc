@@ -20,21 +20,13 @@ LocalPaxos::LocalPaxos(ClusterConfig* config, ConnectionMultiplexer* connection,
 
   received_synchronize_ack = false;
 
-  if (type_ != 2) {
     for (uint32 i = 0; i < 3; i++) {
       uint64 id = local_replica_ * configuration_->nodes_per_replica() + i;
       if (id < (local_replica_ + 1) * configuration_->nodes_per_replica()) {
         participants_.push_back(local_replica_ * configuration_->nodes_per_replica() + i);
       }
     }
-  } else {
-    for (uint32 i = 0; i < 6; i++) {
-      uint64 id = local_replica_ * configuration_->nodes_per_replica() + i;
-      if (id < (local_replica_ + 1) * configuration_->nodes_per_replica()) {
-        participants_.push_back(local_replica_ * configuration_->nodes_per_replica() + i);
-      }
-    }
-  }
+
   
   connection_->NewChannel("paxos_log_");
   connection_->NewChannel("paxos_ack_");
