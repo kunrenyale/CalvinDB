@@ -453,7 +453,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  release remaster txn
       std::ofstream file(filename);
       file << report;
 
-LOG(ERROR) << machine_id<<": reporting latencies to " << filename;
+LOG(ERROR) <<"^^^^^^^^^^^^^^:"<< machine_id<<": reporting latencies to " << filename;
 
     }
 #endif
