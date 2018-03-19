@@ -715,6 +715,8 @@ LOG(ERROR)<<"----replica size is: "<< configuration_->replicas_size();
         ReceiveMessage();
         usleep(10);
       }
+
+      received_synchronize_ack = false;
 //LOG(ERROR) << configuration_->local_node_id()<<"----  received the SYNCHRONIZE_ACK";
     }
 
