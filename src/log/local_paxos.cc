@@ -677,7 +677,9 @@ LOG(ERROR)<<"----replica size is: "<< configuration_->replicas_size();
           sequence_batch.add_sequence_batch()->CopyFrom(current_sequence_);
           find = r->Next();
         }
-    
+
+if (latest_version == 0)
+LOG(ERROR) << "--------------- this replica is: "<<local_replica_<<",,,,,, plan to send to replica:"<<pending_replica;
         CHECK(latest_version != 0);
         
         string sequence_batch_string;
