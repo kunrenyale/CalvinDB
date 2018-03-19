@@ -672,7 +672,7 @@ LOG(ERROR)<<"----replica size is: "<< configuration_->replicas_size();
 
 if (latest_version == 0)
 LOG(ERROR) << "--------------- this replica is: "<<local_replica_<<",,,,,, plan to send to replica:"<<pending_replica;
-        CHECK(latest_version != 0);
+//        CHECK(latest_version != 0);
         
         string sequence_batch_string;
         sequence_batch.SerializeToString(&sequence_batch_string);
