@@ -106,7 +106,7 @@ void ClusterManager::Update() {
     threads.resize(threads.size()+1);
     string* ssh_command = new string(
       "ssh " + ssh_key(it->first)  + " "+ ssh_username_ + "@" + it->second.host() +
-      " 'cd " + calvin_path_ + "; git pull; cd src; cp Makefile.default Makefile; make clean; make -j'");
+      " 'cd " + calvin_path_ + ";git checkout calvin.conf;  git pull; cd src; cp Makefile.default Makefile; make clean; make -j'");
     pthread_create(
         &threads[threads.size()-1],
         NULL,
