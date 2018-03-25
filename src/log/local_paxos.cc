@@ -20,21 +20,13 @@ LocalPaxos::LocalPaxos(ClusterConfig* config, ConnectionMultiplexer* connection,
 
   received_synchronize_ack = false;
 
-  if (type_ != 2) {
     for (uint32 i = 0; i < 3; i++) {
       uint64 id = local_replica_ * configuration_->nodes_per_replica() + i;
       if (id < (local_replica_ + 1) * configuration_->nodes_per_replica()) {
         participants_.push_back(local_replica_ * configuration_->nodes_per_replica() + i);
       }
     }
-  } else {
-    for (uint32 i = 0; i < 6; i++) {
-      uint64 id = local_replica_ * configuration_->nodes_per_replica() + i;
-      if (id < (local_replica_ + 1) * configuration_->nodes_per_replica()) {
-        participants_.push_back(local_replica_ * configuration_->nodes_per_replica() + i);
-      }
-    }
-  }
+
   
   connection_->NewChannel("paxos_log_");
   connection_->NewChannel("paxos_ack_");
@@ -628,6 +620,38 @@ void LocalPaxos::RunLeaderStrong() {
    
     sequence_message.Clear();
 
+
+    // Forward the local sequence to closed replica
+    // Receive the ACK
+    if(isLocal == true) {
+      sequence_message.add_data(encoded);
+      sequence_message.set_type(MessageProto::SYNCHRONIZE);
+      sequence_message.set_destination_channel("paxos_log_");
+
+      sequence_message.set_destination_node(closed_replica_head);
+      sequence_message.add_misc_int(local_replica_);
+      connection_->Send(sequence_message);
+      sequence_message.Clear();
+
+      while (received_synchronize_ack == false) {
+        ReceiveMessage();
+        usleep(10);
+      }
+
+      received_synchronize_ack = false;
+//LOG(ERROR) << configuration_->local_node_id()<<"----  received the SYNCHRONIZE_ACK";
+    }
+
+    // Actually append the request into the log
+    if (isLocal == true) {
+      local_log_->Append(local_next_version, encoded);
+//if (configuration_->local_node_id() == 0)
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to local log. version: "<<local_next_version;
+    }
+    global_log_->Append(global_next_version, encoded);
+//if (configuration_->local_node_id() == 0)
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to global log. version: "<<global_next_version;
+
     // Send its local sequences to other replicas for the first time.
     if (isLocal == true && isFirst == true) {
       for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
@@ -677,7 +701,9 @@ void LocalPaxos::RunLeaderStrong() {
           sequence_batch.add_sequence_batch()->CopyFrom(current_sequence_);
           find = r->Next();
         }
-    
+
+if (latest_version == 0)
+LOG(ERROR) << "--------------- this replica is: "<<local_replica_<<",,,,,, plan to send to replica:"<<pending_replica;
         CHECK(latest_version != 0);
         
         string sequence_batch_string;
@@ -698,35 +724,6 @@ void LocalPaxos::RunLeaderStrong() {
       // clear new-sequence_todo
       new_sequence_todo.clear();
     }
-
-    // Forward the local sequence to closed replica
-    // Receive the ACK
-    if(isLocal == true) {
-      sequence_message.add_data(encoded);
-      sequence_message.set_type(MessageProto::SYNCHRONIZE);
-      sequence_message.set_destination_channel("paxos_log_");
-
-      sequence_message.set_destination_node(closed_replica_head);
-      sequence_message.add_misc_int(local_replica_);
-      connection_->Send(sequence_message);
-      sequence_message.Clear();
-
-      while (received_synchronize_ack == false) {
-        ReceiveMessage();
-        usleep(10);
-      }
-LOG(ERROR) << configuration_->local_node_id()<<"----  received the SYNCHRONIZE_ACK";
-    }
-
-    // Actually append the request into the log
-    if (isLocal == true) {
-      local_log_->Append(local_next_version, encoded);
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to local log. version: "<<local_next_version;
-    }
-    global_log_->Append(global_next_version, encoded);
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to global log. version: "<<global_next_version;
 
     // Receive messages
     ReceiveMessage();
