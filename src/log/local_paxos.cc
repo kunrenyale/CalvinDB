@@ -439,6 +439,134 @@ void LocalPaxos::RunLeader() {
   }
 }
 
+void LocalPaxos::HandleRemoteBatch() {
+  uint64 quorum = static_cast<int>(participants_.size()) / 2 + 1;
+  MessageProto sequence_message;
+
+  string encoded;
+  pair<Sequence, uint32> remote_sequence_pair;
+  Sequence remote_sequence;
+  uint32 remote_replica;
+
+  global_next_version ++;
+  sequences_other_replicas_.Pop(&remote_sequence_pair);
+  remote_sequence = remote_sequence_pair.first;
+  remote_replica = remote_sequence_pair.second;
+  remote_sequence.SerializeToString(&encoded);
+
+  if (local_replica_ != 0 && remote_replica == 0) {
+    // Generate new txns for multi-replica txns.
+    for (int i = 0; i < remote_sequence.batch_ids_size(); i++) {
+      uint64 batch_id = remote_sequence.batch_ids(i);
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: before handle remote_sequence:"<<batch_id;
+      while (mr_txn_batches_.find(batch_id) == mr_txn_batches_.end()) {
+        usleep(20);
+   
+        // Receive messages
+        ReceiveMessage();
+
+      }; // end while
+
+
+      MessageProto* mr_message = mr_txn_batches_[batch_id];
+
+      if (mr_message->data_size() == 0) {
+        continue;
+      }
+
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: after handle remote_sequence:"<<batch_id<<"  size is:"<<mr_message->data_size();
+
+      remote_batch_message_.clear_data();
+      for (int i = 0; i < mr_message->data_size(); i++) {
+        TxnProto txn;
+        txn.ParseFromString(mr_message->data(i));
+       
+        if (txn.fake_txn() == true) {
+          txn.set_fake_txn(false);
+        }
+
+        txn.set_new_generated(true);
+        txn.set_origin_replica(local_replica_);
+
+        string txn_string;
+        txn.SerializeToString(&txn_string);
+        remote_batch_message_.add_data(txn_string);
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: generated a new txn:"<<txn.txn_id();
+      }
+
+      if (remote_batch_message_.data_size() > 0) {
+        uint64 batch_number = configuration_->GetGUID();
+        remote_batch_message_.set_batch_number(batch_number);
+        Append(batch_number);
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: append a new batch:"<<batch_number;
+
+        for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
+          uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_number), i);
+          remote_batch_message_.set_destination_node(machine_id);
+          connection_->Send(remote_batch_message_);
+        }
+      } // end if
+
+    } // end for loop
+
+  } // end if
+
+
+    // Handle this sequence
+    sequence_message.add_data(encoded);
+    sequence_message.add_misc_int(global_next_version);
+    sequence_message.set_type(MessageProto::PAXOS_DATA);
+    sequence_message.set_destination_channel("paxos_ack_");
+
+    for (uint32 i = 1; i < participants_.size(); i++) {
+      sequence_message.set_destination_node(participants_[i]);
+      connection_->Send(sequence_message);
+    }
+
+    uint64 acks = 1;
+
+    // Collect Acks.
+    MessageProto message;
+    while (acks < quorum) {
+      while (connection_->GotMessage("paxos_ack_", &message) == false) {
+        usleep(10);
+        if (!go_) {
+          return;
+        }
+      }
+
+      CHECK(message.type() == MessageProto::PAXOS_DATA_ACK);
+      if (message.misc_int(0) == global_next_version) {
+        acks++;
+      }
+      message.Clear();
+    }
+
+    // Send the order to the locking thread
+    sequence_message.set_type(MessageProto::PAXOS_BATCH_ORDER);
+    sequence_message.set_destination_channel("scheduler_");
+    for (uint64 i = local_replica_ * machines_per_replica_; i < (local_replica_ + 1)*machines_per_replica_ ;i++) {
+      sequence_message.set_destination_node(i);
+      connection_->Send(sequence_message);
+    }
+
+    sequence_message.clear_data();
+
+    // Commit!
+    sequence_message.set_type(MessageProto::PAXOS_COMMIT);
+    sequence_message.set_destination_channel("paxos_log_");
+    for (uint32 i = 1; i < participants_.size(); i++) {
+      sequence_message.set_destination_node(participants_[i]);
+      connection_->Send(sequence_message);
+    }
+   
+    sequence_message.Clear();
+
+    // Actually append the request into the log
+    global_log_->Append(global_next_version, encoded);
+
+    return;
+}
 
 //--------------------------------------- RunLeaderStrong ------------------
 void LocalPaxos::RunLeaderStrong() {
@@ -449,7 +577,7 @@ void LocalPaxos::RunLeaderStrong() {
     readers_for_local_log_[i] = local_log_->GetReader();
   }
 
-  uint64 quorum = static_cast<int>(participants_.size()) / 2 + 1;
+  quorum = static_cast<int>(participants_.size()) / 2 + 1;
   MessageProto sequence_message;
 
   MessageProto message;
@@ -459,11 +587,10 @@ void LocalPaxos::RunLeaderStrong() {
   Sequence remote_sequence;
   uint32 remote_replica;
 
-  MessageProto batch_message;
-  batch_message.set_destination_channel("sequencer_");
-  batch_message.set_type(MessageProto::TXN_BATCH);
-  batch_message.set_source_node(this_machine_id_);
-  batch_message.add_misc_bool(false);
+  remote_batch_message_.set_destination_channel("sequencer_");
+  remote_batch_message_.set_type(MessageProto::TXN_BATCH);
+  remote_batch_message_.set_source_node(this_machine_id_);
+  remote_batch_message_.add_misc_bool(false);
 
   bool isFirst = true;
 
@@ -502,71 +629,8 @@ void LocalPaxos::RunLeaderStrong() {
     } else
     if (sequences_other_replicas_.Size() > 0) {
       isLocal = false;
-      global_next_version ++;
-      sequences_other_replicas_.Pop(&remote_sequence_pair);
-      remote_sequence = remote_sequence_pair.first;
-      remote_replica = remote_sequence_pair.second;
-      remote_sequence.SerializeToString(&encoded);
-
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "### In paxos:  will handle remote sequence, version: "<<global_next_version;
-
-      if (local_replica_ != 0 && remote_replica == 0) {
-        // Generate new txns for multi-replica txns.
-        for (int i = 0; i < remote_sequence.batch_ids_size(); i++) {
-          uint64 batch_id = remote_sequence.batch_ids(i);
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: before handle remote_sequence:"<<batch_id;
-          while (mr_txn_batches_.find(batch_id) == mr_txn_batches_.end()) {
-            usleep(20);
-   
-            // Receive messages
-            ReceiveMessage();
-
-          }; // end while
-
-
-          MessageProto* mr_message = mr_txn_batches_[batch_id];
-
-          if (mr_message->data_size() == 0) {
-            continue;
-          }
-
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: after handle remote_sequence:"<<batch_id<<"  size is:"<<mr_message->data_size();
-
-          batch_message.clear_data();
-          for (int i = 0; i < mr_message->data_size(); i++) {
-            TxnProto txn;
-            txn.ParseFromString(mr_message->data(i));
-       
-            if (txn.fake_txn() == true) {
-              txn.set_fake_txn(false);
-            }
-
-            txn.set_new_generated(true);
-            txn.set_origin_replica(local_replica_);
-
-            string txn_string;
-            txn.SerializeToString(&txn_string);
-            batch_message.add_data(txn_string);
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: generated a new txn:"<<txn.txn_id();
-          }
-
-          if (batch_message.data_size() > 0) {
-            uint64 batch_number = configuration_->GetGUID();
-            batch_message.set_batch_number(batch_number);
-            Append(batch_number);
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: append a new batch:"<<batch_number;
-
-            for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
-              uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_number), i);
-              batch_message.set_destination_node(machine_id);
-              connection_->Send(batch_message);
-            }
-          } // end if
-
-        } // end for loop
-
-      } // end if
+      HandleRemoteBatch();
+      continue;
     }
 
     // Handle this sequence
@@ -637,7 +701,14 @@ void LocalPaxos::RunLeaderStrong() {
 
       while (received_synchronize_ack == false) {
         ReceiveMessage();
-        usleep(10);
+        // Handle remote requence while waiting
+        if (sequences_other_replicas_.Size() > 0) {
+          isLocal = false;
+          HandleRemoteBatch();
+          continue;
+        }
+
+        usleep(5);
       }
 
       received_synchronize_ack = false;

@@ -37,6 +37,7 @@ class LocalPaxos {
 
   void ReceiveMessage();
 
+  void HandleRemoteBatch();
  private:
 
   // Functions to start the Multiplexor's main loops, called in new pthreads by
@@ -96,6 +97,10 @@ class LocalPaxos {
   uint32 local_replica_;
 
   bool received_synchronize_ack;
+
+  // for strong availbility
+  uint64 quorum;
+  MessageProto remote_batch_message_;
 };
 
 #endif  // CALVIN_LOG_LOCALPAXOS_H_
