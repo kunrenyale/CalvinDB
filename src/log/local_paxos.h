@@ -99,7 +99,7 @@ class LocalPaxos {
   bool received_synchronize_ack;
 
   // for strong availbility
-  uint64 quorum;
+  uint64 quorum_;
   MessageProto remote_batch_message_;
 };
 
