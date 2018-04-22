@@ -440,7 +440,6 @@ void LocalPaxos::RunLeader() {
 }
 
 void LocalPaxos::HandleRemoteBatch() {
-  uint64 quorum = static_cast<int>(participants_.size()) / 2 + 1;
   MessageProto sequence_message;
 
   string encoded;
@@ -527,7 +526,7 @@ void LocalPaxos::HandleRemoteBatch() {
 
     // Collect Acks.
     MessageProto message;
-    while (acks < quorum) {
+    while (acks < quorum_) {
       while (connection_->GotMessage("paxos_ack_", &message) == false) {
         usleep(10);
         if (!go_) {
@@ -577,7 +576,7 @@ void LocalPaxos::RunLeaderStrong() {
     readers_for_local_log_[i] = local_log_->GetReader();
   }
 
-  quorum = static_cast<int>(participants_.size()) / 2 + 1;
+  quorum_ = static_cast<int>(participants_.size()) / 2 + 1;
   MessageProto sequence_message;
 
   MessageProto message;
@@ -585,7 +584,6 @@ void LocalPaxos::RunLeaderStrong() {
   bool isLocal = false;
   pair<Sequence, uint32> remote_sequence_pair;
   Sequence remote_sequence;
-  uint32 remote_replica;
 
   remote_batch_message_.set_destination_channel("sequencer_");
   remote_batch_message_.set_type(MessageProto::TXN_BATCH);
@@ -633,6 +631,33 @@ void LocalPaxos::RunLeaderStrong() {
       continue;
     }
 
+    // Forward the local sequence to closed replica
+    // Receive the ACK
+    if(isLocal == true) {
+      sequence_message.add_data(encoded);
+      sequence_message.set_type(MessageProto::SYNCHRONIZE);
+      sequence_message.set_destination_channel("paxos_log_");
+
+      sequence_message.set_destination_node(closed_replica_head);
+      sequence_message.add_misc_int(local_replica_);
+      connection_->Send(sequence_message);
+      sequence_message.Clear();
+
+      while (received_synchronize_ack == false) {
+        ReceiveMessage();
+        // Handle remote requence while waiting
+        if (sequences_other_replicas_.Size() > 0) {
+          HandleRemoteBatch();
+          continue;
+        }
+
+        usleep(5);
+      }
+
+      received_synchronize_ack = false;
+//LOG(ERROR) << configuration_->local_node_id()<<"----  received the SYNCHRONIZE_ACK";
+    }
+
     // Handle this sequence
     sequence_message.add_data(encoded);
     sequence_message.add_misc_int(global_next_version);
@@ -651,7 +676,7 @@ void LocalPaxos::RunLeaderStrong() {
 
     // Collect Acks.
     MessageProto message;
-    while (acks < quorum) {
+    while (acks < quorum_) {
       while (connection_->GotMessage("paxos_ack_", &message) == false) {
         usleep(10);
         if (!go_) {
@@ -686,34 +711,6 @@ void LocalPaxos::RunLeaderStrong() {
    
     sequence_message.Clear();
 
-
-    // Forward the local sequence to closed replica
-    // Receive the ACK
-    if(isLocal == true) {
-      sequence_message.add_data(encoded);
-      sequence_message.set_type(MessageProto::SYNCHRONIZE);
-      sequence_message.set_destination_channel("paxos_log_");
-
-      sequence_message.set_destination_node(closed_replica_head);
-      sequence_message.add_misc_int(local_replica_);
-      connection_->Send(sequence_message);
-      sequence_message.Clear();
-
-      while (received_synchronize_ack == false) {
-        ReceiveMessage();
-        // Handle remote requence while waiting
-        if (sequences_other_replicas_.Size() > 0) {
-          isLocal = false;
-          HandleRemoteBatch();
-          continue;
-        }
-
-        usleep(5);
-      }
-
-      received_synchronize_ack = false;
-//LOG(ERROR) << configuration_->local_node_id()<<"----  received the SYNCHRONIZE_ACK";
-    }
 
     // Actually append the request into the log
     if (isLocal == true) {
