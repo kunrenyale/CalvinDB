@@ -247,7 +247,7 @@ void LocalPaxos::RunLeader() {
 
     // Collect Acks.
     MessageProto message;
-    while (acks < quorum) {
+    while (acks < quorum_) {
       while (connection_->GotMessage("paxos_ack_", &message) == false) {
         usleep(10);
         if (!go_) {
