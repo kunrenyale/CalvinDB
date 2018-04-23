@@ -203,12 +203,6 @@ void LocalPaxos::RunLeader() {
 
   bool isFirst = true;
 
-  for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
-    if (i == local_replica_) {
-      continue;
-    }
-  }
-
   while (go_) {
     
     // Sleep while there are NO requests.
@@ -219,6 +213,18 @@ void LocalPaxos::RunLeader() {
       ReceiveMessage();
     } // End while
  
+ if (local_count_.load() >  0) {
+      // Propose a new sequence.
+      Lock l(&mutex_);
+      local_next_version ++;
+      global_next_version ++;
+      sequence_.SerializeToString(&encoded);
+      sequence_.Clear();
+      local_count_ = 0;
+      isLocal = true;
+//if (configuration_->local_node_id() == 0)
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  will handle the version from local: "<<global_next_version;
+    } else
     if (sequences_other_replicas_.Size() > 0) {
       isLocal = false;
       global_next_version ++;
@@ -286,18 +292,7 @@ void LocalPaxos::RunLeader() {
         } // end for loop
 
       } // end if
-    } else if (local_count_.load() >  0) {
-      // Propose a new sequence.
-      Lock l(&mutex_);
-      local_next_version ++;
-      global_next_version ++;
-      sequence_.SerializeToString(&encoded);
-      sequence_.Clear();
-      local_count_ = 0;
-      isLocal = true;
-//if (configuration_->local_node_id() == 0)
-//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  will handle the version from local: "<<global_next_version;
-    }
+    } 
 
     // Handle this sequence
     sequence_message.add_data(encoded);
