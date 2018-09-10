@@ -217,7 +217,7 @@ void LocalPaxos::RunLeader() {
  
     alternate = (alternate + 1) % 4;
 
-    if (alternate < 3 && local_count_.load() >  0) {
+    if ((alternate < 3 && local_count_.load() >  0) || (sequences_other_replicas_.Size() == 0)) {
           // Propose a new sequence.
           Lock l(&mutex_);
           local_next_version ++;
