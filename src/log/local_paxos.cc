@@ -215,7 +215,7 @@ void LocalPaxos::RunLeader() {
       ReceiveMessage();
     } // End while
  
-    alternate = (alternate + 1) % 4;
+    alternate = (alternate + 1) % 8;
 
     if ((alternate < 1 && local_count_.load() >  0) || (sequences_other_replicas_.Size() == 0)) {
           // Propose a new sequence.
