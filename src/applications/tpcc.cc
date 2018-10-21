@@ -204,7 +204,7 @@ TxnProto* Tpcc::TpccTxnSRSP(int64 txn_id, uint64 part, uint32 replica) {
 
   // Add district to the read-write set
   set<uint64> keys;
-  GetRandomKeys(&keys,
+  GetRandomKeysReplica(&keys,
                 1,
                 warehouse_end,
                 district_end,
@@ -244,7 +244,7 @@ TxnProto* Tpcc::TpccTxnSRSP(int64 txn_id, uint64 part, uint32 replica) {
   }
   keys.clear();
 
-  GetRandomKeys(&keys,
+  GetRandomKeysReplica(&keys,
                 10,
                 key_start,
                 item_end,
@@ -290,7 +290,7 @@ TxnProto* Tpcc::TpccTxnSRMP(int64 txn_id, uint64 part1, uint64 part2, uint32 rep
 
   // Add district to the read-write set
   set<uint64> keys;
-  GetRandomKeys(&keys,
+  GetRandomKeysReplica(&keys,
                 1,
                 warehouse_end,
                 district_end,
@@ -330,7 +330,7 @@ TxnProto* Tpcc::TpccTxnSRMP(int64 txn_id, uint64 part1, uint64 part2, uint32 rep
   }
   keys.clear();
 
-  GetRandomKeys(&keys,
+  GetRandomKeysReplica(&keys,
                 10,
                 key_start,
                 item_end,
@@ -385,7 +385,7 @@ TxnProto* Tpcc::TpccTxnMRSP(int64 txn_id, uint64 part, uint32 replica1, uint32 r
 
   // Add district to the read-write set
   set<uint64> keys;
-  GetRandomKeys(&keys,
+  GetRandomKeysReplica(&keys,
                 1,
                 warehouse_end,
                 district_end,
@@ -425,7 +425,7 @@ TxnProto* Tpcc::TpccTxnMRSP(int64 txn_id, uint64 part, uint32 replica1, uint32 r
   }
   keys.clear();
 
-  GetRandomKeys(&keys,
+  GetRandomKeysReplica(&keys,
                 10,
                 key_start,
                 item_end,
@@ -484,7 +484,7 @@ TxnProto* Tpcc::TpccTxnMRMP(int64 txn_id, uint64 part1, uint64 part2, uint32 rep
 
   // Add district to the read-write set
   set<uint64> keys;
-  GetRandomKeys(&keys,
+  GetRandomKeysReplica(&keys,
                 1,
                 warehouse_end,
                 district_end,
@@ -524,7 +524,7 @@ TxnProto* Tpcc::TpccTxnMRMP(int64 txn_id, uint64 part1, uint64 part2, uint32 rep
   }
   keys.clear();
 
-  GetRandomKeys(&keys,
+  GetRandomKeysReplica(&keys,
                 10,
                 key_start,
                 item_end,
