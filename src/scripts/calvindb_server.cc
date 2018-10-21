@@ -11,6 +11,7 @@
 #include "machine/connection.h"
 #include "machine/sequencer.h"
 #include "applications/microbenchmark.h"
+#include "applications/tpcc.h"
 #include "scheduler/deterministic_scheduler.h"
 #include "scripts/script_utils.h"
 
@@ -62,6 +63,8 @@ int main(int argc, char** argv) {
   // Artificial loadgen clients. Right now only microbenchmark
   if (FLAGS_experiment == 0) {
     client = reinterpret_cast<Client*>(new MClient(config, FLAGS_percent_mp, FLAGS_hot_records));
+  } else {
+	client = reinterpret_cast<Client*>(new TClient(config, FLAGS_percent_mp, FLAGS_hot_records));
   }
 
   Storage* storage;
@@ -75,6 +78,8 @@ int main(int argc, char** argv) {
     application->InitializeStorage(storage, config);
   } else {
     // Other benchmark
+	application = new Tpcc(config, multiplexer, FLAGS_hot_records);
+	application->InitializeStorage(storage, config);
   }
 
   LOG(ERROR) << FLAGS_machine_id << ":Created application "; 
