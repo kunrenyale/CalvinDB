@@ -206,7 +206,7 @@ class Lowlatency_TClient : public Client {
 	    }
     } else {
         // Single-replica single-partition txn
-        *txn = microbenchmark.MicroTxnSRSP(txn_id, replative_node_id_, local_replica_);
+        *txn = tpcc.TpccTxnSRSP(txn_id, replative_node_id_, local_replica_);
     }
   }
 
