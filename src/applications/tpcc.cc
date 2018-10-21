@@ -466,8 +466,8 @@ TxnProto* Tpcc::TpccTxnMRMP(int64 txn_id, uint64 part1, uint64 part2, uint32 rep
   }
 
   // Add two hot keys to read/write set---one in each partition.
-  uint64 hotkey_order1 = (rand() % (hot_records/replica_size)) * replica_size + replica1;
-  uint64 hotkey_order2 = (rand() % (hot_records/replica_size)) * replica_size + replica2;
+  uint64 hotkey_order1 = (rand() % (warehouses_per_node/replica_size)) * replica_size + replica1;
+  uint64 hotkey_order2 = (rand() % (warehouses_per_node/replica_size)) * replica_size + replica2;
 
   uint64 hotkey1 = part1 + nparts * hotkey_order1;
   uint64 hotkey2 = part2 + nparts * hotkey_order2;
@@ -558,7 +558,7 @@ int Tpcc::Execute(TxnProto* txn, StorageManager* storage) const {
   }
   double execution_start = GetTime();
 
-  for (uint32 i = 0; i < (uint32)(txn->read_write_set_size(); i++) {
+  for (uint32 i = 0; i < (uint32)(txn->read_write_set_size()); i++) {
     KeyEntry key_entry = txn->read_write_set(i);
     Record* val = storage->ReadObject(key_entry.key());
     // Not necessary since storage already has a pointer to val.
@@ -573,7 +573,7 @@ int Tpcc::Execute(TxnProto* txn, StorageManager* storage) const {
     }
   }
 
-  for (uint32 i = 0; i < (uint32)(txn->read_set_size(); i++) {
+  for (uint32 i = 0; i < (uint32)(txn->read_set_size()); i++) {
 	  KeyEntry key_entry = txn->read_set(i);
 	  Record* val = storage->ReadObject(key_entry.key());
 	  // Not necessary since storage already has a pointer to val.
