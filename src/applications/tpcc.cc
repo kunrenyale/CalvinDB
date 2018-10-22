@@ -64,13 +64,11 @@ TxnProto* Tpcc::TpccTxnSP(int64 txn_id, uint64 part) {
   // Add warehouse to read set.
   uint64 hotkey1 = part + nparts * (rand() % warehouses_per_node);
 
-  /**
   KeyEntry* key_entry = txn->add_read_set();
   key_entry->set_key(IntToString(hotkey1));
   key_entry->set_master(0);
   key_entry->set_counter(0);
-**/
-  KeyEntry* key_entry;
+
   // Add district to the read-write set
   set<uint64> keys;
   GetRandomKeys(&keys,
@@ -85,7 +83,6 @@ TxnProto* Tpcc::TpccTxnSP(int64 txn_id, uint64 part) {
     key_entry->set_counter(0);
   }
 
-  /**
   // Add comstomer to the read set
   keys.clear();
   GetRandomKeys(&keys,
@@ -98,9 +95,8 @@ TxnProto* Tpcc::TpccTxnSP(int64 txn_id, uint64 part) {
     key_entry->set_key(IntToString(*it));
     key_entry->set_master(0);
     key_entry->set_counter(0);
-  }**/
+  }
 
-  /**
   // Add item stock to the read_write set
   keys.clear();
   GetRandomKeys(&keys,
@@ -114,7 +110,7 @@ TxnProto* Tpcc::TpccTxnSP(int64 txn_id, uint64 part) {
     key_entry->set_master(0);
     key_entry->set_counter(0);
   }
-**/
+
   return txn;
 }
 

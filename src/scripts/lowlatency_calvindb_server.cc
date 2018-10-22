@@ -97,15 +97,11 @@ int main(int argc, char** argv) {
   LOG(ERROR) << FLAGS_machine_id << ":Created sequencer ";
 
   // Run scheduler in main thread.
-  if (FLAGS_experiment == 0) {
-    DeterministicScheduler scheduler(config,
-                                     storage,
-                                     application,
-                                     multiplexer,
-                                     FLAGS_mode);
-  } else {
-    // Other benchmark
-  }
+  DeterministicScheduler scheduler(config,
+                                   storage,
+                                   application,
+                                   multiplexer,
+                                   FLAGS_mode);
 
   LOG(ERROR) << FLAGS_machine_id << ":Created scheduler "; 
 
