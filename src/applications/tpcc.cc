@@ -100,6 +100,7 @@ TxnProto* Tpcc::TpccTxnSP(int64 txn_id, uint64 part) {
     key_entry->set_counter(0);
   }**/
 
+  /**
   // Add item stock to the read_write set
   keys.clear();
   GetRandomKeys(&keys,
@@ -113,7 +114,7 @@ TxnProto* Tpcc::TpccTxnSP(int64 txn_id, uint64 part) {
     key_entry->set_master(0);
     key_entry->set_counter(0);
   }
-
+**/
   return txn;
 }
 
