@@ -278,12 +278,12 @@ TxnProto* Tpcc::TpccTxnSRMP(int64 txn_id, uint64 part1, uint64 part2, uint32 rep
   uint64 hotkey1 = part1 + nparts * hotkey_order1;
   uint64 hotkey2 = part2 + nparts * hotkey_order2;
 
-  KeyEntry* key_entry = txn->add_read_write_set();
+  KeyEntry* key_entry = txn->add_read_set();
   key_entry->set_key(IntToString(hotkey1));
   key_entry->set_master(replica);
   key_entry->set_counter(0);
 
-  key_entry = txn->add_read_write_set();
+  key_entry = txn->add_read_set();
   key_entry->set_key(IntToString(hotkey2));
   key_entry->set_master(replica);
   key_entry->set_counter(0);
