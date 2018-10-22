@@ -70,6 +70,7 @@ TxnProto* Tpcc::TpccTxnSP(int64 txn_id, uint64 part) {
   key_entry->set_master(0);
   key_entry->set_counter(0);
 **/
+  KeyEntry* key_entry;
   // Add district to the read-write set
   set<uint64> keys;
   GetRandomKeys(&keys,
