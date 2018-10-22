@@ -194,15 +194,13 @@ class Lowlatency_TClient : public Client {
             *txn = tpcc.TpccTxnMRMP(txn_id, replative_node_id_, other_node, local_replica_, other_replica);
         } else {
             // Single-replica txn.
-            if (nodes_per_replica_ > 1 && (uint32)(rand() % 100) < percent_mp_) {
-                // Single-replica multi-partition txn
-                uint64 other_node;
-                do {
-                   other_node = (uint64)(rand() % nodes_per_replica_);
-                } while (other_node == replative_node_id_);
+            // Single-replica multi-partition txn
+            uint64 other_node;
+            do {
+               other_node = (uint64)(rand() % nodes_per_replica_);
+            } while (other_node == replative_node_id_);
 
-                *txn = tpcc.TpccTxnSRMP(txn_id, replative_node_id_, other_node, local_replica_);
-            }
+            *txn = tpcc.TpccTxnSRMP(txn_id, replative_node_id_, other_node, local_replica_);
 	    }
     } else {
         // Single-replica single-partition txn

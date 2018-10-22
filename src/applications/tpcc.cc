@@ -573,12 +573,13 @@ int Tpcc::Execute(TxnProto* txn, StorageManager* storage) const {
     }
   }
 
+  /**
   for (uint32 i = 0; i < (uint32)(txn->read_set_size()); i++) {
 	  KeyEntry key_entry = txn->read_set(i);
 	  Record* val = storage->ReadObject(key_entry.key());
 	  // Not necessary since storage already has a pointer to val.
 	  //   storage->PutObject(txn->read_write_set(i), val);
-  }
+  }**/
 
   // The following code is for microbenchmark "long" transaction, uncomment it if for "long" transaction
   while (GetTime() - execution_start < 0.00012/factor) {
