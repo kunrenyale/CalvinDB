@@ -64,11 +64,12 @@ TxnProto* Tpcc::TpccTxnSP(int64 txn_id, uint64 part) {
   // Add warehouse to read set.
   uint64 hotkey1 = part + nparts * (rand() % warehouses_per_node);
 
+  /**
   KeyEntry* key_entry = txn->add_read_set();
   key_entry->set_key(IntToString(hotkey1));
   key_entry->set_master(0);
   key_entry->set_counter(0);
-
+**/
   // Add district to the read-write set
   set<uint64> keys;
   GetRandomKeys(&keys,
@@ -83,6 +84,7 @@ TxnProto* Tpcc::TpccTxnSP(int64 txn_id, uint64 part) {
     key_entry->set_counter(0);
   }
 
+  /**
   // Add comstomer to the read set
   keys.clear();
   GetRandomKeys(&keys,
@@ -95,7 +97,7 @@ TxnProto* Tpcc::TpccTxnSP(int64 txn_id, uint64 part) {
     key_entry->set_key(IntToString(*it));
     key_entry->set_master(0);
     key_entry->set_counter(0);
-  }
+  }**/
 
   // Add item stock to the read_write set
   keys.clear();
@@ -578,14 +580,6 @@ int Tpcc::Execute(TxnProto* txn, StorageManager* storage) const {
 	  Record* val = storage->ReadObject(key_entry.key());
 	  // Not necessary since storage already has a pointer to val.
 	  //   storage->PutObject(txn->read_write_set(i), val);
-
-	  for (int j = 0; j < 8; j++) {
-		  if ((val->value)[j] + 1 > 'z') {
-		     (val->value)[j] = 'a';
-		  } else {
-		     (val->value)[j] = (val->value)[j] + 1;
-		  }
-	  }
   }
 
   // The following code is for microbenchmark "long" transaction, uncomment it if for "long" transaction
