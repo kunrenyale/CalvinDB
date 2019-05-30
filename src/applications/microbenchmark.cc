@@ -565,7 +565,7 @@ void Microbenchmark::InitializeStorage(Storage* storage, ClusterConfig* conf) co
       storage->PutObject(IntToString(i), new Record(value, master));
     }
 
-    if (i % 100000 == 0) {
+    if (i % 1000000 == 0) {
     	LOG(ERROR) <<conf->relative_node_id()<< ":*********In InitializeStorage:  Finish 100000 records ";
     }
   }
