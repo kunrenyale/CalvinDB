@@ -23,7 +23,7 @@ using std::string;
 using std::queue;
 using std::map;
 
-#define SAMPLES  720
+#define SAMPLES  360
 #define SAMPLE_RATE 199
 
 #define LATENCY_TEST
