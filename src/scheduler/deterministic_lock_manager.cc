@@ -202,7 +202,7 @@ int DeterministicLockManager::Lock(TxnProto* txn, set<Key> skip_keys) {
 
 // TODO: for this paper experiments, only_lock_key only for read_write_set
 // but it is easy to expand to support both read and write set
-int Lock(TxnProto* txn, Key only_lock_key) {
+int DeterministicLockManager::Lock(TxnProto* txn, Key only_lock_key) {
     int not_acquired = 0;
 	uint32 origin = txn->origin_replica();
 
