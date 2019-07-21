@@ -372,8 +372,6 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
       // Handle remaster transactions     
       if (mode_ == 2 && done_txn->remaster_txn() == true) {
 LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  release remaster txn: "<<done_txn->txn_id();
-
-        uint64 txn_id = done_txn->txn_id();
       
         // Check whether remaster txn can wake up some blocking txns
         KeyEntry key_entry = done_txn->read_write_set(0);
@@ -387,6 +385,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  release remaster txn
  
           for (auto it = blocked_txns.begin(); it != blocked_txns.end(); it++) {
             TxnProto* a = *it;
+            uint64 txn_id = a->txn_id();
             (waiting_txns_by_txnid_[txn_id]).erase(key_info);
 
             if ((waiting_txns_by_txnid_[txn_id]).size() == 0) {
