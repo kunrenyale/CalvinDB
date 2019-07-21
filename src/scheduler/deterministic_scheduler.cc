@@ -491,7 +491,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
             	skip_keys.insert(key_counter.first);
             }
 
-            lock_manager_->Lock(txn, keys);
+            lock_manager_->Lock(txn, skip_keys);
             pending_txns++;
              // Working on next txn
              continue;
