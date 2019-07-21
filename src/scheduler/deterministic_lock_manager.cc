@@ -204,7 +204,6 @@ int DeterministicLockManager::Lock(TxnProto* txn, set<Key> skip_keys) {
 // but it is easy to expand to support both read and write set
 int DeterministicLockManager::Lock(TxnProto* txn, Key only_lock_key) {
     int not_acquired = 0;
-	uint32 origin = txn->origin_replica();
 
 	// Handle read/write lock requests.
     deque<KeysList>* key_requests = lock_table_[Hash(only_lock_key)];
