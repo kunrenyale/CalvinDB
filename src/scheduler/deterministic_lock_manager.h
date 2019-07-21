@@ -8,6 +8,7 @@
 
 #include <deque>
 #include <tr1/unordered_map>
+#include <set>
 
 #include "machine/cluster_config.h"
 #include "scheduler/lock_manager.h"
@@ -15,6 +16,7 @@
 
 using std::tr1::unordered_map;
 using std::deque;
+using std::set;
 
 #define TABLE_SIZE 1000000
 

@@ -518,7 +518,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
     while (ready_txns_->Pop(&ready_txn)) {
       pending_txns--;
 
-      if (read_txn.wait_for_remaster_pros() == false) {
+      if (ready_txn.wait_for_remaster_pros() == false) {
           executing_txns++;
           txns_queue_->Push(ready_txn);
       }

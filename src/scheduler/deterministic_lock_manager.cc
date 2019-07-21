@@ -6,12 +6,10 @@
 #include "scheduler/deterministic_lock_manager.h"
 
 #include <vector>
-#include <set>
 
 #include "proto/txn.pb.h"
 
 using std::vector;
-using std::set;
 
 DeterministicLockManager::DeterministicLockManager(
     AtomicQueue<TxnProto*>* ready_txns,
@@ -204,7 +202,7 @@ int DeterministicLockManager::Lock(TxnProto* txn, set<Key> skip_keys) {
 
 // TODO: for this paper experiments, only_lock_key only for read_write_set
 // but it is easy to expand to support both read and write set
-virtual int Lock(TxnProto* txn, Key only_lock_key) {
+int Lock(TxnProto* txn, Key only_lock_key) {
     int not_acquired = 0;
 	uint32 origin = txn->origin_replica();
 
