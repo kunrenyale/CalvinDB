@@ -372,49 +372,31 @@ LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler 
       // Handle remaster transactions     
       if (mode_ == 2 && done_txn->remaster_txn() == true) {
 LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  release remaster txn: "<<done_txn->txn_id();
-
-        uint64 txn_id = done_txn->txn_id();
       
         // Check whether remaster txn can wake up some blocking txns
         KeyEntry key_entry = done_txn->read_write_set(0);
         pair <string, uint64> key_info = make_pair(key_entry.key(), key_entry.counter()+1);
-
-        // For txns that are now ready to request locks
-        vector<TxnProto*> ready_to_lock_txns;
 
         if (waiting_txns_by_key_.find(key_info) != waiting_txns_by_key_.end()) {
           vector<TxnProto*> blocked_txns = waiting_txns_by_key_[key_info];
  
           for (auto it = blocked_txns.begin(); it != blocked_txns.end(); it++) {
             TxnProto* a = *it;
+            uint64 txn_id = a->txn_id();
             (waiting_txns_by_txnid_[txn_id]).erase(key_info);
 
             if ((waiting_txns_by_txnid_[txn_id]).size() == 0) {
               a->set_wait_for_remaster_pros(false);
               waiting_txns_by_txnid_.erase(txn_id);
-
-              if (blocking_txns_[a->origin_replica()].front() == a) {
-                ready_to_lock_txns.push_back(a); 
-                blocking_txns_[a->origin_replica()].pop();
-//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn: "<<a->txn_id();
-                while (!blocking_txns_[a->origin_replica()].empty() && blocking_txns_[a->origin_replica()].front()->wait_for_remaster_pros() == false) {
-//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn: "<<blocking_txns_[a->origin_replica()].front()->txn_id();
-                  ready_to_lock_txns.push_back(blocking_txns_[a->origin_replica()].front()); 
-                  blocking_txns_[a->origin_replica()].pop();
-                }
-              }
             }
+
+            lock_manager_->Lock(a, key_info.first);
+            pending_txns++;
           } // end for
 
           waiting_txns_by_key_.erase(key_info);
         } 
 
-
-        for (uint32 i = 0; i < ready_to_lock_txns.size(); i++) {
-          lock_manager_->Lock(ready_to_lock_txns[i]);
-          pending_txns++; 
-//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn(acquire lock): "<<ready_to_lock_txns[i]->txn_id();
-        }
       } // end  if (mode_ == 2 && done_txn->remaster_txn() == true) 
 
       // We have received a finished transaction back, release the lock
@@ -496,7 +478,6 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
           set<pair<string,uint64>> keys;
           bool can_execute_now = VerifyStorageCounters(txn, keys);
           if (can_execute_now == false) {
-            blocking_txns_[txn->origin_replica()].push(txn);
             txn->set_wait_for_remaster_pros(true);
 //LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id()<<"  on key:"<<keys.begin()->first;
             // Put it into the queue and wait for the remaster action come
@@ -505,6 +486,13 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
               waiting_txns_by_key_[*it].push_back(txn);
             }
 
+            set<Key> skip_keys;
+            for (auto key_counter : keys) {
+            	skip_keys.insert(key_counter.first);
+            }
+
+            lock_manager_->Lock(txn, keys);
+            pending_txns++;
              // Working on next txn
              continue;
           } else {
@@ -514,14 +502,6 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
               ready_txns_->Push(txn);
               pending_txns++;
               continue;
-            } else { 
-              // It is the first txn and can be executed right now
-              if (!blocking_txns_[txn->origin_replica()].empty()) {
-                blocking_txns_[txn->origin_replica()].push(txn);
-//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id();
-                continue;
-              }
-      
             }
           }
         } // end if (mode_ == 2)
@@ -537,9 +517,11 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
    TxnProto* ready_txn;
     while (ready_txns_->Pop(&ready_txn)) {
       pending_txns--;
-      executing_txns++;
 
-      txns_queue_->Push(ready_txn);
+      if (read_txn.wait_for_remaster_pros() == false) {
+          executing_txns++;
+          txns_queue_->Push(ready_txn);
+      }
 //if (machine_id == 0)
 //LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  acquired locks txn: "<<ready_txn->txn_id()<<" origin:"<<ready_txn->origin_replica()<<"  involved_replicas:"<<ready_txn->involved_replicas_size();
     }

@@ -29,6 +29,8 @@ class DeterministicLockManager {
   virtual void Release(const Key& key, TxnProto* txn);
   virtual void Release(TxnProto* txn);
 
+  virtual int Lock(TxnProto* txn, set<Key> skip_keys);
+  virtual int virtual int Lock(TxnProto* txn, Key only_lock_key) ;
  private:
   int Hash(const Key& key) {
     uint64 hash = 2166136261;
