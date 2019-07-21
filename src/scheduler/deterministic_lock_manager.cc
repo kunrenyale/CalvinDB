@@ -117,7 +117,7 @@ int DeterministicLockManager::Lock(TxnProto* txn, set<Key> skip_keys) {
       continue;
     }
 
-    if (skip_keys.find(key_entry.key() != skip_keys.end()) {
+    if (skip_keys.find(key_entry.key()) != skip_keys.end()) {
     	continue;
     }
 
@@ -156,7 +156,7 @@ int DeterministicLockManager::Lock(TxnProto* txn, set<Key> skip_keys) {
       continue;
     }
 
-    if (skip_keys.find(key_entry.key() != skip_keys.end()) {
+    if (skip_keys.find(key_entry.key()) != skip_keys.end()) {
     	continue;
     }
 
