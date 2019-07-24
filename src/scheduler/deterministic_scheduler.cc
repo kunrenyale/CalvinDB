@@ -498,7 +498,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
           } else {
             if (txn->status() == TxnProto::ABORTED_WITHOUT_LOCK) {
             // If the status is: ABORTED_WITHOUT_LOCK, we can run this txn without locking
-//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  find a  ABORTED_WITHOUT_LOCK txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  find a  ABORTED_WITHOUT_LOCK txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
               ready_txns_->Push(txn);
               pending_txns++;
               continue;
