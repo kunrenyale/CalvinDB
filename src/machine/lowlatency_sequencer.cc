@@ -149,7 +149,7 @@ LOG(ERROR) << configuration_->local_node_id()<< "---In sequencer:  After synchro
 LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  received a remaster txn: "<<txn.txn_id();
 else 
 LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  received a aborted txn;"<<txn.txn_id()<<" replica size:"<<txn.involved_replicas_size();**/
-LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  received a forward txn;"<<txn.txn_id()<<" key:"<<txn.read_write_set(0).key();
+//LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  received a forward txn;"<<txn.txn_id()<<" key:"<<txn.read_write_set(0).key();
         } else if (message.type() == MessageProto::MASTER_LOOKUP_RESULT) {
           // Got master lookup result message
           LookupMasterResultEntry lookup_result_entry;

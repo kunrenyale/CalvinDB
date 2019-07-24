@@ -479,7 +479,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
           bool can_execute_now = VerifyStorageCounters(txn, keys);
           if (can_execute_now == false) {
             txn->set_wait_for_remaster_pros(true);
-//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id()<<"  on key:"<<keys.begin()->first;
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id()<<"  on key:"<<keys.begin()->first;
             // Put it into the queue and wait for the remaster action come
             waiting_txns_by_txnid_[txn->txn_id()] = keys;
             for (auto it = keys.begin(); it != keys.end(); it++) {
@@ -498,7 +498,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
           } else {
             if (txn->status() == TxnProto::ABORTED_WITHOUT_LOCK) {
             // If the status is: ABORTED_WITHOUT_LOCK, we can run this txn without locking
-LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  find a  ABORTED_WITHOUT_LOCK txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
+//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  find a  ABORTED_WITHOUT_LOCK txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
               ready_txns_->Push(txn);
               pending_txns++;
               continue;
