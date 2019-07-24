@@ -239,6 +239,8 @@ LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  rece
         //txn->set_client_replica(local_replica);
         if (local_replica == 0 && txn->read_write_set(0).key().compare("0") == 0) {
             txn->set_client_replica(1);
+        } else {
+        	txn->set_client_replica(local_replica);
         }
         txn_id_offset++;
 
