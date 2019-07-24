@@ -237,9 +237,9 @@ LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  rece
 
         txn->set_origin_replica(local_replica);
         txn->set_client_replica(local_replica);
-        if (local_replica == 0 && txn->read_write_set(0).key().compare("0") == 0) {
+        /**if (local_replica == 0 && txn->read_write_set(0).key().compare("0") == 0) {
             txn->set_client_replica(1);
-        }
+        }**/
         txn_id_offset++;
 
 #ifdef LATENCY_TEST
