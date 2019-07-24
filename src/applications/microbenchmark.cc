@@ -151,6 +151,40 @@ TxnProto* Microbenchmark::MicroTxnMP(int64 txn_id, uint64 part1, uint64 part2) {
   return txn;
 }
 
+//------------- Create a single-replica single-partition transaction ------------
+// Note that this is only for remaster expeirment which only has 1 hot key
+TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint64 part, uint32 replica) {
+  // Create the new transaction object
+  TxnProto* txn = new TxnProto();
+
+  // Set the transaction's standard attributes
+  txn->set_txn_id(txn_id);
+  txn->set_txn_type(MICROTXN_SP);
+
+//if (replica == 0)
+//LOG(ERROR) << ": In Microbenchmark::MicroTxnSRSP:  1";
+
+  // Add one hot keys to read/write set.
+  uint64 hotkey_order1 = (rand() % (hot_records/replica_size)) * replica_size + replica;
+
+
+//if (replica == 0)
+//LOG(ERROR) << ": In Microbenchmark::MicroTxnSRSP:  2";
+
+  uint64 hotkey1 = part + nparts * hotkey_order1;
+
+  KeyEntry* key_entry = txn->add_read_write_set();
+  key_entry->set_key(IntToString(hotkey1));
+  key_entry->set_master(replica);
+  key_entry->set_counter(0);
+
+//if (replica == 0)
+//LOG(ERROR) << ": In Microbenchmark::MicroTxnSRSP:  3";
+
+  return txn;
+}
+
+/**
 //------------- Create a single-replica single-partition transaction------------
 TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint64 part, uint32 replica) {
   // Create the new transaction object
@@ -214,6 +248,7 @@ TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint64 part, uint32 replica
 
   return txn;
 }
+**/
 
 //------------- Create a single-replica multi-partition transaction------------
 TxnProto* Microbenchmark::MicroTxnSRMP(int64 txn_id, uint64 part1, uint64 part2, uint32 replica) {
