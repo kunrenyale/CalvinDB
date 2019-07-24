@@ -529,8 +529,10 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn
     // Report throughput.
     if (GetTime() > time + 0.5) {
       double total_time = GetTime() - time;
+      if (machine_id == 0) {
       LOG(ERROR) << "Machine: "<<machine_id<<" Completed "<< (static_cast<double>(txns) / total_time)
                  << " txns/sec, "<< executing_txns << " executing, "<< pending_txns << " pending";
+      }
 
       // Reset txn count.
       time = GetTime();
