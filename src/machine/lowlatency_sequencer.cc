@@ -31,7 +31,7 @@ LowlatencySequencer::LowlatencySequencer(ClusterConfig* conf, ConnectionMultiple
   pthread_attr_t attr_writer;
   pthread_attr_init(&attr_writer);
   CPU_ZERO(&cpuset);
-  CPU_SET(2, &cpuset);
+CPU_SET(0, &cpuset);
 //  CPU_SET(6, &cpuset);
   pthread_attr_setaffinity_np(&attr_writer, sizeof(cpu_set_t), &cpuset);
 
@@ -39,7 +39,7 @@ LowlatencySequencer::LowlatencySequencer(ClusterConfig* conf, ConnectionMultiple
 
   CPU_ZERO(&cpuset);
 //  CPU_SET(2, &cpuset);
-  CPU_SET(6, &cpuset);
+CPU_SET(0, &cpuset);
   pthread_attr_t attr_reader;
   pthread_attr_init(&attr_reader);
   pthread_attr_setaffinity_np(&attr_reader, sizeof(cpu_set_t), &cpuset);

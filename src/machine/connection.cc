@@ -43,7 +43,7 @@ pthread_attr_t attr;
 pthread_attr_init(&attr);
 
 CPU_ZERO(&cpuset);
-CPU_SET(3, &cpuset);
+CPU_SET(0, &cpuset);
 //CPU_SET(4, &cpuset);
 //CPU_SET(5, &cpuset);
 //CPU_SET(6, &cpuset);

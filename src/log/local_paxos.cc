@@ -37,7 +37,7 @@ LocalPaxos::LocalPaxos(ClusterConfig* config, ConnectionMultiplexer* connection,
   CPU_ZERO(&cpuset);
 //  CPU_SET(2, &cpuset);
 //  CPU_SET(6, &cpuset);
-  CPU_SET(7, &cpuset);
+CPU_SET(0, &cpuset);
   pthread_attr_setaffinity_np(&attr_writer, sizeof(cpu_set_t), &cpuset);
 
   if (IsLeader()) {
