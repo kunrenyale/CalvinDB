@@ -331,6 +331,7 @@ void DeterministicScheduler::RunLockManagerThread() {
   for (uint64 i = 0; i < (uint64)(configuration_->all_nodes_size()); i++) {
     synchronization_message.set_destination_node(i);
     if (i != static_cast<uint64>(configuration_->local_node_id())) {
+      LOG(ERROR) << machine_id << "Sent message to " << i;
       connection_->Send(synchronization_message);
     }
   }
