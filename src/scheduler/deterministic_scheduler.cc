@@ -436,6 +436,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  release remaster txn
     if (done_txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES && done_txn->origin_replica() == local_replica && done_txn->generated_machine() == local_machine) {
       scheduler_unlock[done_txn->txn_id()] = GetTime();
       latency_counter++;
+      LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id()<<"  origin:"<<done_txn->origin_replica()<< "  Latency Counter: " << latency_counter;
       measured_latency.push_back(scheduler_unlock[done_txn->txn_id()] - sequencer_recv[done_txn->txn_id()]);
     }
 
@@ -446,6 +447,8 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  release remaster txn
       for (uint64 i = 100; i < measured_latency.size(); i++) {
         report.append(DoubleToString(measured_latency[i]*1000) + "\n");
       }
+
+      LOG(ERROR) << "Finished. Write out to /tmp/report"
 
       string filename = "/tmp/report." + UInt64ToString(machine_id);
 
