@@ -64,11 +64,12 @@ CPU_SET(0, &cpuset);
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     CPU_ZERO(&cpuset);
-    if (i == 0 || i == 1) {
-CPU_SET(0, &cpuset);
+    CPU_SET(0, &cpuset);
+    /*if (i == 0 || i == 1) {
+      CPU_SET(0, &cpuset);
     } else {
       CPU_SET(i+2, &cpuset);
-    }
+    }*/
 
     pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset);
 
