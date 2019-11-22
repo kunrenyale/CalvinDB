@@ -452,7 +452,7 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  Finish executing the
         report.append(DoubleToString(measured_latency[i]*1000) + "\n");
       }
 
-      LOG(ERROR) << "Finished. Write out to /tmp/report"
+      LOG(ERROR) << "Finished. Write out to /tmp/report";
 
       string filename = "/tmp/report." + UInt64ToString(machine_id);
 
