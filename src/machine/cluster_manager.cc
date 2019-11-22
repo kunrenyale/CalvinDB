@@ -119,6 +119,28 @@ void ClusterManager::Update() {
   threads.clear();
 }
 
+void ClusterManager::RunArbitrary(string& command) {
+  // Next, Run "git pull ;make clean;make -j" to get the latest code and compile.
+  vector<pthread_t> threads;
+  for (map<uint64, MachineInfo>::const_iterator it =
+       config_.machines().begin();
+       it != config_.machines().end(); ++it) {
+    threads.resize(threads.size()+1);
+    string* ssh_command = new string(
+      "ssh " + ssh_key(it->first)  + " "+ ssh_username_ + "@" + it->second.host() +
+      " 'cd " + calvin_path_ + ";" + command + "'");
+    pthread_create(
+        &threads[threads.size()-1],
+        NULL,
+        SystemFunction,
+        reinterpret_cast<void*>(ssh_command));
+  }
+  for (uint32 i = 0; i < threads.size(); i++) {
+    pthread_join(threads[i], NULL);
+  }
+  threads.clear();
+}
+
 void ClusterManager::DeployCluster(int experiment, int percent_mp, int percent_mr, int hot_records, int max_batch_size) {
   vector<pthread_t> threads;
   // Now ssh into all machines and start 'binary' running.
