@@ -19,6 +19,8 @@ using std::pair;
 using std::string;
 using std::map;
 
+#define LATENCY_TEST
+
 //----------------------------------------------------------------  constructor --------------------------------------------------------------------
 DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
                                                Storage* storage,
@@ -431,12 +433,13 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  release remaster txn
          (done_txn->writers_size() == 0 || (rand() % done_txn->writers_size() == 0 && rand() % done_txn->involved_replicas_size() == 0))) {
         txns++;       
       }
-//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id()<<"  origin:"<<done_txn->origin_replica();
+
+LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id()<<"  origin:"<<done_txn->origin_replica();
 #ifdef LATENCY_TEST
     if (done_txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES && done_txn->origin_replica() == local_replica && done_txn->generated_machine() == local_machine) {
       scheduler_unlock[done_txn->txn_id()] = GetTime();
       latency_counter++;
-      LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id()<<"  origin:"<<done_txn->origin_replica()<< "  Latency Counter: " << latency_counter;
+      LOG(ERROR) << "  Latency Counter: " << latency_counter;
       measured_latency.push_back(scheduler_unlock[done_txn->txn_id()] - sequencer_recv[done_txn->txn_id()]);
     }
 
