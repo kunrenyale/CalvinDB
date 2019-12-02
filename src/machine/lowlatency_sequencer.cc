@@ -235,6 +235,11 @@ LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  rece
 
         client_->GetTxn(&txn, batch_number * max_batch_size_ + txn_id_offset);
 
+        // no more local txns
+        if (txn == NULL) {
+          continue;
+        }
+
         txn->set_origin_replica(local_replica);
         txn->set_client_replica(local_replica);
         txn_id_offset++;

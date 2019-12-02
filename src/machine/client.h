@@ -11,7 +11,7 @@
 #include <iostream>
 #include <map>
 #include <utility>
-
+#include <glog/logging.h>
 #include "machine/cluster_config.h"
 #include "common/utils.h"
 #include "proto/txn.pb.h"
@@ -50,7 +50,7 @@ class MClient : public Client {
  public:
   MClient(ClusterConfig* config, uint32 mp, uint32 hot_records)
       : microbenchmark(config, hot_records), config_(config), percent_mp_(mp),
-        nodes_per_replica_(config->nodes_per_replica()), replative_node_id_(config->relative_node_id()) {
+        nodes_per_replica_(config->nodes_per_replica()), relative_node_id_(config->relative_node_id()) {
   }
   virtual ~MClient() {}
   virtual void GetTxn(TxnProto** txn, int txn_id) {
@@ -59,11 +59,11 @@ class MClient : public Client {
       uint64 other;
       do {
         other = (uint64)(rand() % nodes_per_replica_);
-      } while (other == replative_node_id_);
-      *txn = microbenchmark.MicroTxnMP(txn_id, replative_node_id_, other);
+      } while (other == relative_node_id_);
+      *txn = microbenchmark.MicroTxnMP(txn_id, relative_node_id_, other);
     } else {
       // Single-partition txn.
-      *txn = microbenchmark.MicroTxnSP(txn_id, replative_node_id_);
+      *txn = microbenchmark.MicroTxnSP(txn_id, relative_node_id_);
     }
   }
 
@@ -72,7 +72,7 @@ class MClient : public Client {
   ClusterConfig* config_;
   uint32 percent_mp_;
   uint64 nodes_per_replica_;
-  uint64 replative_node_id_;
+  uint64 relative_node_id_;
 };
 
 // TPCC load generation client.
@@ -80,7 +80,7 @@ class TClient : public Client {
  public:
   TClient(ClusterConfig* config, uint32 mp, uint32 hot_records)
       : tpcc(config, hot_records), config_(config), percent_mp_(mp),
-        nodes_per_replica_(config->nodes_per_replica()), replative_node_id_(config->relative_node_id()) {
+        nodes_per_replica_(config->nodes_per_replica()), relative_node_id_(config->relative_node_id()) {
   }
   virtual ~TClient() {}
   virtual void GetTxn(TxnProto** txn, int txn_id) {
@@ -90,11 +90,11 @@ class TClient : public Client {
       uint64 other;
       do {
         other = (uint64)(rand() % nodes_per_replica_);
-      } while (other == replative_node_id_);
-      *txn = tpcc.TpccTxnMP(txn_id, replative_node_id_, other);
+      } while (other == relative_node_id_);
+      *txn = tpcc.TpccTxnMP(txn_id, relative_node_id_, other);
     } else {
       // Single-partition txn.
-      *txn = tpcc.TpccTxnSP(txn_id, replative_node_id_);
+      *txn = tpcc.TpccTxnSP(txn_id, relative_node_id_);
     }
   }
 
@@ -103,7 +103,7 @@ class TClient : public Client {
   ClusterConfig* config_;
   uint32 percent_mp_;
   uint64 nodes_per_replica_;
-  uint64 replative_node_id_;
+  uint64 relative_node_id_;
 };
 
 // Microbenchmark load generation client.
@@ -111,7 +111,7 @@ class Lowlatency_MClient : public Client {
  public:
   Lowlatency_MClient(ClusterConfig* config, uint32 mp, uint32 mr, uint32 hot_records)
       : microbenchmark(config, hot_records), config_(config), percent_mp_(mp), percent_mr_(mr),
-        nodes_per_replica_(config->nodes_per_replica()), replative_node_id_(config->relative_node_id()) {
+        nodes_per_replica_(config->nodes_per_replica()), relative_node_id_(config->relative_node_id()) {
     local_replica_ = config_->local_replica_id();
     num_replicas_ = config_->replicas_size();
   }
@@ -129,13 +129,13 @@ class Lowlatency_MClient : public Client {
         uint64 other_node;
         do {
           other_node = (uint64)(rand() % nodes_per_replica_);
-        } while (other_node == replative_node_id_);
+        } while (other_node == relative_node_id_);
 
-        *txn = microbenchmark.MicroTxnMRMP(txn_id, replative_node_id_, other_node, local_replica_, other_replica);
+        *txn = microbenchmark.MicroTxnMRMP(txn_id, relative_node_id_, other_node, local_replica_, other_replica);
         //*txn = microbenchmark.MicroTxnMRMP(txn_id, 0, 1, 0, 1);
       } else {
         // Multi-replica single-partition txn
-        *txn = microbenchmark.MicroTxnMRSP(txn_id, replative_node_id_, local_replica_, other_replica);    
+        *txn = microbenchmark.MicroTxnMRSP(txn_id, relative_node_id_, local_replica_, other_replica);    
 //*txn = microbenchmark.MicroTxnMRSP(txn_id, 0, 0, 1);   
       }
     } else {
@@ -145,12 +145,12 @@ class Lowlatency_MClient : public Client {
         uint64 other_node;
         do {
           other_node = (uint64)(rand() % nodes_per_replica_);
-        } while (other_node == replative_node_id_);
+        } while (other_node == relative_node_id_);
 
-        *txn = microbenchmark.MicroTxnSRMP(txn_id, replative_node_id_, other_node, local_replica_);
+        *txn = microbenchmark.MicroTxnSRMP(txn_id, relative_node_id_, other_node, local_replica_);
       } else {
         // Single-replica single-partition txn
-        *txn = microbenchmark.MicroTxnSRSP(txn_id, replative_node_id_, local_replica_);         
+        *txn = microbenchmark.MicroTxnSRSP(txn_id, relative_node_id_, local_replica_);         
       }
     }
   }
@@ -163,7 +163,7 @@ class Lowlatency_MClient : public Client {
   uint32 local_replica_;
   uint32 num_replicas_;
   uint64 nodes_per_replica_;
-  uint64 replative_node_id_;
+  uint64 relative_node_id_;
 };
 
 // Tpcc load generation client for slog.
@@ -171,7 +171,7 @@ class Lowlatency_TClient : public Client {
  public:
   Lowlatency_TClient(ClusterConfig* config, uint32 mp, uint32 mr, uint32 hot_records)
       : tpcc(config, hot_records), config_(config), percent_mp_(mp), percent_mr_(mr),
-        nodes_per_replica_(config->nodes_per_replica()), replative_node_id_(config->relative_node_id()) {
+        nodes_per_replica_(config->nodes_per_replica()), relative_node_id_(config->relative_node_id()) {
     local_replica_ = config_->local_replica_id();
     num_replicas_ = config_->replicas_size();
   }
@@ -189,22 +189,22 @@ class Lowlatency_TClient : public Client {
             uint64 other_node;
             do {
                 other_node = (uint64)(rand() % nodes_per_replica_);
-            } while (other_node == replative_node_id_);
+            } while (other_node == relative_node_id_);
 
-            *txn = tpcc.TpccTxnMRMP(txn_id, replative_node_id_, other_node, local_replica_, other_replica);
+            *txn = tpcc.TpccTxnMRMP(txn_id, relative_node_id_, other_node, local_replica_, other_replica);
         } else {
             // Single-replica txn.
             // Single-replica multi-partition txn
             uint64 other_node;
             do {
                other_node = (uint64)(rand() % nodes_per_replica_);
-            } while (other_node == replative_node_id_);
+            } while (other_node == relative_node_id_);
 
-            *txn = tpcc.TpccTxnSRMP(txn_id, replative_node_id_, other_node, local_replica_);
+            *txn = tpcc.TpccTxnSRMP(txn_id, relative_node_id_, other_node, local_replica_);
 	    }
     } else {
         // Single-replica single-partition txn
-        *txn = tpcc.TpccTxnSRSP(txn_id, replative_node_id_, local_replica_);
+        *txn = tpcc.TpccTxnSRSP(txn_id, relative_node_id_, local_replica_);
     }
   }
 
@@ -216,8 +216,41 @@ class Lowlatency_TClient : public Client {
   uint32 local_replica_;
   uint32 num_replicas_;
   uint64 nodes_per_replica_;
-  uint64 replative_node_id_;
+  uint64 relative_node_id_;
 };
 
+// Client for correctness testing
+class MockClient : public Client {
+ public:
+  MockClient(ClusterConfig* config, uint32 mp, uint32 mr, uint32 hot_records)
+      : microbenchmark(config, hot_records), config_(config), percent_mp_(mp), percent_mr_(mr),
+        nodes_per_replica_(config->nodes_per_replica()), relative_node_id_(config->relative_node_id()) {
+    local_replica_ = config_->local_replica_id();
+    num_replicas_ = config_->replicas_size();
+    txnsCreated_ = 0;
+  }
+  virtual ~MockClient() {}
+  virtual void GetTxn(TxnProto** txn, int txn_id) {
+    LOG(ERROR) << "Created txn";
+    // send 1 txn from rep 0 to rep 1
+    if (local_replica_ == 0 && relative_node_id_ == 0 && txnsCreated_ == 0) {
+      microbenchmark.MicroTxnSRSP(txn_id, 0, 1);
+      txnsCreated_++;
+    } else {
+      *txn = NULL;
+    }
+  }
+
+ private:
+  Microbenchmark microbenchmark;
+  ClusterConfig* config_;
+  uint32 percent_mp_;
+  uint32 percent_mr_;
+  uint32 local_replica_;
+  uint32 num_replicas_;
+  uint64 nodes_per_replica_;
+  uint64 relative_node_id_;
+  uint32 txnsCreated_;
+};
 
 #endif  // _DB_MACHINE_CLIENT_H_
