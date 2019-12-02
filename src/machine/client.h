@@ -235,7 +235,7 @@ class MockClient : public Client {
     // send 1 txn from rep 0 to rep 1
     if (local_replica_ == 0 && relative_node_id_ == 0 && txns_created_ == 0) {
       microbenchmark.MicroTxnSRSP(txn_id, 0, 1);
-      txnsCreated_++;
+      txns_created_++;
     } else {
       *txn = NULL;
     }
