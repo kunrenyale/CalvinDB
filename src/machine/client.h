@@ -227,13 +227,13 @@ class MockClient : public Client {
         nodes_per_replica_(config->nodes_per_replica()), relative_node_id_(config->relative_node_id()) {
     local_replica_ = config_->local_replica_id();
     num_replicas_ = config_->replicas_size();
-    txnsCreated_ = 0;
+    txns_created_ = 0;
   }
   virtual ~MockClient() {}
   virtual void GetTxn(TxnProto** txn, int txn_id) {
     LOG(ERROR) << "Created txn";
     // send 1 txn from rep 0 to rep 1
-    if (local_replica_ == 0 && relative_node_id_ == 0 && txnsCreated_ == 0) {
+    if (local_replica_ == 0 && relative_node_id_ == 0 && txns_created_ == 0) {
       microbenchmark.MicroTxnSRSP(txn_id, 0, 1);
       txnsCreated_++;
     } else {
@@ -250,7 +250,7 @@ class MockClient : public Client {
   uint32 num_replicas_;
   uint64 nodes_per_replica_;
   uint64 relative_node_id_;
-  uint32 txnsCreated_;
+  uint32 txns_created_;
 };
 
 #endif  // _DB_MACHINE_CLIENT_H_

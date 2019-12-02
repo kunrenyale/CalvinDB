@@ -79,10 +79,13 @@ int main(int argc, char** argv) {
   if (FLAGS_experiment == 0) {
     application = new Microbenchmark(config, multiplexer, FLAGS_hot_records);
     application->InitializeStorage(storage, config);
-  } else {
+  } else if (FLAGS_experiment == 1) {
     // Other benchmark
 	application = new Tpcc(config, multiplexer, FLAGS_hot_records);
 	application->InitializeStorage(storage, config);
+  } else if (FLAGS_experiment == 2) {
+    application = new Microbenchmark(config, multiplexer, FLAGS_hot_records);
+    application->InitializeStorage(storage, config);
   }
 
   LOG(ERROR) << FLAGS_machine_id << ":Created application "; 
