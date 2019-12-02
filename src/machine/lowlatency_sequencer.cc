@@ -282,7 +282,9 @@ LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  rece
           }
         }
 
-        // All keys are on local machine
+        // All keys are on local machine (All keys within this partition, but might be mastered
+        // in other region/sreplicas). If the keys aren't in our partition, we can't ask our own
+        // storage "GetMasterCounter"
         if (remote_expected == 0) {
           // Add involved replicas
           for (uint32 replica : involved_replicas[txn_id]) {
@@ -294,17 +296,24 @@ LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  rece
           string txn_string;
           txn->SerializeToString(&txn_string);
 
+          // Single-home txn on in this region
           if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) == local_replica) {
             batch_message.add_data(txn_string);
-          } else if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) != local_replica) {
+          }
+          // Single-home txn in a different region. Send directly to a random machine within that region
+          else if (txn->involved_replicas_size() == 1 && txn->involved_replicas(0) != local_replica) {
             uint64 machine_sent = txn->involved_replicas(0) * nodes_per_replica + rand() % nodes_per_replica;
             txn_message.clear_data();
             txn_message.add_data(txn_string);
             txn_message.set_destination_node(machine_sent);
             connection_->Send(txn_message);
-          } else if (txn->involved_replicas_size() > 1 && local_replica == 0) {
+          }
+          // Multi-home txn, and we are the sequencer for mh txns (hard-coded as region 0)
+          else if (txn->involved_replicas_size() > 1 && local_replica == 0) {
             batch_message.add_data(txn_string);
-          } else {
+          }
+          // Multi-home, send to a random machine in region 0
+          else {
             uint64 machine_sent = rand() % nodes_per_replica;
             txn_message.clear_data();
             txn_message.add_data(txn_string);
@@ -313,7 +322,9 @@ LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  rece
           }
 
           delete txn;
-        } else {
+        } 
+        // Txn access set is split among partitions. Add lookup_master requests to batch, and save the txn for later
+        else {
           expected_master_lookups[txn_id] = make_pair(remote_expected, txn);
 
           LookupMasterEntry lookup_master_entry;
@@ -378,6 +389,7 @@ void LowlatencySequencer::RunReader() {
   // Set up batch messages for each system node.
   map<uint64, MessageProto> batches;
 
+  // region id
   uint32 local_replica = configuration_->local_replica_id();
   for (uint64 i = 0; i < configuration_->nodes_per_replica();i++) {
     batches[i].set_destination_channel("scheduler_");
@@ -388,6 +400,7 @@ void LowlatencySequencer::RunReader() {
   MessageProto message;
   uint64 batch_number;
 
+  // paxos leader is first node in each region
   uint64 local_paxos_leader_ = local_replica * configuration_->nodes_per_replica();
 
   MessageProto master_lookup_result_message;
