@@ -206,7 +206,7 @@ void LocalPaxos::RunLeader() {
   int alternate = 0;
 
   while (go_) {
-    
+    LOG(ERROR) << "inside paxos:RunLeader()";
     // Sleep while there are NO requests.
     while (local_count_.load() == 0 && sequences_other_replicas_.Size() == 0) {
       usleep(20);
@@ -353,10 +353,12 @@ void LocalPaxos::RunLeader() {
     // Actually append the request into the log
     if (isLocal == true) {
       local_log_->Append(local_next_version, encoded);
+      LOG(ERROR) << "wrote to local_log_";
 //if (configuration_->local_node_id() == 0)
 //LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to local log. version: "<<local_next_version;
     }
     global_log_->Append(global_next_version, encoded);
+    LOG(ERROR) << "wrote to global_log_";
 //if (configuration_->local_node_id() == 0)
 //LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to global log. version: "<<global_next_version;
 

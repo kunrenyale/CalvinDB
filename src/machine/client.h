@@ -231,11 +231,12 @@ class MockClient : public Client {
   }
   virtual ~MockClient() {}
   virtual void GetTxn(TxnProto** txn, int txn_id) {
-    LOG(ERROR) << "Created txn";
     // send 1 txn from rep 0 to rep 1
     if (local_replica_ == 0 && relative_node_id_ == 0 && txns_created_ == 0) {
-      microbenchmark.MicroTxnSRSP(txn_id, 0, 1);
+      // hard code txn id as 0 so we can find it in the log of node 0, rep 0
+      *txn = microbenchmark.MicroTxnSRSP(0, 0, 0);
       txns_created_++;
+      LOG(ERROR) << "Created txn";
     } else {
       *txn = NULL;
     }

@@ -233,6 +233,7 @@ LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  rece
         // Add next txn request to batch.
         TxnProto* txn;
 
+        LOG(ERROR) << "inside sequencer: getting txn, offset: " << txn_id_offset << " max: " << max_batch_size_;
         client_->GetTxn(&txn, batch_number * max_batch_size_ + txn_id_offset);
 
         // no more local txns
@@ -243,6 +244,7 @@ LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  rece
         txn->set_origin_replica(local_replica);
         txn->set_client_replica(local_replica);
         txn_id_offset++;
+        LOG(ERROR) << "inside sequencer: inc offset: " << txn_id_offset;
 
 #ifdef LATENCY_TEST
     if (txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES) {
@@ -353,6 +355,7 @@ LOG(ERROR) << configuration_->local_node_id()<<": ----In sequencer writer:  rece
         } // end if (remote_expected == 0) 
       } else { //if (txn_id_offset < max_batch_size_) 
         // Send this epoch's lookup_master requests.
+        LOG(ERROR) << "inside sequencer: sending batch, offset: " << txn_id_offset;
         if (sent_lookup_request == false) {
           for (map<uint64, MessageProto>::iterator it = lookup_master_batch.begin(); it != lookup_master_batch.end(); ++it) {
             if (it->second.data_size() > 0) {

@@ -554,8 +554,8 @@ LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn
     // Report throughput.
     if (GetTime() > time + 1) {
       double total_time = GetTime() - time;
-      LOG(ERROR) << "Machine: "<<machine_id<<" Completed "<< (static_cast<double>(txns) / total_time)
-                 << " txns/sec, "<< executing_txns << " executing, "<< pending_txns << " pending";
+      // LOG(ERROR) << "Machine: "<<machine_id<<" Completed "<< (static_cast<double>(txns) / total_time)
+      //            << " txns/sec, "<< executing_txns << " executing, "<< pending_txns << " pending";
 
       // Reset txn count.
       time = GetTime();
