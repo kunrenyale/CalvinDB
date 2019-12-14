@@ -65,6 +65,9 @@ class Log {
     //
     // Requires: Valid()
     virtual string Entry() = 0;
+
+    // Print full log (only for correctness tests)
+    virtual string ToString() = 0;
   };
 
   // Returns a reader for reading the Log. This is required to be thread-safe:

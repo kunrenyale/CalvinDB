@@ -18,6 +18,7 @@ class LocalMemLogReader : public Log::Reader {
   virtual bool Seek(uint64 target);
   virtual uint64 Version();
   virtual string Entry();
+  virtual string ToString();
 
  private:
   friend class LocalMemLog;
@@ -173,5 +174,16 @@ uint64 LocalMemLogReader::Version() {
 string LocalMemLogReader::Entry() {
   CHECK(Valid()) << "entry called on invalid LogReader";
   return *(entry_.entry);
+}
+
+string LocalMemLogReader::ToString() {
+  uint64 size = log_->size_.load();
+  LocalMemLog::Entry* e = log_->entries_;  // For brevity.
+
+  string result = "";
+  for (uint i = 0; i < size; i++) {
+    result.append(*e[i].entry);
+  }
+  return result;
 }
 

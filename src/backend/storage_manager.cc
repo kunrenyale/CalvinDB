@@ -175,12 +175,12 @@ bool StorageManager::CheckCommitOrAbort() {
   if (txn_->status() == TxnProto::ABORTED_WITHOUT_LOCK) {
     // If we already know this txn will be aborted in the locking thread(without acquiring locks), then we will abort it.
     decision = false;
-//LOG(ERROR) << configuration_->local_node_id()<< ":wrong------------------------";
+//LOG(INFO) << configuration_->local_node_id()<< ":wrong------------------------";
   } else if (local_commit_ == false) {
     // If we know it will be aborted based on the local information
     txn_->set_status(TxnProto::ABORTED);
     decision = false;
-//LOG(ERROR) << configuration_->local_node_id()<< ":wrong------------------------";
+//LOG(INFO) << configuration_->local_node_id()<< ":wrong------------------------";
   } else if (involved_machines_.size() == 1) {
     decision = true;
   } else {
@@ -213,7 +213,7 @@ bool StorageManager::CheckCommitOrAbort() {
 
   // If we need to generate new transction for the aborted txn
   if (decision == false && local_replica_id_ == txn_origin_replica_ && min_involved_machine_ == relative_node_id_ && min_involved_machine_origin_ == txn_origin_replica_) {
-//LOG(ERROR) << configuration_->local_node_id()<< ":Generate new transaction for the aborted txn------------------------:"<<txn_->txn_id();
+//LOG(INFO) << configuration_->local_node_id()<< ":Generate new transaction for the aborted txn------------------------:"<<txn_->txn_id();
     // abort the txn and send it to the related replica.
     TxnProto txn;
     txn.CopyFrom(*txn_);
@@ -258,7 +258,7 @@ bool StorageManager::CheckCommitOrAbort() {
     txn.SerializeToString(&txn_string);
 
     if (txn.involved_replicas_size() == 1) {
-//LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn.txn_id() << ":In storageManager: will abort this txn) , replica size == 1: old txn id:"<<txn_->txn_id()<<"  new id:"<<txn.txn_id();
+//LOG(INFO) << configuration_->local_node_id()<< " :"<<txn.txn_id() << ":In storageManager: will abort this txn) , replica size == 1: old txn id:"<<txn_->txn_id()<<"  new id:"<<txn.txn_id();
       txn.set_client_replica(txn.involved_replicas(0));
       uint64 machine_sent = txn.involved_replicas(0) * configuration_->nodes_per_replica() + rand() % configuration_->nodes_per_replica();
       forward_txn_message_.clear_data();
@@ -266,7 +266,7 @@ bool StorageManager::CheckCommitOrAbort() {
       forward_txn_message_.set_destination_node(machine_sent);
       connection_->Send(forward_txn_message_);
     } else {
-//LOG(ERROR) << configuration_->local_node_id()<< " :"<<txn.txn_id() << ":In storageManager:  received remote entries (will abort this txn) , replica size == 2: ";
+//LOG(INFO) << configuration_->local_node_id()<< " :"<<txn.txn_id() << ":In storageManager:  received remote entries (will abort this txn) , replica size == 2: ";
       txn.set_client_replica(0);
       uint64 machine_sent = rand() % configuration_->nodes_per_replica();
       forward_txn_message_.clear_data();
@@ -295,7 +295,7 @@ void StorageManager::HandleReadResult(const MessageProto& message) {
 }
 
 bool StorageManager::ReadyToExecute() {
-//LOG(ERROR) <<configuration_->local_node_id()<< ":^^^^^^^^^ In StorageManager: bojects size is:  "<<static_cast<int>(objects_.size());
+//LOG(INFO) <<configuration_->local_node_id()<< ":^^^^^^^^^ In StorageManager: bojects size is:  "<<static_cast<int>(objects_.size());
   return static_cast<int>(objects_.size()) == txn_->read_set_size() + txn_->read_write_set_size();
 }
 

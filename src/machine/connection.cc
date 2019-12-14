@@ -125,18 +125,18 @@ void ConnectionMultiplexer::Run() {
       if (channel_results_.Count(channel) > 0) {
         // Channel name already in use. Report an error and set new_connection_
         // (which NewConnection() will return) to NULL.
-        LOG(ERROR) << "Attempt to create channel that already exists: "<< channel;
+        LOG(INFO) << "Attempt to create channel that already exists: "<< channel;
         return ;
       }
   
       AtomicQueue<MessageProto>* channel_queue = new AtomicQueue<MessageProto>(); 
 
-//LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), creat new channel--:"<<channel; 
+//LOG(INFO) << local_node_id_ << ":ConnectionMultiplexer::Run(), creat new channel--:"<<channel; 
       // Forward on any messages sent to this channel before it existed.
       vector<MessageProto>::iterator i;
       for (i = undelivered_messages_[channel].begin(); i != undelivered_messages_[channel].end(); ++i) {
         channel_queue->Push(*i);
-//LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), creat new channel get undelivered_messages, channel:"<<channel; 
+//LOG(INFO) << local_node_id_ << ":ConnectionMultiplexer::Run(), creat new channel get undelivered_messages, channel:"<<channel; 
       }
   
       undelivered_messages_.erase(channel);
@@ -160,7 +160,7 @@ void ConnectionMultiplexer::Run() {
  
       if (channel_results_.Count(message.destination_channel()) > 0) {
         (channel_results_.Lookup(message.destination_channel()))->Push(message);
-//LOG(ERROR) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage1, channel:"<<message.destination_channel();   
+//LOG(INFO) << local_node_id_ << ":ConnectionMultiplexer::Run(), receive a meesage1, channel:"<<message.destination_channel();   
       } else {
         undelivered_messages_[message.destination_channel()].push_back(message);  
       }
