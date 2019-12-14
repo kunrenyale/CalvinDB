@@ -424,26 +424,121 @@ void LowlatencySequencer::RunReader() {
     bool got_message = connection_->GotMessage("sequencer_", &message);
     if (got_message == true) {
       if (message.type() == MessageProto::TXN_BATCH) {
-//LOG(INFO) << configuration_->local_node_id()<< ":In sequencer reader:  recevie TXN_BATCH message:"<<message.batch_number();
+LOG(INFO) << configuration_->local_node_id()<< ":In sequencer reader:  recevie TXN_BATCH message:"<<message.batch_number();
         batch_number = message.batch_number();
+        // int message_data_size = message.data_size();
+
+        // // TODO: don't append to list while iterating! (stops using constant size)
+        // for (int i = 0; i < message_data_size; i++) {
+
+        //   TxnProto txn;
+        //   txn.ParseFromString(message.data(i));
+        //   // LOG(INFO) << configuration_->local_node_id()<< ":In sequencer reader:  txn id:"<<txn.txn_id();
+
+        //   if (txn.new_generated()) {
+        //     continue;
+        //   }
+
+        //   bool is_multihome = false;
+        //   if (txn.involved_replicas_size() > 1) {
+        //     is_multihome = true;
+        //   }
+
+        //   LOG(INFO) << configuration_->local_node_id()<< ":In sequencer reader:  txn id:"<<txn.txn_id() <<" multihome: " << is_multihome;
+        //   if (is_multihome) {
+
+        //     LOG(INFO) << configuration_->local_node_id()<< "In sequencer reader:  txn origin:"<<txn.origin_replica() << " message source: " << configuration_->LookupReplica(message.source_node());
+        //     CHECK(txn.origin_replica() == 0);
+        //     CHECK(configuration_->LookupReplica(message.source_node()) == 0);
+
+        //     TxnProto lock_only_txn;
+        //     lock_only_txn.ParseFromString(message.data(i));
+        //     lock_only_txn.set_lock_only(true);
+        //     lock_only_txn.set_origin_replica(local_replica);
+        //     lock_only_txn.set_txn_id(1);
+
+        //     // txn.set_new_generated(true); // write back to message?
+        //     txn.set_origin_replica(local_replica)
+        //     lock_only_txn.set_new_generated(true);
+
+        //     string txn_data;
+        //     lock_only_txn.SerializeToString(&txn_data);
+        //     message.add_data(txn_data);
+        //   }
+        // }
+
+                // Forward "relevant multi-replica action" to the head node
+        if (configuration_->LookupReplica(message.source_node()) == 0 && message.misc_bool(0) == true) {
+          MessageProto mr_batch_message;
+          int message_data_size = message.data_size();
+
+          // iterating while appending to end
+          for (int i = 0; i < message_data_size; i++) {
+            TxnProto txn;
+            txn.ParseFromString(message.data(i));
+            if (txn.involved_replicas_size() > 1) { // todo
+              for (int j = 0; j < txn.involved_replicas_size(); j++) {
+                if (txn.involved_replicas(j) == local_replica) {
+                  txn.set_origin_replica(local_replica);
+                  txn.set_multi_home(true);
+                  txn.set_fake_txn(false); // todo
+
+                  string txn_data;
+                  txn.SerializeToString(&txn_data);
+                  message.set_data(i, txn_data);
+                  mr_batch_message.add_data(txn_data);
+
+                  TxnProto lock_only_txn;
+                  lock_only_txn.ParseFromString(message.data(i));
+                  lock_only_txn.set_lock_only(true);
+                  lock_only_txn.set_multi_home(true);
+                  lock_only_txn.set_fake_txn(false);
+                  lock_only_txn.set_origin_replica(local_replica);
+                  // lock_only_txn.set_txn_id(1);
+                  // lock_only_txn.set_new_generated(true);
+
+                  lock_only_txn.SerializeToString(&txn_data);
+                  message.add_data(txn_data);
+                  mr_batch_message.add_data(txn_data);
+
+                  LOG(INFO) << configuration_->local_node_id()<<":--- In sequencer reader: append txn into mr_message:"<<txn.txn_id();
+                }
+              }
+            }
+          }
+          if (local_replica != 0) {
+            batch_number = configuration_->GetGUID();
+            mr_batch_message.set_batch_number(batch_number);
+            mr_batch_message.set_destination_channel("sequencer_");
+            mr_batch_message.set_type(MessageProto::TXN_BATCH);
+            mr_batch_message.set_source_node(configuration_->local_node_id());
+            mr_batch_message.set_destination_node(configuration_->local_node_id());
+            mr_batch_message.add_misc_bool(false);
+            LOG(INFO) << configuration_->local_node_id()<<":--- In sequencer reader: sending mr batch: "<<batch_number<<" size: "<<mr_batch_message.data_size();
+  
+            connection_->Send(mr_batch_message);
+          }
+        }
 
         //  If (This batch come from this replica) → send BATCH_SUBMIT to the the master node of the local paxos participants; Ignore the new_generated txns
-        if (configuration_->LookupReplica(message.source_node()) == local_replica && message.misc_bool(0) == true) {
-          // Send “BATCH_SUBMIT” to the head machines;
-          MessageProto batch_submit_message;
-          batch_submit_message.set_destination_channel("sequencer_");
-          batch_submit_message.set_destination_node(local_paxos_leader_);
-          batch_submit_message.set_type(MessageProto::BATCH_SUBMIT);
-          batch_submit_message.add_misc_int(message.batch_number());
-          connection_->Send(batch_submit_message);
-//if (configuration_->local_node_id() == 0)
-//LOG(INFO) << configuration_->local_node_id()<<": In sequencer reader: send BATCH_SUBMIT, id:"<<message.batch_number();    
+        // if (configuration_->LookupReplica(message.source_node()) == local_replica && message.misc_bool(0) == true) {
+        if (configuration_->LookupReplica(message.source_node()) == local_replica) {
+            MessageProto batch_submit_message;
+            batch_submit_message.set_destination_channel("sequencer_");
+            batch_submit_message.set_destination_node(local_paxos_leader_);
+            batch_submit_message.set_type(MessageProto::BATCH_SUBMIT);
+            batch_submit_message.add_misc_int(message.batch_number());
+            connection_->Send(batch_submit_message);
+  //if (configuration_->local_node_id() == 0)
+            LOG(INFO) << configuration_->local_node_id()<<": In sequencer reader: send BATCH_SUBMIT, id:"<<message.batch_number()<<" size:"<<message.data_size(); 
         }
 
         // If received TXN_BATCH: Parse batch and forward sub-batches to relevant readers (same replica only).
         for (int i = 0; i < message.data_size(); i++) {
           TxnProto txn;
           txn.ParseFromString(message.data(i));
+          LOG(INFO) << configuration_->local_node_id()<<": In sequencer reader: handling txn id:"<<txn.txn_id();    
+
 
           if (txn.fake_txn() == true) {
             continue;
@@ -467,6 +562,9 @@ void LowlatencySequencer::RunReader() {
             }
           }
 
+          LOG(INFO) << configuration_->local_node_id()<<": In sequencer reader: reader size:"<<readers.size()<<" writer: "<<writers.size();    
+
+
           for (set<uint64>::iterator it = readers.begin(); it != readers.end(); ++it) {
             txn.add_readers(*it);
           }
@@ -484,42 +582,63 @@ void LowlatencySequencer::RunReader() {
 
           // Insert txn into appropriate batches.
           for (set<uint64>::iterator it = readers.begin(); it != readers.end(); ++it) {
+            LOG(INFO) << configuration_->local_node_id()<<":--- In sequencer reader: adding txn to batch, id:"<<txn.txn_id();  
             batches[*it].add_data(txn_data);
           }
         }
 
         // Send this epoch's requests to all schedulers.
         for (map<uint64, MessageProto>::iterator it = batches.begin(); it != batches.end(); ++it) {
+          LOG(INFO) << configuration_->local_node_id()<<":--- In sequencer reader: batch size:"<<it->second.data_size();
           it->second.set_batch_number(batch_number);
           connection_->Send(it->second);
           it->second.clear_data();
         }
 
         // Forward "relevant multi-replica action" to the head node
-        if (configuration_->LookupReplica(message.source_node()) == 0 && local_replica != 0) {
-          MessageProto mr_message;
-          for (int i = 0; i < message.data_size(); i++) {
-            TxnProto txn;
-            txn.ParseFromString(message.data(i));
-            if (txn.involved_replicas_size() > 1 && txn.new_generated() == false) {
-              for (int j = 0; j < txn.involved_replicas_size(); j++) {
-                if (txn.involved_replicas(j) == local_replica) {
-                  string txn_data;
-                  txn.SerializeToString(&txn_data);
-                  mr_message.add_data(txn_data);
-//LOG(INFO) << configuration_->local_node_id()<<":--- In sequencer reader: append txn into mr_message:"<<txn.txn_id();
-                }
-              }
-            }
-          }
+        // if (configuration_->LookupReplica(message.source_node()) == 0 && local_replica != 0) {
+        //   MessageProto mr_batch_message;
+        //   for (int i = 0; i < message.data_size(); i++) {
+        //     TxnProto txn;
+        //     txn.ParseFromString(message.data(i));
+        //     if (txn.involved_replicas_size() > 1 && txn.new_generated() == false) {
+        //       for (int j = 0; j < txn.involved_replicas_size(); j++) {
+        //         if (txn.involved_replicas(j) == local_replica) {
+        //           txn.set_origin_replica(local_replica);
+        //           txn.set_multi_home(true);
+        //           txn.set_fake_txn(false);
 
-          mr_message.set_destination_channel("paxos_log_");
-          mr_message.set_destination_node(local_paxos_leader_);
-          mr_message.set_type(MessageProto::MR_TXNS_BATCH);
-          mr_message.set_source_node(message.source_node());
-          mr_message.add_misc_int(message.batch_number());
-          connection_->Send(mr_message);
-        }
+        //           TxnProto lock_only_txn;
+        //           lock_only_txn.ParseFromString(message.data(i));
+        //           lock_only_txn.set_lock_only(true);
+        //           lock_only_txn.set_multi_home(true);
+        //           lock_only_txn.set_fake_txn(false);
+        //           lock_only_txn.set_origin_replica(local_replica);
+        //           // lock_only_txn.set_txn_id(1);
+        //           // lock_only_txn.set_new_generated(true);
+
+        //           string txn_data;
+        //           txn.SerializeToString(&txn_data);
+        //           mr_batch_message.add_data(txn_data);
+
+        //           lock_only_txn.SerializeToString(&txn_data);
+        //           mr_batch_message.add_data(txn_data);
+
+        //           LOG(INFO) << configuration_->local_node_id()<<":--- In sequencer reader: append txn into mr_message:"<<txn.txn_id();
+        //         }
+        //       }
+        //     }
+        //   }
+        //   batch_number = configuration_->GetGUID();
+        //   mr_batch_message.set_destination_channel("sequencer_");
+        //   mr_batch_message.set_type(MessageProto::TXN_BATCH);
+        //   mr_batch_message.set_source_node(configuration_->local_node_id());
+        //   mr_batch_message.set_destination_node(configuration_->local_node_id());
+
+        //   LOG(INFO) << configuration_->local_node_id()<<":--- In sequencer reader: sending mr batch: "<<batch_number<<" size: "<<mr_batch_message.data_size();
+ 
+        //   connection_->Send(mr_batch_message);
+        // }
 
       } else if (message.type() == MessageProto::BATCH_SUBMIT) {
         uint64 batch_id = message.misc_int(0);

@@ -239,7 +239,8 @@ void LocalPaxos::RunLeader() {
 //if (configuration_->local_node_id() == 0)
 //LOG(INFO) << configuration_->local_node_id()<< "### In paxos:  will handle remote sequence, version: "<<global_next_version;
 
-      if (local_replica_ != 0 && remote_replica == 0) {
+      // if (local_replica_ != 0 && remote_replica == 0) {
+        if (false) {
         // Generate new txns for multi-replica txns.
         for (int i = 0; i < remote_sequence.batch_ids_size(); i++) {
           uint64 batch_id = remote_sequence.batch_ids(i);
@@ -355,13 +356,13 @@ void LocalPaxos::RunLeader() {
       local_log_->Append(local_next_version, encoded);
       LOG(INFO) << "wrote to local_log_";
 //if (configuration_->local_node_id() == 0)
-//LOG(INFO) << configuration_->local_node_id()<< "---In paxos:  Append to local log. version: "<<local_next_version;
+LOG(INFO) << configuration_->local_node_id()<< "---In paxos:  Append to local log. version: "<<local_next_version;
     }
     global_log_->Append(global_next_version, encoded);
     LOG(INFO) << "wrote to global_log_";
     LOG(INFO) << "global log: " << global_log_->GetReader()->ToString();
 //if (configuration_->local_node_id() == 0)
-//LOG(INFO) << configuration_->local_node_id()<< "---In paxos:  Append to global log. version: "<<global_next_version;
+LOG(INFO) << configuration_->local_node_id()<< "---In paxos:  Append to global log. version: "<<global_next_version;
 
     // Send its local sequences to other replicas for the first time.
     if (isLocal == true && isFirst == true) {

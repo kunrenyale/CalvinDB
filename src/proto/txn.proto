@@ -81,6 +81,9 @@ message TxnProto {
   // Also should take some information about which records will be remaster
   // This is to measure latency
   optional uint64 generated_machine = 64 [default = 1000];
+
+  optional bool lock_only = 65 [default = false];
+  optional bool multi_home = 66 [default = false];
 }
 
 message LookupMasterEntry {

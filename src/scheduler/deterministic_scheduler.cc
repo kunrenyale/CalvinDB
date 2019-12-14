@@ -163,6 +163,8 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
 
           string origin_channel = IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica());
           connection_->LinkChannel(origin_channel, channel);
+          LOG(INFO) << ":In scheduler:  linking channels: "<< origin_channel << ", " << channel;
+
           // There are outstanding remote reads.
           active_txns[origin_channel] = manager;
         }
@@ -474,17 +476,17 @@ LOG(INFO) <<"^^^^^^^^^^^^^^:"<< machine_id<<": reporting latencies to " << filen
     // Have we run out of txns in our batch? Let's get some new ones.
     if (batch_message == NULL) {
       batch_message = GetBatch();
-/**if (batch_message != NULL) {
-LOG(INFO) <<machine_id<< ":In LockManagerThread:  got a batch(1): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
-} **/
+if (batch_message != NULL) {
+  LOG(INFO) <<machine_id<< ":In LockManagerThread:  got a batch(1): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
+}
     // Done with current batch, get next.
     } else if (batch_offset >= batch_message->data_size()) {
         batch_offset = 0;
         delete batch_message;
         batch_message = GetBatch();
-/**if (batch_message != NULL) {
-LOG(INFO) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
-}**/ 
+if (batch_message != NULL) {
+  LOG(INFO) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
+}
     // Current batch has remaining txns, grab up to num_txns_once.
     } else if (executing_txns + pending_txns < maximum_txns) {
       for (uint i = 0; i < num_txns_once; i++) {
@@ -520,7 +522,7 @@ LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn:
           } else {
             if (txn->status() == TxnProto::ABORTED_WITHOUT_LOCK) {
             // If the status is: ABORTED_WITHOUT_LOCK, we can run this txn without locking
-//LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  find a  ABORTED_WITHOUT_LOCK txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
+// LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  find a  ABORTED_WITHOUT_LOCK txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
               ready_txns_->Push(txn);
               pending_txns++;
               continue;
@@ -528,7 +530,7 @@ LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn:
               // It is the first txn and can be executed right now
               if (!blocking_txns_[txn->origin_replica()].empty()) {
                 blocking_txns_[txn->origin_replica()].push(txn);
-//LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id();
+// LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id();
                 continue;
               }
       
@@ -536,6 +538,7 @@ LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn:
           }
         } // end if (mode_ == 2)
 
+LOG(INFO) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locking txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
         lock_manager_->Lock(txn);
         pending_txns++;
 //if (machine_id == 0)

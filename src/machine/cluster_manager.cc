@@ -155,7 +155,7 @@ void ClusterManager::DeployCluster(int experiment, int percent_mp, int percent_m
          " --machine_id=" + IntToString(it->second.id()) + " --mode=" + IntToString(mode_) + " --type=" + IntToString(type_) +
          "  --config=" + config_file_ + " --experiment=" + IntToString(experiment) + " --percent_mp=" + IntToString(percent_mp) + " --percent_mr=" + IntToString(percent_mr) + 
          " --hot_records=" + IntToString(hot_records) + " --max_batch_size=" + IntToString(max_batch_size) + " ' &");
-
+    printf("%s\n", ssh_command->c_str());
     pthread_create(
         &threads[threads.size()-1],
         NULL,
