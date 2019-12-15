@@ -161,7 +161,7 @@ TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint64 part, uint32 replica
   txn->set_txn_type(MICROTXN_SP);
 
 //if (replica == 0)
-//LOG(INFO) << ": In Microbenchmark::MicroTxnSRSP:  1";
+//LOG(ERROR) << ": In Microbenchmark::MicroTxnSRSP:  1";
 
   // Add two hot keys to read/write set.
   uint64 hotkey_order1 = (rand() % (hot_records/replica_size)) * replica_size + replica;
@@ -173,7 +173,7 @@ TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint64 part, uint32 replica
 
 
 //if (replica == 0)
-//LOG(INFO) << ": In Microbenchmark::MicroTxnSRSP:  2";
+//LOG(ERROR) << ": In Microbenchmark::MicroTxnSRSP:  2";
 
   uint64 hotkey1 = part + nparts * hotkey_order1;
   uint64 hotkey2 = part + nparts * hotkey_order2;
@@ -210,7 +210,7 @@ TxnProto* Microbenchmark::MicroTxnSRSP(int64 txn_id, uint64 part, uint32 replica
   }
 
 //if (replica == 0)
-//LOG(INFO) << ": In Microbenchmark::MicroTxnSRSP:  3";
+//LOG(ERROR) << ": In Microbenchmark::MicroTxnSRSP:  3";
 
   return txn;
 }
@@ -448,11 +448,11 @@ TxnProto* Microbenchmark::NewTxn(int64 txn_id, int txn_type,
 }
 
 int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {  
-  LOG(INFO) << "Execute txn id: " << txn->txn_id()<<"-"<<txn->origin_replica()<<"-"<<txn->lock_only()<< ", access set: " << txn->read_write_set_size();
+//LOG(ERROR) << "Execute txn id: " << txn->txn_id()<<"-"<<txn->origin_replica()<<"-"<<txn->lock_only()<< ", access set: " << txn->read_write_set_size();
 
   // Remaster txn
   if (txn->remaster_txn() == true) {
-LOG(INFO) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<txn->txn_id();
+//LOG(ERROR) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<txn->txn_id();
     KeyEntry key_entry = txn->read_write_set(0);
     Record* val = storage->ReadObject(key_entry.key());
 
@@ -517,7 +517,7 @@ LOG(INFO) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<txn
         txn_message.add_data(txn_string);
 
         connection_->Send(txn_message);
-LOG(INFO) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, on record: "<<key_entry.key()<<"  txn id:"<<txn->txn_id();
+//LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, on record: "<<key_entry.key()<<"  txn id:"<<txn->txn_id();
       }
 
 
@@ -568,7 +568,7 @@ void Microbenchmark::InitializeStorage(Storage* storage, ClusterConfig* conf) co
     }
 
     //if (i % 1000000 == 0) {
-    // 	LOG(INFO) <<conf->relative_node_id()<< ":*********In InitializeStorage:  Finish 100000 records ";
+    // 	LOG(ERROR) <<conf->relative_node_id()<< ":*********In InitializeStorage:  Finish 100000 records ";
     //}
   }
 }

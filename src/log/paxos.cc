@@ -59,7 +59,7 @@ bool Paxos::IsLeader() {
 }
 
 void Paxos::Append(uint64 blockid) {
-//LOG(INFO) << "In paxos log:  append a batch: "<<blockid;
+//LOG(ERROR) << "In paxos log:  append a batch: "<<blockid;
     Lock l(&mutex_);
     sequence_.add_batch_ids(blockid);
     count_ += 1;
@@ -129,7 +129,7 @@ void Paxos::RunLeader() {
     sequence_message.set_type(MessageProto::PAXOS_BATCH_ORDER);
     sequence_message.set_destination_channel("scheduler_");
     for (uint64 i = local_replica * machines_per_replica; i < (local_replica + 1)*machines_per_replica ;i++) {
-//LOG(INFO) <<this_machine_id_<< ":In paxos log:  send PAXOS_BATCH_ORDER: "<<version<<"  to node:"<<i;
+//LOG(ERROR) <<this_machine_id_<< ":In paxos log:  send PAXOS_BATCH_ORDER: "<<version<<"  to node:"<<i;
       sequence_message.set_destination_node(i);
       connection_->Send(sequence_message);
     }
@@ -145,7 +145,7 @@ void Paxos::RunLeader() {
     }
    
     sequence_message.Clear();
-//LOG(INFO) << "In paxos log:  append a sequence: "<<version;
+//LOG(ERROR) << "In paxos log:  append a sequence: "<<version;
     log_->Append(version, encoded);
 
   }
@@ -197,7 +197,7 @@ void Paxos::RunFollower() {
       for (uint64 i = local_replica * machines_per_replica; i < (local_replica + 1)*machines_per_replica ;i++) {
         append_message.set_destination_node(i);
         connection_->Send(append_message);
-//LOG(INFO) <<this_machine_id_<< ":In paxos log:  send PAXOS_BATCH_ORDER: "<<version<<"  to node:"<<i;
+//LOG(ERROR) <<this_machine_id_<< ":In paxos log:  send PAXOS_BATCH_ORDER: "<<version<<"  to node:"<<i;
       }
 
       append_message.Clear();

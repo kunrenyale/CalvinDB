@@ -104,7 +104,7 @@ uint64 local_machine = configuration_->local_node_id();
   }
 
   connection_->DeleteChannel("synchronization_sequencer_channel");
-LOG(INFO) << "In sequencer:  After synchronization. Starting sequencer writer.";
+//LOG(ERROR) << "In sequencer:  After synchronization. Starting sequencer writer.";
   start_working_ = true;
 
   while (!deconstructor_invoked_) {
@@ -148,10 +148,10 @@ LOG(INFO) << "In sequencer:  After synchronization. Starting sequencer writer.";
     // Send this epoch's transactions to the central machine of each replica
     for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
       uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_message.batch_number()), i);
-//LOG(INFO) << configuration_->local_node_id()<<": In sequencer reader:  will send TXN_BATCH to :"<<machine_id<<"  batch_id:"<<batch_number;
+//LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  will send TXN_BATCH to :"<<machine_id<<"  batch_id:"<<batch_number;
       batch_message.set_destination_node(machine_id);
       connection_->Send(batch_message);
-//LOG(INFO) << configuration_->local_node_id()<<": In sequencer reader:  after send TXN_BATCH to :"<<machine_id<<"  batch_id:"<<batch_number;
+//LOG(ERROR) << configuration_->local_node_id()<<": In sequencer reader:  after send TXN_BATCH to :"<<machine_id<<"  batch_id:"<<batch_number;
     }
   }
 
@@ -159,7 +159,7 @@ LOG(INFO) << "In sequencer:  After synchronization. Starting sequencer writer.";
 
 void Sequencer::RunReader() {
 
-//LOG(INFO) << "In sequencer:  Starting sequencer reader.";
+//LOG(ERROR) << "In sequencer:  Starting sequencer reader.";
   // Set up batch messages for each system node.
   map<uint64, MessageProto> batches;
 
@@ -182,7 +182,7 @@ void Sequencer::RunReader() {
     bool got_message = connection_->GotMessage("sequencer_", &message);
     if (got_message == true) {
       if (message.type() == MessageProto::TXN_BATCH) {
-//LOG(INFO) << configuration_->local_node_id()<< ":In sequencer reader:  recevie TXN_BATCH message:"<<message.batch_number();
+//LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie TXN_BATCH message:"<<message.batch_number();
         batch_number = message.batch_number();
         // If received TXN_BATCH: Parse batch and forward sub-batches to relevant readers (same replica only).
         for (int i = 0; i < message.data_size(); i++) {
@@ -241,7 +241,7 @@ void Sequencer::RunReader() {
         connection_->Send(vote_message);
 
       } else if (message.type() == MessageProto::BATCH_VOTE) {
-//LOG(INFO) << configuration_->local_node_id()<< ":In sequencer reader:  recevie BATCH_VOTE message:"<<message.misc_int(0);
+//LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie BATCH_VOTE message:"<<message.misc_int(0);
         uint64 batch_id = message.misc_int(0);
         uint32 votes = 0;
         
@@ -261,7 +261,7 @@ void Sequencer::RunReader() {
         // If block is now written to (exactly) a majority of replicas, submit
         // to paxos leader.
         if (votes == configuration_->replicas_size() / 2 + 1) {
-//LOG(INFO) << configuration_->local_node_id()<< ":In sequencer reader:  recevie BATCH_VOTE message, will append:"<<batch_id;
+//LOG(ERROR) << configuration_->local_node_id()<< ":In sequencer reader:  recevie BATCH_VOTE message, will append:"<<batch_id;
           paxos_log_->Append(batch_id);
         }        
       }

@@ -103,7 +103,7 @@ int DeterministicLockManager::Lock(TxnProto* txn) {
   if (not_acquired > 0) {
     txn_waits_[txn] = not_acquired;
   } else {
-    LOG(INFO) << "lock manager: txn is now ready!: " << txn->txn_id()<<"-"<<txn->origin_replica()<<"-"<<txn->lock_only()<< ", access set: " << txn->read_write_set_size();
+//LOG(ERROR) << "lock manager: txn is now ready!: " << txn->txn_id()<<"-"<<txn->origin_replica()<<"-"<<txn->lock_only()<< ", access set: " << txn->read_write_set_size();
     ready_txns_->Push(txn);
   }
   return not_acquired;
@@ -141,7 +141,7 @@ void DeterministicLockManager::Release(TxnProto* txn) {
     }
 
     if (IsLocal(key_entry.key())) {
-//LOG(INFO) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :$$$$$$ In Release: release key:"<<key_entry.key();
+//LOG(ERROR) <<configuration_->local_node_id()<<" :"<<txn->txn_id() <<" :$$$$$$ In Release: release key:"<<key_entry.key();
       Release(key_entry.key(), txn);
     }
   }

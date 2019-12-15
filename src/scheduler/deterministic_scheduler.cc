@@ -105,7 +105,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
     if (got_message == true) {
       if (message.type() == MessageProto::READ_RESULT) {
         // Remote read result.
-        LOG(INFO) << ":In scheduler: got read result:"<<message.destination_channel();
+//LOG(ERROR) << ":In scheduler: got read result:"<<message.destination_channel();
         CHECK(active_txns.count(message.destination_channel()) > 0);
         StorageManager* manager = active_txns[message.destination_channel()];
 
@@ -140,9 +140,9 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
       // No remote read result found, start on next txn if one is waiting.
       TxnProto* txn;
       bool got_it = txns_queue_->Pop(&txn);
-      // LOG(INFO) << ":In scheduler:  starting on next txn: got it:"<<got_it;
+      // LOG(ERROR) << ":In scheduler:  starting on next txn: got it:"<<got_it;
       if (got_it == true) {
-        LOG(INFO) << ":In scheduler:  starting on next txn: id:"<<txn->txn_id()<<"-"<<txn->origin_replica()<<"-"<<txn->lock_only();
+//LOG(ERROR) << ":In scheduler:  starting on next txn: id:"<<txn->txn_id()<<"-"<<txn->origin_replica()<<"-"<<txn->lock_only();
         // Create manager.
         StorageManager* manager = new StorageManager(configuration_,
                                       connection_,
@@ -170,7 +170,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
 
           string origin_channel = IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica()) + "-" + IntToString(txn->lock_only());
           connection_->LinkChannel(origin_channel, channel);
-          LOG(INFO) << ":In scheduler:  linking channels: "<< origin_channel << ", " << channel;
+//LOG(ERROR) << ":In scheduler:  linking channels: "<< origin_channel << ", " << channel;
 
           // There are outstanding remote reads.
           active_txns[origin_channel] = manager;
@@ -196,13 +196,13 @@ MessageProto* DeterministicScheduler::GetBatch() {
      if (global_batches_order_.count(current_sequence_id_) > 0) {
 
        MessageProto* sequence_message = global_batches_order_[current_sequence_id_];
-      LOG(INFO) << sequence_message->destination_node()<< ":In scheduler:  found the batch at seq: "<<current_sequence_id_;
+//LOG(ERROR) << sequence_message->destination_node()<< ":In scheduler:  found the batch at seq: "<<current_sequence_id_;
 
        current_sequence_ = new Sequence();
        current_sequence_->ParseFromString(sequence_message->data(0));
        current_sequence_batch_index_ = 0;
 //if (sequence_message->destination_node() == 0)
-//LOG(INFO) << sequence_message->destination_node()<< ":In scheduler:  find the sequence: "<<current_sequence_id_;
+//LOG(ERROR) << sequence_message->destination_node()<< ":In scheduler:  find the sequence: "<<current_sequence_id_;
        delete sequence_message;
        global_batches_order_.erase(current_sequence_id_);
      } else {
@@ -210,27 +210,27 @@ MessageProto* DeterministicScheduler::GetBatch() {
        MessageProto* message = new MessageProto();
        while (connection_->GotMessage("scheduler_", message)) {
          if (message->type() == MessageProto::TXN_SUBBATCH) {
-LOG(INFO) << message->destination_node()<<"In scheduler:  receive a subbatch: "<<message->batch_number()<<" size: "<<message->data_size();
+//LOG(ERROR) << message->destination_node()<<"In scheduler:  receive a subbatch: "<<message->batch_number()<<" size: "<<message->data_size();
 
       for (int i = 0; i < message->data_size(); i++) {
                   TxnProto txn;
                   txn.ParseFromString(message->data(i));
-                  LOG(INFO) << message->destination_node()<<"In scheduler:  txn: "<<txn.txn_id();
+//LOG(ERROR) << message->destination_node()<<"In scheduler:  txn: "<<txn.txn_id();
       }
 
 //CHECK(message->data_size() > 0);
            batches_data_[message->batch_number()] = message;
            message = new MessageProto();
          } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
-LOG(INFO)<< message->destination_node()<< ":In scheduler:  receive a sequence: "<<message->misc_int(0)<<" size: "<<message->data_size();
+//LOG(ERROR)<< message->destination_node()<< ":In scheduler:  receive a sequence: "<<message->misc_int(0)<<" size: "<<message->data_size();
 
            if (message->misc_int(0) == current_sequence_id_) {
 //if (message->destination_node() == 0)
-// LOG(INFO) << message->destination_node()<< ":In scheduler:  find the sequence: "<<message->misc_int(0);
+// LOG(ERROR) << message->destination_node()<< ":In scheduler:  find the sequence: "<<message->misc_int(0);
              current_sequence_ = new Sequence();
              current_sequence_->ParseFromString(message->data(0));
              current_sequence_batch_index_ = 0;
-             LOG(INFO)<< message->destination_node()<< ":In scheduler:  current sequence batch id: "<<current_sequence_->batch_ids(0)<<" size: "<<current_sequence_->batch_ids_size();
+//LOG(ERROR)<< message->destination_node()<< ":In scheduler:  current sequence batch id: "<<current_sequence_->batch_ids(0)<<" size: "<<current_sequence_->batch_ids_size();
              break;
            } else {
              global_batches_order_[message->misc_int(0)] = message;
@@ -243,42 +243,42 @@ LOG(INFO)<< message->destination_node()<< ":In scheduler:  receive a sequence: "
    }
 
    if (current_sequence_ == NULL) {
-     LOG(INFO)<< ":In scheduler:  current sequence is NULL";
+//LOG(ERROR)<< ":In scheduler:  current sequence is NULL";
      return NULL;
    }
    
    CHECK(current_sequence_batch_index_ < (uint32)(current_sequence_->batch_ids_size()));
    current_batch_id_ = current_sequence_->batch_ids(current_sequence_batch_index_);
-    LOG(INFO)<< ":In scheduler:  current sequence batch index: "<<current_sequence_batch_index_<<" batch_id:"<<current_batch_id_;
+//LOG(ERROR)<< ":In scheduler:  current sequence batch index: "<<current_sequence_batch_index_<<" batch_id:"<<current_batch_id_;
 
    if (batches_data_.count(current_batch_id_) > 0) {
      // Requested batch has already been received.
-     LOG(INFO)<< ":In scheduler:  Requested batch has already been received.";
+//LOG(ERROR)<< ":In scheduler:  Requested batch has already been received.";
      MessageProto* batch = batches_data_[current_batch_id_];
      batches_data_.erase(current_batch_id_);
-//LOG(INFO) <<batch->destination_node()<< ": ^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
+//LOG(ERROR) <<batch->destination_node()<< ": ^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
    
      if (++current_sequence_batch_index_ >= (uint32)(current_sequence_->batch_ids_size())) {
        delete current_sequence_;
        current_sequence_ = NULL;
        current_sequence_id_++;
-//LOG(INFO) << "^^^^^In scheduler:  will work on next sequence: "<<current_sequence_id_;
+//LOG(ERROR) << "^^^^^In scheduler:  will work on next sequence: "<<current_sequence_id_;
      }
 
      return batch; 
    } else {
      // Receive the batch data or global batch order
-     LOG(INFO)<< ":In scheduler:  Batch not received, Receive the batch data or global batch order";
+//LOG(ERROR)<< ":In scheduler:  Batch not received, Receive the batch data or global batch order";
      MessageProto* message = new MessageProto();
      while (connection_->GotMessage("scheduler_", message)) {
        if (message->type() == MessageProto::TXN_SUBBATCH) {
-LOG(INFO) << message->destination_node()<<"In scheduler:  receive a subbatch 2: "<<message->batch_number()<<" size: "<<message->data_size();
+//LOG(ERROR) << message->destination_node()<<"In scheduler:  receive a subbatch 2: "<<message->batch_number()<<" size: "<<message->data_size();
 //CHECK(message->data_size() > 0);
 
       for (int i = 0; i < message->data_size(); i++) {
                   TxnProto txn;
                   txn.ParseFromString(message->data(i));
-                  LOG(INFO) << message->destination_node()<<"In scheduler:  txn: "<<txn.txn_id();
+//LOG(ERROR) << message->destination_node()<<"In scheduler:  txn: "<<txn.txn_id();
       }
 
          if ((uint64)(message->batch_number()) == current_batch_id_) {
@@ -290,14 +290,14 @@ LOG(INFO) << message->destination_node()<<"In scheduler:  receive a subbatch 2: 
              current_sequence_id_++;
 //LOG(ERROR) << "^^^^^In scheduler:  will work on next sequence: "<<current_sequence_id_;
            }
-           LOG(INFO)<< ":In scheduler:  Batch found";
+//LOG(ERROR)<< ":In scheduler:  Batch found";
            return message;
          } else {
            batches_data_[message->batch_number()] = message;
            message = new MessageProto();
          }
        } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
-         LOG(INFO)<< message->destination_node()<< ":In scheduler 2:  receive a sequence: "<<message->misc_int(0)<<" size: "<<message->data_size();
+//LOG(ERROR)<< message->destination_node()<< ":In scheduler 2:  receive a sequence: "<<message->misc_int(0)<<" size: "<<message->data_size();
 //LOG(ERROR)<< message->destination_node()<< ":In scheduler:  receive a sequence: "<<message->misc_int(0);
          
 
@@ -366,7 +366,7 @@ void DeterministicScheduler::RunLockManagerThread() {
   for (uint64 i = 0; i < (uint64)(configuration_->all_nodes_size()); i++) {
     synchronization_message.set_destination_node(i);
     if (i != static_cast<uint64>(configuration_->local_node_id())) {
-      LOG(INFO) << configuration_->local_node_id() << "Sent message to " << i;
+//LOG(ERROR) << configuration_->local_node_id() << "Sent message to " << i;
       connection_->Send(synchronization_message);
     }
   }
@@ -381,7 +381,7 @@ void DeterministicScheduler::RunLockManagerThread() {
   }
 
   connection_->DeleteChannel("synchronization_scheduler_channel");
-LOG(INFO) << "In LockManagerThread:  After synchronization. Starting scheduler thread.";
+//LOG(ERROR) << "In LockManagerThread:  After synchronization. Starting scheduler thread.";
 
   start_working_ = true;
 
@@ -410,7 +410,7 @@ LOG(INFO) << "In LockManagerThread:  After synchronization. Starting scheduler t
     while (done_queue_->Pop(&done_txn) == true) {
       // Handle remaster transactions     
       if (mode_ == 2 && done_txn->remaster_txn() == true) {
-LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  release remaster txn: "<<done_txn->txn_id();
+//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  release remaster txn: "<<done_txn->txn_id();
       
         // Check whether remaster txn can wake up some blocking txns
         KeyEntry key_entry = done_txn->read_write_set(0);
@@ -434,9 +434,9 @@ LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  release remaster txn:
               if (blocking_txns_[a->origin_replica()].front() == a) {
                 ready_to_lock_txns.push_back(a); 
                 blocking_txns_[a->origin_replica()].pop();
-//LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn: "<<a->txn_id();
+//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn: "<<a->txn_id();
                 while (!blocking_txns_[a->origin_replica()].empty() && blocking_txns_[a->origin_replica()].front()->wait_for_remaster_pros() == false) {
-//LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn: "<<blocking_txns_[a->origin_replica()].front()->txn_id();
+//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn: "<<blocking_txns_[a->origin_replica()].front()->txn_id();
                   ready_to_lock_txns.push_back(blocking_txns_[a->origin_replica()].front()); 
                   blocking_txns_[a->origin_replica()].pop();
                 }
@@ -451,7 +451,7 @@ LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  release remaster txn:
         for (uint32 i = 0; i < ready_to_lock_txns.size(); i++) {
           lock_manager_->Lock(ready_to_lock_txns[i]);
           pending_txns++; 
-//LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn(acquire lock): "<<ready_to_lock_txns[i]->txn_id();
+//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  remaster txn wake up ready txn(acquire lock): "<<ready_to_lock_txns[i]->txn_id();
         }
       } // end  if (mode_ == 2 && done_txn->remaster_txn() == true) 
 
@@ -459,9 +459,9 @@ LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  release remaster txn:
       if (done_txn->status() != TxnProto::ABORTED_WITHOUT_LOCK) {
         lock_manager_->Release(done_txn);
 //if (machine_id == 0)
-//LOG(INFO) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  realeasing txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
+//LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  realeasing txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
       } else {
-//LOG(INFO) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  no need to release txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
+//LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  no need to release txn: "<<done_txn->txn_id()<<" origin:"<<done_txn->origin_replica()<<"  involved_replicas:"<<done_txn->involved_replicas_size();
       }
 
       executing_txns--;
@@ -471,18 +471,18 @@ LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  release remaster txn:
       //   txns++;       
       // }
 
-      LOG(INFO) <<machine_id<< "Should I inc txns?";
+//LOG(ERROR) <<machine_id<< "Should I inc txns?";
       if(done_txn->status() == TxnProto::COMMITTED && !done_txn->lock_only()) {
-        LOG(INFO) <<machine_id<< "Should I inc txns? yes!";
+//LOG(ERROR) <<machine_id<< "Should I inc txns? yes!";
         txns++;
       }
 
-LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id()<<"  origin:"<<done_txn->origin_replica();
+//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id()<<"  origin:"<<done_txn->origin_replica();
 #ifdef LATENCY_TEST
     if (done_txn->txn_id() % SAMPLE_RATE == 0 && latency_counter < SAMPLES && done_txn->origin_replica() == local_replica && done_txn->generated_machine() == local_machine) {
       scheduler_unlock[done_txn->txn_id()] = GetTime();
       latency_counter++;
-      LOG(INFO) << "  Latency Counter: " << latency_counter;
+//LOG(ERROR) << "  Latency Counter: " << latency_counter;
       measured_latency.push_back(scheduler_unlock[done_txn->txn_id()] - sequencer_recv[done_txn->txn_id()]);
     }
 
@@ -494,14 +494,14 @@ LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  Finish executing the 
         report.append(DoubleToString(measured_latency[i]*1000) + "\n");
       }
 
-      LOG(INFO) << "Finished. Write out to /tmp/report";
+//LOG(ERROR) << "Finished. Write out to /tmp/report";
 
       string filename = "/tmp/report." + UInt64ToString(machine_id);
 
       std::ofstream file(filename);
       file << report;
 
-LOG(INFO) <<"^^^^^^^^^^^^^^:"<< machine_id<<": reporting latencies to " << filename;
+//LOG(ERROR) <<"^^^^^^^^^^^^^^:"<< machine_id<<": reporting latencies to " << filename;
 
     }
 #endif
@@ -513,7 +513,7 @@ LOG(INFO) <<"^^^^^^^^^^^^^^:"<< machine_id<<": reporting latencies to " << filen
     if (batch_message == NULL) {
       batch_message = GetBatch();
 if (batch_message != NULL) {
-  LOG(INFO) <<machine_id<< ":In LockManagerThread:  got a batch(1): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
+//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(1): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
 }
     // Done with current batch, get next.
     } else if (batch_offset >= batch_message->data_size()) {
@@ -521,7 +521,7 @@ if (batch_message != NULL) {
         delete batch_message;
         batch_message = GetBatch();
 if (batch_message != NULL) {
-  LOG(INFO) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
+//LOG(ERROR) <<machine_id<< ":In LockManagerThread:  got a batch(2): "<<batch_message->batch_number()<<" size:"<<batch_message->data_size();
 }
     // Current batch has remaining txns, grab up to num_txns_once.
     } else if (executing_txns + pending_txns < maximum_txns) {
@@ -536,7 +536,7 @@ if (batch_message != NULL) {
         batch_offset++;
 
 /**if (txn->remaster_txn() == true) {
-LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn: "<<txn->txn_id();
+//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn: "<<txn->txn_id();
 }**/
 
         if (mode_ == 2 && txn->remaster_txn() == false) {
@@ -546,7 +546,7 @@ LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn:
           if (can_execute_now == false) {
             blocking_txns_[txn->origin_replica()].push(txn);
             txn->set_wait_for_remaster_pros(true);
-//LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id()<<"  on key:"<<keys.begin()->first;
+//LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id()<<"  on key:"<<keys.begin()->first;
             // Put it into the queue and wait for the remaster action come
             waiting_txns_by_txnid_[txn->txn_id()] = keys;
             for (auto it = keys.begin(); it != keys.end(); it++) {
@@ -558,7 +558,7 @@ LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn:
           } else {
             if (txn->status() == TxnProto::ABORTED_WITHOUT_LOCK) {
             // If the status is: ABORTED_WITHOUT_LOCK, we can run this txn without locking
-// LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  find a  ABORTED_WITHOUT_LOCK txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
+// LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  find a  ABORTED_WITHOUT_LOCK txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
               ready_txns_->Push(txn);
               pending_txns++;
               continue;
@@ -566,7 +566,7 @@ LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn:
               // It is the first txn and can be executed right now
               if (!blocking_txns_[txn->origin_replica()].empty()) {
                 blocking_txns_[txn->origin_replica()].push(txn);
-// LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id();
+// LOG(ERROR) <<machine_id<< ":*********In LockManagerThread:  blocking txn: "<<txn->txn_id();
                 continue;
               }
       
@@ -574,14 +574,14 @@ LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn:
           }
         } // end if (mode_ == 2)
 
-LOG(INFO) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locking txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
+//LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locking txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
         lock_manager_->Lock(txn);
         pending_txns++;
-        LOG(INFO) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locked txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
+//LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locked txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
 
 
 //if (machine_id == 0)
-//LOG(INFO) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locking txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
+//LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locking txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
       }
     }
 
@@ -593,13 +593,13 @@ LOG(INFO) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locking txn: "<<txn
 
       txns_queue_->Push(ready_txn);
 //if (machine_id == 0)
-//LOG(INFO) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  acquired locks txn: "<<ready_txn->txn_id()<<" origin:"<<ready_txn->origin_replica()<<"  involved_replicas:"<<ready_txn->involved_replicas_size();
+//LOG(ERROR) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  acquired locks txn: "<<ready_txn->txn_id()<<" origin:"<<ready_txn->origin_replica()<<"  involved_replicas:"<<ready_txn->involved_replicas_size();
     }
 
     // Report throughput.
     if (GetTime() > time + 1) {
       double total_time = GetTime() - time;
-      LOG(INFO) << "Machine: "<<machine_id<<" Completed "<< (static_cast<double>(txns) / total_time)
+//LOG(ERROR) << "Machine: "<<machine_id<<" Completed "<< (static_cast<double>(txns) / total_time)
                  << " txns/sec, "<< executing_txns << " executing, "<< pending_txns << " pending";
 
       // Reset txn count.

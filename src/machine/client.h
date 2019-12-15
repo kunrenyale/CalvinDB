@@ -238,7 +238,7 @@ class MockClient : public Client {
       // *txn = microbenchmark.MicroTxnSRSP(0, 0, 1);
       *txn = microbenchmark.MicroTxnMRSP(0, 0, 0, 1);
       txns_created_++;
-      LOG(INFO) << "Created txn";
+//LOG(ERROR) << "Created txn";
       
     } else {
       *txn = NULL;

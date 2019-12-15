@@ -42,21 +42,21 @@ int main(int argc, char** argv) {
     }
   }
 
-  LOG(INFO) <<FLAGS_machine_id<<":Preparing to start Calvin node ";
+//LOG(ERROR) <<FLAGS_machine_id<<":Preparing to start Calvin node ";
 
 
   // Build this node's configuration object.
   ClusterConfig* config = new ClusterConfig(FLAGS_machine_id);
   config->FromFile(FLAGS_config);
 
-  LOG(INFO)<<FLAGS_machine_id <<":Created config ";
+//LOG(ERROR)<<FLAGS_machine_id <<":Created config ";
 
   // Build connection context and start multiplexer thread running.
   ConnectionMultiplexer* multiplexer = new ConnectionMultiplexer(config);
 
   Spin(1);
 
-  LOG(INFO) << FLAGS_machine_id <<":Created connection "; 
+//LOG(ERROR) << FLAGS_machine_id <<":Created connection "; 
 
   Client* client = NULL;
   // Artificial loadgen clients. Right now only microbenchmark
@@ -67,13 +67,13 @@ int main(int argc, char** argv) {
   } else if (FLAGS_experiment == 2) {
     client = reinterpret_cast<Client*>(new MockClient(config, FLAGS_percent_mp, FLAGS_percent_mr, FLAGS_hot_records));
   } else {
-    LOG(FATAL)<<"Unknown experiment flag";
+//LOG(FATAL)<<"Unknown experiment flag";
   }
 
   Storage* storage;
   storage = new SimpleStorage();
 
-  LOG(INFO) << FLAGS_machine_id<< ":Created storage "; 
+//LOG(ERROR) << FLAGS_machine_id<< ":Created storage "; 
   
   Application* application = NULL; 
   if (FLAGS_experiment == 0) {
@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
     application->InitializeStorage(storage, config);
   }
 
-  LOG(INFO) << FLAGS_machine_id << ":Created application "; 
+//LOG(ERROR) << FLAGS_machine_id << ":Created application "; 
 
   // Create Paxos
   LocalPaxos* paxos = NULL;
@@ -96,12 +96,12 @@ int main(int argc, char** argv) {
     paxos = new LocalPaxos(config, multiplexer, FLAGS_type);
   }
 
-  LOG(INFO) << FLAGS_machine_id << ":Created paxos log "; 
+//LOG(ERROR) << FLAGS_machine_id << ":Created paxos log "; 
 
   // Initialize sequencer component and start sequencer thread running.
   LowlatencySequencer sequencer(config, multiplexer, client, paxos, storage, FLAGS_max_batch_size);
 
-  LOG(INFO) << FLAGS_machine_id << ":Created sequencer ";
+//LOG(ERROR) << FLAGS_machine_id << ":Created sequencer ";
 
   // Run scheduler in main thread.
   DeterministicScheduler scheduler(config,
@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
                                    multiplexer,
                                    FLAGS_mode);
 
-  LOG(INFO) << FLAGS_machine_id << ":Created scheduler "; 
+//LOG(ERROR) << FLAGS_machine_id << ":Created scheduler "; 
 
   while (!config->Stopped()) {
     usleep(1000000);

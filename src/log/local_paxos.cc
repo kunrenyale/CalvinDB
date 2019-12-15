@@ -82,11 +82,11 @@ bool LocalPaxos::IsLeader() {
 }
 
 void LocalPaxos::Append(uint64 blockid) {
-//LOG(INFO) << "In paxos log:  append a batch: "<<blockid;
+//LOG(ERROR) << "In paxos log:  append a batch: "<<blockid;
     Lock l(&mutex_);
     sequence_.add_batch_ids(blockid);
     local_count_ += 1;
-//LOG(INFO) << configuration_->local_node_id()<< "+++In paxos Append: append a new batch:"<<blockid;
+//LOG(ERROR) << configuration_->local_node_id()<< "+++In paxos Append: append a new batch:"<<blockid;
 }
 
 void LocalPaxos::ReceiveMessage() {
@@ -118,7 +118,7 @@ void LocalPaxos::ReceiveMessage() {
       new_sequence_ack_message.add_misc_int(latest_version);
       connection_->Send(new_sequence_ack_message);
 //if (configuration_->local_node_id() == 0)
-//LOG(INFO) << configuration_->local_node_id()<< "---In paxos:  receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica_<<"  . latest_version is:"<<latest_version;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  receive  NEW_SEQUENCE from: "<<from_replica * machines_per_replica_<<"  . latest_version is:"<<latest_version;
     } else if (message.type() == MessageProto::NEW_SEQUENCE_ACK) {
       SequenceBatch sequence_batch;
       uint32 from_replica = message.misc_int(0);
@@ -149,7 +149,7 @@ void LocalPaxos::ReceiveMessage() {
         sequence_batch_message.add_misc_int(latest_version);
         connection_->Send(sequence_batch_message);
 //if (configuration_->local_node_id() == 0)
-//LOG(INFO) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<from_replica * machines_per_replica_<<"  . latest_version is:"<<latest_version;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<from_replica * machines_per_replica_<<"  . latest_version is:"<<latest_version;
       }
     } else if (message.type() == MessageProto::SYNCHRONIZE) {
       uint32 from_replica = message.misc_int(0);
@@ -206,7 +206,7 @@ void LocalPaxos::RunLeader() {
   int alternate = 0;
 
   while (go_) {
-    LOG(INFO) << "inside paxos:RunLeader()";
+//LOG(ERROR) << "inside paxos:RunLeader()";
     // Sleep while there are NO requests.
     while (local_count_.load() == 0 && sequences_other_replicas_.Size() == 0) {
       usleep(20);
@@ -227,7 +227,7 @@ void LocalPaxos::RunLeader() {
           local_count_ = 0;
           isLocal = true;
     //if (configuration_->local_node_id() == 0)
-    //LOG(INFO) << configuration_->local_node_id()<< "---In paxos:  will handle the version from local: "<<global_next_version;
+    //LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  will handle the version from local: "<<global_next_version;
     } else if (sequences_other_replicas_.Size() > 0) {
       isLocal = false;
       global_next_version ++;
@@ -237,13 +237,13 @@ void LocalPaxos::RunLeader() {
       remote_sequence.SerializeToString(&encoded);
 
 //if (configuration_->local_node_id() == 0)
-//LOG(INFO) << configuration_->local_node_id()<< "### In paxos:  will handle remote sequence, version: "<<global_next_version;
+//LOG(ERROR) << configuration_->local_node_id()<< "### In paxos:  will handle remote sequence, version: "<<global_next_version;
 
       // if (local_replica_ != 0 && remote_replica == 0) {
 //         // Generate new txns for multi-replica txns.
 //         for (int i = 0; i < remote_sequence.batch_ids_size(); i++) {
 //           uint64 batch_id = remote_sequence.batch_ids(i);
-// //LOG(INFO) << configuration_->local_node_id()<< "---In paxos: before handle remote_sequence:"<<batch_id;
+// //LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: before handle remote_sequence:"<<batch_id;
 //           while (mr_txn_batches_.find(batch_id) == mr_txn_batches_.end()) {
 //             usleep(20);
    
@@ -259,7 +259,7 @@ void LocalPaxos::RunLeader() {
 //             continue;
 //           }
 
-// //LOG(INFO) << configuration_->local_node_id()<< "---In paxos: after handle remote_sequence:"<<batch_id<<"  size is:"<<mr_message->data_size();
+// //LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: after handle remote_sequence:"<<batch_id<<"  size is:"<<mr_message->data_size();
 
 //           batch_message.clear_data();
 //           for (int i = 0; i < mr_message->data_size(); i++) {
@@ -353,15 +353,15 @@ void LocalPaxos::RunLeader() {
     // Actually append the request into the log
     if (isLocal == true) {
       local_log_->Append(local_next_version, encoded);
-      LOG(INFO) << "wrote to local_log_";
+//LOG(ERROR) << "wrote to local_log_";
 //if (configuration_->local_node_id() == 0)
-LOG(INFO) << configuration_->local_node_id()<< "---In paxos:  Append to local log. version: "<<local_next_version;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to local log. version: "<<local_next_version;
     }
     global_log_->Append(global_next_version, encoded);
-    LOG(INFO) << "wrote to global_log_";
-    LOG(INFO) << "global log: " << global_log_->GetReader()->ToString();
+//LOG(ERROR) << "wrote to global_log_";
+//LOG(ERROR) << "global log: " << global_log_->GetReader()->ToString();
 //if (configuration_->local_node_id() == 0)
-LOG(INFO) << configuration_->local_node_id()<< "---In paxos:  Append to global log. version: "<<global_next_version;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to global log. version: "<<global_next_version;
 
     // Send its local sequences to other replicas for the first time.
     if (isLocal == true && isFirst == true) {
@@ -394,7 +394,7 @@ LOG(INFO) << configuration_->local_node_id()<< "---In paxos:  Append to global l
         sequence_batch_message.add_misc_int(latest_version);
         connection_->Send(sequence_batch_message);
 //if (configuration_->local_node_id() == 0)
-//LOG(INFO) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<i * machines_per_replica_<<"  . latest_version is:"<<latest_version;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<i * machines_per_replica_<<"  . latest_version is:"<<latest_version;
       }
 
       isFirst = false;
@@ -427,7 +427,7 @@ LOG(INFO) << configuration_->local_node_id()<< "---In paxos:  Append to global l
         sequence_batch_message.add_misc_int(latest_version);
         connection_->Send(sequence_batch_message);
 //if (configuration_->local_node_id() == 0)
-//LOG(INFO) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<pending_replica * machines_per_replica_<<"  . latest_version is:"<<latest_version;  
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<pending_replica * machines_per_replica_<<"  . latest_version is:"<<latest_version;  
 
       }
       // clear the new_sequence_todo
@@ -457,7 +457,7 @@ void LocalPaxos::HandleRemoteBatch() {
     // Generate new txns for multi-replica txns.
     for (int i = 0; i < remote_sequence.batch_ids_size(); i++) {
       uint64 batch_id = remote_sequence.batch_ids(i);
-//LOG(INFO) << configuration_->local_node_id()<< "---In paxos: before handle remote_sequence:"<<batch_id;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: before handle remote_sequence:"<<batch_id;
       while (mr_txn_batches_.find(batch_id) == mr_txn_batches_.end()) {
         usleep(20);
    
@@ -473,7 +473,7 @@ void LocalPaxos::HandleRemoteBatch() {
         continue;
       }
 
-//LOG(INFO) << configuration_->local_node_id()<< "---In paxos: after handle remote_sequence:"<<batch_id<<"  size is:"<<mr_message->data_size();
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: after handle remote_sequence:"<<batch_id<<"  size is:"<<mr_message->data_size();
 
       remote_batch_message_.clear_data();
       for (int i = 0; i < mr_message->data_size(); i++) {
@@ -490,14 +490,14 @@ void LocalPaxos::HandleRemoteBatch() {
         string txn_string;
         txn.SerializeToString(&txn_string);
         remote_batch_message_.add_data(txn_string);
-//LOG(INFO) << configuration_->local_node_id()<< "---In paxos: generated a new txn:"<<txn.txn_id();
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: generated a new txn:"<<txn.txn_id();
       }
 
       if (remote_batch_message_.data_size() > 0) {
         uint64 batch_number = configuration_->GetGUID();
         remote_batch_message_.set_batch_number(batch_number);
         Append(batch_number);
-//LOG(INFO) << configuration_->local_node_id()<< "---In paxos: append a new batch:"<<batch_number;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos: append a new batch:"<<batch_number;
 
         for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
           uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_number), i);
@@ -627,7 +627,7 @@ void LocalPaxos::RunLeaderStrong() {
       local_count_ = 0;
       isLocal = true;
 //if (configuration_->local_node_id() == 0)
-//LOG(INFO) << configuration_->local_node_id()<< "---In paxos:  will handle the version from local: "<<global_next_version;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  will handle the version from local: "<<global_next_version;
     }
 
     // Handle this sequence
@@ -707,18 +707,18 @@ void LocalPaxos::RunLeaderStrong() {
       }
 
       received_synchronize_ack = false;
-//LOG(INFO) << configuration_->local_node_id()<<"----  received the SYNCHRONIZE_ACK";
+//LOG(ERROR) << configuration_->local_node_id()<<"----  received the SYNCHRONIZE_ACK";
     }
 
     // Actually append the request into the log
     if (isLocal == true) {
       local_log_->Append(local_next_version, encoded);
 //if (configuration_->local_node_id() == 0)
-//LOG(INFO) << configuration_->local_node_id()<< "---In paxos:  Append to local log. version: "<<local_next_version;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to local log. version: "<<local_next_version;
     }
     global_log_->Append(global_next_version, encoded);
 //if (configuration_->local_node_id() == 0)
-//LOG(INFO) << configuration_->local_node_id()<< "---In paxos:  Append to global log. version: "<<global_next_version;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  Append to global log. version: "<<global_next_version;
 
     // Send its local sequences to other replicas for the first time.
     if (isLocal == true && isFirst == true) {
@@ -751,7 +751,7 @@ void LocalPaxos::RunLeaderStrong() {
         sequence_batch_message.add_misc_int(latest_version);
         connection_->Send(sequence_batch_message);
 //if (configuration_->local_node_id() == 0)
-//LOG(INFO) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<i * machines_per_replica_<<"  . latest_version is:"<<latest_version;
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<i * machines_per_replica_<<"  . latest_version is:"<<latest_version;
       }
 
       isFirst = false;
@@ -771,7 +771,7 @@ void LocalPaxos::RunLeaderStrong() {
         }
 
 if (latest_version == 0)
-LOG(INFO) << "--------------- this replica is: "<<local_replica_<<",,,,,, plan to send to replica:"<<pending_replica;
+//LOG(ERROR) << "--------------- this replica is: "<<local_replica_<<",,,,,, plan to send to replica:"<<pending_replica;
         CHECK(latest_version != 0);
         
         string sequence_batch_string;
@@ -786,7 +786,7 @@ LOG(INFO) << "--------------- this replica is: "<<local_replica_<<",,,,,, plan t
         sequence_batch_message.add_misc_int(latest_version);
         connection_->Send(sequence_batch_message);
 //if (configuration_->local_node_id() == 0)
-//LOG(INFO) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<pending_replica * machines_per_replica_<<"  . latest_version is:"<<latest_version;  
+//LOG(ERROR) << configuration_->local_node_id()<< "---In paxos:  send  NEW_SEQUENCE to: "<<pending_replica * machines_per_replica_<<"  . latest_version is:"<<latest_version;  
 
       }
       // clear new-sequence_todo
