@@ -8,6 +8,12 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
                                Storage* actual_storage, TxnProto* txn, uint32 mode)
     : configuration_(config), connection_(connection),
       actual_storage_(actual_storage), txn_(txn), mode_(mode), relative_node_id_(config->relative_node_id()){
+
+  // Coding txn should only receive reads via remote reads from the locking txns.
+  if (txn->multi_home() && !txn->lock_only()) {
+    return;
+  }
+
   local_replica_id_ = config->local_replica_id();
 
   // If reads are performed at this node, execute local reads and broadcast
@@ -118,10 +124,20 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
         uint64 mds = remote_writer.first;
         uint64 replica = remote_writer.second;
         string destination_channel = IntToString(txn->txn_id()) + "-" + IntToString(replica);
+        LOG(INFO) << ":In storage manager: destination+channel:"<< destination_channel;
         remote_result_message_.set_destination_channel(destination_channel);
         remote_result_message_.set_destination_node(configuration_->LookupMachineID(mds, configuration_->local_replica_id()));
         connection_->Send(remote_result_message_);        
       }
+
+      if (txn->lock_only()) {
+        string destination_channel = IntToString(txn->txn_id()) + "-0";
+        LOG(INFO) << ":In storage manager: (lock only) destination+channel:"<< destination_channel;
+        remote_result_message_.set_destination_channel(destination_channel);
+        remote_result_message_.set_destination_node(configuration_->LookupMachineID(0, configuration_->local_replica_id())); // TODO: Partition hardcoded to 0!!!!
+        connection_->Send(remote_result_message_);  
+      }
+
     } else {
       // (for mp or mr txns) Request chopping with remaster: get the min_involved_machine_ and min_involved_machine_origin_(will generate new txn if aborted)
       pair<uint64, uint32> min_machine = make_pair(INT_MAX, INT_MAX);

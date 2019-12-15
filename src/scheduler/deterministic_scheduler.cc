@@ -122,7 +122,9 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
           } else { 
             // Execute and clean up.
             TxnProto* txn = manager->txn_;
-            application_->Execute(txn, manager);
+            if (!txn->lock_only()) {
+              application_->Execute(txn, manager);
+            }
             delete manager;
 
             connection_->UnlinkChannel(message.destination_channel());
@@ -140,7 +142,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
       bool got_it = txns_queue_->Pop(&txn);
       LOG(INFO) << ":In scheduler:  starting on next txn: got it:"<<got_it;
       if (got_it == true) {
-        LOG(INFO) << ":In scheduler:  starting on next txn: id:"<<txn->txn_id();
+        LOG(INFO) << ":In scheduler:  starting on next txn: id:"<<txn->txn_id()<<"-"<<txn->origin_replica()<<"-"<<txn->lock_only();
         // Create manager.
         StorageManager* manager = new StorageManager(configuration_,
                                       connection_,
@@ -155,7 +157,9 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
             done_queue_->Push(txn);
           } else {
             // No remote reads. Execute and clean up.
-            application_->Execute(txn, manager);
+            if (!txn->lock_only()) {
+              application_->Execute(txn, manager);
+            }
             delete manager;
 
             // Respond to scheduler;
@@ -567,6 +571,9 @@ LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  receive remaster txn:
 LOG(INFO) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locking txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
         lock_manager_->Lock(txn);
         pending_txns++;
+        LOG(INFO) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locked txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
+
+
 //if (machine_id == 0)
 //LOG(INFO) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locking txn: "<<txn->txn_id()<<" origin:"<<txn->origin_replica()<<"  involved_replicas:"<<txn->involved_replicas_size();
       }
