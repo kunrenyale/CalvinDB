@@ -123,7 +123,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
       for (auto remote_writer : remote_replica_writers_) {
         uint64 mds = remote_writer.first;
         uint64 replica = remote_writer.second;
-        string destination_channel = IntToString(txn->txn_id()) + "-" + IntToString(replica);
+        string destination_channel = IntToString(txn->txn_id()) + "-" + IntToString(replica) + "-" + IntToString(txn->lock_only());
         LOG(INFO) << ":In storage manager: destination+channel:"<< destination_channel;
         remote_result_message_.set_destination_channel(destination_channel);
         remote_result_message_.set_destination_node(configuration_->LookupMachineID(mds, configuration_->local_replica_id()));
@@ -131,7 +131,7 @@ StorageManager::StorageManager(ClusterConfig* config, ConnectionMultiplexer* con
       }
 
       if (txn->lock_only()) {
-        string destination_channel = IntToString(txn->txn_id()) + "-0";
+        string destination_channel = IntToString(txn->txn_id()) + "-0-0"; // region 0 (master order), non-lockonly
         LOG(INFO) << ":In storage manager: (lock only) destination+channel:"<< destination_channel;
         remote_result_message_.set_destination_channel(destination_channel);
         remote_result_message_.set_destination_node(configuration_->LookupMachineID(0, configuration_->local_replica_id())); // TODO: Partition hardcoded to 0!!!!

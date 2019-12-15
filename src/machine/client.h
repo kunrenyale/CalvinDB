@@ -23,7 +23,7 @@ using std::string;
 using std::queue;
 using std::map;
 
-#define SAMPLES  100
+#define SAMPLES  1000
 #define SAMPLE_RATE 1
 
 #define LATENCY_TEST
@@ -236,7 +236,7 @@ class MockClient : public Client {
       // hard code txn id as 0 so we can find it in the log of node 0, rep 0
       // *txn = microbenchmark.MicroTxnSRSP(0, 0, 0);
       // *txn = microbenchmark.MicroTxnSRSP(0, 0, 1);
-      *txn = microbenchmark.MicroTxnMRSP(0, 0, 1, 2);
+      *txn = microbenchmark.MicroTxnMRSP(0, 0, 0, 1);
       txns_created_++;
       LOG(INFO) << "Created txn";
       

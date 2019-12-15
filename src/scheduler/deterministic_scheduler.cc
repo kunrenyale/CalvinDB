@@ -168,7 +168,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
           }
         } else {
 
-          string origin_channel = IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica());
+          string origin_channel = IntToString(txn->txn_id()) + "-" + IntToString(txn->origin_replica()) + "-" + IntToString(txn->lock_only());
           connection_->LinkChannel(origin_channel, channel);
           LOG(INFO) << ":In scheduler:  linking channels: "<< origin_channel << ", " << channel;
 
@@ -466,9 +466,13 @@ LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  release remaster txn:
 
       executing_txns--;
 
-      if((done_txn->status() == TxnProto::COMMITTED) && 
-         (done_txn->writers_size() == 0 || (rand() % done_txn->writers_size() == 0 && rand() % done_txn->involved_replicas_size() == 0))) {
-        txns++;       
+      // if((done_txn->status() == TxnProto::COMMITTED) && 
+      //    (done_txn->writers_size() == 0 || (rand() % done_txn->writers_size() == 0 && rand() % done_txn->involved_replicas_size() == 0))) {
+      //   txns++;       
+      // }
+
+      if(done_txn->status() == TxnProto::COMMITTED && !done_txn->lock_only()) {
+        txns++;
       }
 
 LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  Finish executing the  txn: "<<done_txn->txn_id()<<"  origin:"<<done_txn->origin_replica();
