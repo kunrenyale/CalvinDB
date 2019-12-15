@@ -140,7 +140,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
       // No remote read result found, start on next txn if one is waiting.
       TxnProto* txn;
       bool got_it = txns_queue_->Pop(&txn);
-      LOG(INFO) << ":In scheduler:  starting on next txn: got it:"<<got_it;
+      // LOG(INFO) << ":In scheduler:  starting on next txn: got it:"<<got_it;
       if (got_it == true) {
         LOG(INFO) << ":In scheduler:  starting on next txn: id:"<<txn->txn_id()<<"-"<<txn->origin_replica()<<"-"<<txn->lock_only();
         // Create manager.
@@ -593,8 +593,8 @@ LOG(INFO) <<machine_id<< ":^^^^^^^^^^^In LockManagerThread:  locking txn: "<<txn
     // Report throughput.
     if (GetTime() > time + 1) {
       double total_time = GetTime() - time;
-      // LOG(INFO) << "Machine: "<<machine_id<<" Completed "<< (static_cast<double>(txns) / total_time)
-      //            << " txns/sec, "<< executing_txns << " executing, "<< pending_txns << " pending";
+      LOG(INFO) << "Machine: "<<machine_id<<" Completed "<< (static_cast<double>(txns) / total_time)
+                 << " txns/sec, "<< executing_txns << " executing, "<< pending_txns << " pending";
 
       // Reset txn count.
       time = GetTime();
