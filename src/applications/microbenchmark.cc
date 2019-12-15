@@ -448,9 +448,11 @@ TxnProto* Microbenchmark::NewTxn(int64 txn_id, int txn_type,
 }
 
 int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {  
+//LOG(ERROR) << "Execute txn id: " << txn->txn_id()<<"-"<<txn->origin_replica()<<"-"<<txn->lock_only()<< ", access set: " << txn->read_write_set_size();
+
   // Remaster txn
   if (txn->remaster_txn() == true) {
-LOG(ERROR) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<txn->txn_id();
+//LOG(ERROR) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<txn->txn_id();
     KeyEntry key_entry = txn->read_write_set(0);
     Record* val = storage->ReadObject(key_entry.key());
 
@@ -515,7 +517,7 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  handle remaster txn: "<<tx
         txn_message.add_data(txn_string);
 
         connection_->Send(txn_message);
-LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, on record: "<<key_entry.key()<<"  txn id:"<<txn->txn_id();
+//LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, on record: "<<key_entry.key()<<"  txn id:"<<txn->txn_id();
       }
 
 
@@ -540,13 +542,13 @@ LOG(ERROR) <<local_replica_<< ":*********In Execute:  Generate a remaster  txn, 
   }
 
   // The following code is for microbenchmark "long" transaction, uncomment it if for "long" transaction
-  while (GetTime() - execution_start < 0.00012/factor) {
-    int x = 1;
-    for(int i = 0; i < 10000; i++) {
-      x = x+10;
-      x = x-2;
-    }
-  }
+  // while (GetTime() - execution_start < 0.00012/factor) {
+  //   int x = 1;
+  //   for(int i = 0; i < 10000; i++) {
+  //     x = x+10;
+  //     x = x-2;
+  //   }
+  // }
 
   return 0;
 }

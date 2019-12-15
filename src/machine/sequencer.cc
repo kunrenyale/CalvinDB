@@ -38,18 +38,18 @@ Sequencer::Sequencer(ClusterConfig* conf, ConnectionMultiplexer* connection, Cli
   pthread_attr_t attr_writer;
   pthread_attr_init(&attr_writer);
   CPU_ZERO(&cpuset);
-  CPU_SET(2, &cpuset);
+//CPU_SET(0, &cpuset);
 //  CPU_SET(6, &cpuset);
-  pthread_attr_setaffinity_np(&attr_writer, sizeof(cpu_set_t), &cpuset);
+  //pthread_attr_setaffinity_np(&attr_writer, sizeof(cpu_set_t), &cpuset);
 
   pthread_create(&writer_thread_, &attr_writer, RunSequencerWriter, reinterpret_cast<void*>(this));
 
   CPU_ZERO(&cpuset);
 //  CPU_SET(2, &cpuset);
-  CPU_SET(6, &cpuset);
+//CPU_SET(0, &cpuset);
   pthread_attr_t attr_reader;
   pthread_attr_init(&attr_reader);
-  pthread_attr_setaffinity_np(&attr_reader, sizeof(cpu_set_t), &cpuset);
+  //pthread_attr_setaffinity_np(&attr_reader, sizeof(cpu_set_t), &cpuset);
 
   pthread_create(&reader_thread_, &attr_reader, RunSequencerReader, reinterpret_cast<void*>(this));
 }
@@ -104,7 +104,7 @@ uint64 local_machine = configuration_->local_node_id();
   }
 
   connection_->DeleteChannel("synchronization_sequencer_channel");
-LOG(ERROR) << "In sequencer:  After synchronization. Starting sequencer writer.";
+//LOG(ERROR) << "In sequencer:  After synchronization. Starting sequencer writer.";
   start_working_ = true;
 
   while (!deconstructor_invoked_) {

@@ -65,7 +65,8 @@ int main(int argc, char** argv) {
     cm->ClusterStatus();
 
   } else {
-    LOG(FATAL) << "unknown command: " << FLAGS_command;
+    // LOG(FATAL) << "unknown command: " << FLAGS_command;
+    cm->RunArbitrary(FLAGS_command);
   }
   return 0;
 }

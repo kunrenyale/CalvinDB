@@ -37,18 +37,18 @@ const string& ClusterManager::ssh_key(uint64 m) {
     return ssh_key6_;
   }
 
-  LOG(FATAL) << "bad machine id: " << m;
+//LOG(FATAL) << "bad machine id: " << m;
 }
 
 void* SystemFunction(void* arg) {
   // Run the specified command.
   int status = system(reinterpret_cast<string*>(arg)->c_str());
   if(status == -1){
-    LOG(FATAL)<<"system error";
+//LOG(FATAL)<<"system error";
   } else if(WIFEXITED(status) && (WEXITSTATUS(status) == 0)){
     // printf("run command successful\n");
   } else {
-    LOG(FATAL) << "run command fail and exit code is " << WEXITSTATUS(status);
+//LOG(FATAL) << "run command fail and exit code is " << WEXITSTATUS(status);
   }
 
   delete reinterpret_cast<string*>(arg);
@@ -106,7 +106,29 @@ void ClusterManager::Update() {
     threads.resize(threads.size()+1);
     string* ssh_command = new string(
       "ssh " + ssh_key(it->first)  + " "+ ssh_username_ + "@" + it->second.host() +
-      " 'cd " + calvin_path_ + ";git checkout calvin.conf;  git pull; cd src; cp Makefile.default Makefile; make clean; make -j'");
+      " 'cd " + calvin_path_ + ";git checkout calvin.conf; git checkout src/Makefile; git pull; cd src; sudo make clean; sudo make -j'");
+    pthread_create(
+        &threads[threads.size()-1],
+        NULL,
+        SystemFunction,
+        reinterpret_cast<void*>(ssh_command));
+  }
+  for (uint32 i = 0; i < threads.size(); i++) {
+    pthread_join(threads[i], NULL);
+  }
+  threads.clear();
+}
+
+void ClusterManager::RunArbitrary(string& command) {
+  // Next, Run "git pull ;make clean;make -j" to get the latest code and compile.
+  vector<pthread_t> threads;
+  for (map<uint64, MachineInfo>::const_iterator it =
+       config_.machines().begin();
+       it != config_.machines().end(); ++it) {
+    threads.resize(threads.size()+1);
+    string* ssh_command = new string(
+      "ssh " + ssh_key(it->first)  + " "+ ssh_username_ + "@" + it->second.host() +
+      " 'cd " + calvin_path_ + ";" + command + "'");
     pthread_create(
         &threads[threads.size()-1],
         NULL,
@@ -133,7 +155,7 @@ void ClusterManager::DeployCluster(int experiment, int percent_mp, int percent_m
          " --machine_id=" + IntToString(it->second.id()) + " --mode=" + IntToString(mode_) + " --type=" + IntToString(type_) +
          "  --config=" + config_file_ + " --experiment=" + IntToString(experiment) + " --percent_mp=" + IntToString(percent_mp) + " --percent_mr=" + IntToString(percent_mr) + 
          " --hot_records=" + IntToString(hot_records) + " --max_batch_size=" + IntToString(max_batch_size) + " ' &");
-
+    printf("%s\n", ssh_command->c_str());
     pthread_create(
         &threads[threads.size()-1],
         NULL,

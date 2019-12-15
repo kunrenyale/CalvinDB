@@ -45,6 +45,9 @@ class ClusterManager {
   // Runs "svn up" and rebuilds calvin on every machine in the cluster.
   void Update();
 
+  // Run any command on every machine
+  void RunArbitrary(string& command);
+
   // Attempts to deploy the cluster according to config....
   //
   // First, performs several checks (and dies with a useful error message if
