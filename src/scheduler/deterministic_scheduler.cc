@@ -203,18 +203,27 @@ MessageProto* DeterministicScheduler::GetBatch() {
        MessageProto* message = new MessageProto();
        while (connection_->GotMessage("scheduler_", message)) {
          if (message->type() == MessageProto::TXN_SUBBATCH) {
-LOG(INFO) << message->destination_node()<<"In scheduler:  receive a subbatch: "<<message->batch_number();
+LOG(INFO) << message->destination_node()<<"In scheduler:  receive a subbatch: "<<message->batch_number()<<" size: "<<message->data_size();
+
+      for (int i = 0; i < message->data_size(); i++) {
+                  TxnProto txn;
+                  txn.ParseFromString(message->data(i));
+                  LOG(INFO) << message->destination_node()<<"In scheduler:  txn: "<<txn.txn_id();
+      }
+
 //CHECK(message->data_size() > 0);
            batches_data_[message->batch_number()] = message;
            message = new MessageProto();
          } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
-LOG(INFO)<< message->destination_node()<< ":In scheduler:  receive a sequence: "<<message->misc_int(0);
+LOG(INFO)<< message->destination_node()<< ":In scheduler:  receive a sequence: "<<message->misc_int(0)<<" size: "<<message->data_size();
+
            if (message->misc_int(0) == current_sequence_id_) {
 //if (message->destination_node() == 0)
 // LOG(INFO) << message->destination_node()<< ":In scheduler:  find the sequence: "<<message->misc_int(0);
              current_sequence_ = new Sequence();
              current_sequence_->ParseFromString(message->data(0));
              current_sequence_batch_index_ = 0;
+             LOG(INFO)<< message->destination_node()<< ":In scheduler:  current sequence batch id: "<<current_sequence_->batch_ids(0)<<" size: "<<current_sequence_->batch_ids_size();
              break;
            } else {
              global_batches_order_[message->misc_int(0)] = message;
@@ -227,15 +236,17 @@ LOG(INFO)<< message->destination_node()<< ":In scheduler:  receive a sequence: "
    }
 
    if (current_sequence_ == NULL) {
+     LOG(INFO)<< ":In scheduler:  current sequence is NULL";
      return NULL;
    }
    
    CHECK(current_sequence_batch_index_ < (uint32)(current_sequence_->batch_ids_size()));
    current_batch_id_ = current_sequence_->batch_ids(current_sequence_batch_index_);
-
+    LOG(INFO)<< ":In scheduler:  current sequence batch index: "<<current_sequence_batch_index_<<" batch_id:"<<current_batch_id_;
 
    if (batches_data_.count(current_batch_id_) > 0) {
      // Requested batch has already been received.
+     LOG(INFO)<< ":In scheduler:  Requested batch has already been received.";
      MessageProto* batch = batches_data_[current_batch_id_];
      batches_data_.erase(current_batch_id_);
 //LOG(INFO) <<batch->destination_node()<< ": ^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
@@ -250,11 +261,19 @@ LOG(INFO)<< message->destination_node()<< ":In scheduler:  receive a sequence: "
      return batch; 
    } else {
      // Receive the batch data or global batch order
+     LOG(INFO)<< ":In scheduler:  Batch not received, Receive the batch data or global batch order";
      MessageProto* message = new MessageProto();
      while (connection_->GotMessage("scheduler_", message)) {
        if (message->type() == MessageProto::TXN_SUBBATCH) {
-LOG(INFO) << message->destination_node()<<"In scheduler:  receive a subbatch: "<<message->batch_number();
+LOG(INFO) << message->destination_node()<<"In scheduler:  receive a subbatch 2: "<<message->batch_number()<<" size: "<<message->data_size();
 //CHECK(message->data_size() > 0);
+
+      for (int i = 0; i < message->data_size(); i++) {
+                  TxnProto txn;
+                  txn.ParseFromString(message->data(i));
+                  LOG(INFO) << message->destination_node()<<"In scheduler:  txn: "<<txn.txn_id();
+      }
+
          if ((uint64)(message->batch_number()) == current_batch_id_) {
 //LOG(ERROR) << message->destination_node()<<": ^^^^^In scheduler:  got the batch_id wanted: "<<current_batch_id_;
 
@@ -264,14 +283,18 @@ LOG(INFO) << message->destination_node()<<"In scheduler:  receive a subbatch: "<
              current_sequence_id_++;
 //LOG(ERROR) << "^^^^^In scheduler:  will work on next sequence: "<<current_sequence_id_;
            }
-
+           LOG(INFO)<< ":In scheduler:  Batch found";
            return message;
          } else {
            batches_data_[message->batch_number()] = message;
            message = new MessageProto();
          }
        } else if (message->type() == MessageProto::PAXOS_BATCH_ORDER) {
+         LOG(INFO)<< message->destination_node()<< ":In scheduler 2:  receive a sequence: "<<message->misc_int(0)<<" size: "<<message->data_size();
 //LOG(ERROR)<< message->destination_node()<< ":In scheduler:  receive a sequence: "<<message->misc_int(0);
+         
+
+         
          global_batches_order_[message->misc_int(0)] = message;
          message = new MessageProto();
        }

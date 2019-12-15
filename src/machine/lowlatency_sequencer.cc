@@ -477,22 +477,23 @@ LOG(INFO) << configuration_->local_node_id()<< ":In sequencer reader:  recevie T
             TxnProto txn;
             txn.ParseFromString(message.data(i));
             if (txn.involved_replicas_size() > 1) { // todo
+                txn.set_multi_home(true);
+              // txn.set_fake_txn(false); // todo
+
+              string txn_data;
+              txn.SerializeToString(&txn_data);
+              message.set_data(i, txn_data);
               for (int j = 0; j < txn.involved_replicas_size(); j++) {
                 if (txn.involved_replicas(j) == local_replica) {
-                  txn.set_origin_replica(local_replica);
-                  txn.set_multi_home(true);
-                  txn.set_fake_txn(false); // todo
-
-                  string txn_data;
-                  txn.SerializeToString(&txn_data);
-                  message.set_data(i, txn_data);
-                  mr_batch_message.add_data(txn_data);
+                  // txn.set_origin_replica(local_replica);
+                  
+                  // mr_batch_message.add_data(txn_data);
 
                   TxnProto lock_only_txn;
                   lock_only_txn.ParseFromString(message.data(i));
                   lock_only_txn.set_lock_only(true);
                   lock_only_txn.set_multi_home(true);
-                  lock_only_txn.set_fake_txn(false);
+                  // lock_only_txn.set_fake_txn(false);
                   lock_only_txn.set_origin_replica(local_replica);
                   // lock_only_txn.set_txn_id(1);
                   // lock_only_txn.set_new_generated(true);
@@ -512,11 +513,17 @@ LOG(INFO) << configuration_->local_node_id()<< ":In sequencer reader:  recevie T
             mr_batch_message.set_destination_channel("sequencer_");
             mr_batch_message.set_type(MessageProto::TXN_BATCH);
             mr_batch_message.set_source_node(configuration_->local_node_id());
-            mr_batch_message.set_destination_node(configuration_->local_node_id());
+            // mr_batch_message.set_destination_node(configuration_->local_node_id());
             mr_batch_message.add_misc_bool(false);
             LOG(INFO) << configuration_->local_node_id()<<":--- In sequencer reader: sending mr batch: "<<batch_number<<" size: "<<mr_batch_message.data_size();
   
-            connection_->Send(mr_batch_message);
+            // connection_->Send(mr_batch_message);
+
+            for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
+              uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_number), i);
+              mr_batch_message.set_destination_node(machine_id);
+              connection_->Send(mr_batch_message);
+            }
           }
         }
 
@@ -539,30 +546,32 @@ LOG(INFO) << configuration_->local_node_id()<< ":In sequencer reader:  recevie T
           txn.ParseFromString(message.data(i));
           LOG(INFO) << configuration_->local_node_id()<<": In sequencer reader: handling txn id:"<<txn.txn_id();    
 
-
-          if (txn.fake_txn() == true) {
+          // if this batch is not newly generated, then at non 0 replicas the mr batch will be resubmitted, so don't send the batches now
+          if (local_replica != 0 && message.misc_bool(0) && txn.lock_only()) {
             continue;
           }
+
           // Compute readers & writers; store in txn proto.
           set<uint64> readers;
           set<uint64> writers;
           for (uint32 i = 0; i < (uint32)(txn.read_set_size()); i++) {
             KeyEntry key_entry = txn.read_set(i);
-            if (key_entry.master() == txn.origin_replica()) {
+            // we want to include the code portion of the txn at region 0
+            if (key_entry.master() == txn.origin_replica() || (txn.multi_home() && !txn.lock_only())) {
               uint64 mds = configuration_->LookupPartition(key_entry.key());
               readers.insert(mds);
             }
           }
           for (uint32 i = 0; i < (uint32)(txn.read_write_set_size()); i++) {
             KeyEntry key_entry = txn.read_write_set(i);
-            if (key_entry.master() == txn.origin_replica()) {
+            if (key_entry.master() == txn.origin_replica() || (txn.multi_home() && !txn.lock_only())) {
               uint64 mds = configuration_->LookupPartition(key_entry.key());
               writers.insert(mds);
               readers.insert(mds);
             }
           }
 
-          LOG(INFO) << configuration_->local_node_id()<<": In sequencer reader: reader size:"<<readers.size()<<" writer: "<<writers.size();    
+          LOG(INFO) << configuration_->local_node_id()<<": In sequencer reader: reader size:"<<readers.size()<<" writer: "<<writers.size()<<" tid:"<<txn.txn_id()<<" origin:"<<txn.origin_replica();    
 
 
           for (set<uint64>::iterator it = readers.begin(); it != readers.end(); ++it) {

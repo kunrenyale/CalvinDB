@@ -1,3 +1,2 @@
 #!/bin/bash
-rm /tmp/lowlatency*
-bin/scripts/cluster --command="cd src; sudo make clean; sudo make -j"
+bin/scripts/cluster --command="rm /tmp/lowlatency*; cd src; sudo make clean; sudo make -j"
