@@ -25,8 +25,8 @@ Paxos::Paxos(Log* log, ClusterConfig* config, ConnectionMultiplexer* connection)
   CPU_ZERO(&cpuset);
 //  CPU_SET(2, &cpuset);
 //  CPU_SET(6, &cpuset);
-CPU_SET(0, &cpuset);
-  pthread_attr_setaffinity_np(&attr_writer, sizeof(cpu_set_t), &cpuset);
+//CPU_SET(0, &cpuset);
+  //pthread_attr_setaffinity_np(&attr_writer, sizeof(cpu_set_t), &cpuset);
 
   if (IsLeader()) {
     pthread_create(&leader_thread_, &attr_writer, RunLeaderThread, reinterpret_cast<void*>(this));

@@ -111,7 +111,7 @@ int DeterministicLockManager::Lock(TxnProto* txn) {
 
 void DeterministicLockManager::Release(TxnProto* txn) {
 
-  if (!(txn->multi_home() && !txn->lock_only())) {
+  if (txn->multi_home() && !txn->lock_only()) {
     return;
   }
 

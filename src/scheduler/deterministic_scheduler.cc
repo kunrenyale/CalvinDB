@@ -55,8 +55,8 @@ DeterministicScheduler::DeterministicScheduler(ClusterConfig* conf,
   pthread_attr_t attr1;
   pthread_attr_init(&attr1);
   CPU_ZERO(&cpuset);
-CPU_SET(0, &cpuset);
-  pthread_attr_setaffinity_np(&attr1, sizeof(cpu_set_t), &cpuset); 
+//CPU_SET(0, &cpuset);
+  //pthread_attr_setaffinity_np(&attr1, sizeof(cpu_set_t), &cpuset); 
   pthread_create(&lock_manager_thread_, &attr1, LockManagerThread, reinterpret_cast<void*>(this));
 
   // Start all worker threads.
@@ -64,14 +64,14 @@ CPU_SET(0, &cpuset);
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     CPU_ZERO(&cpuset);
-    CPU_SET(0, &cpuset);
+    //CPU_SET(0, &cpuset);
     /*if (i == 0 || i == 1) {
-      CPU_SET(0, &cpuset);
+      //CPU_SET(0, &cpuset);
     } else {
       CPU_SET(i+2, &cpuset);
     }*/
 
-    pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset);
+    //pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset);
 
     pthread_create(&(threads_[i]), &attr, WorkerThread, reinterpret_cast<void*>(new pair<uint32, DeterministicScheduler*>(i, this)));
   }
@@ -402,7 +402,7 @@ LOG(INFO) << "In LockManagerThread:  After synchronization. Starting scheduler t
   
   // For original CalvinDB high contention: Get better performance if set it smaller
   // For AsyCalvinDB with multi-replica txns: should set maximum_txns much bigger
-  uint64 maximum_txns = 10000000; // 10000000
+  uint64 maximum_txns = 1000; // 10000000
   uint64 num_txns_once = 10;
 
   while (true) {
@@ -471,7 +471,9 @@ LOG(INFO) <<machine_id<< ":*********In LockManagerThread:  release remaster txn:
       //   txns++;       
       // }
 
+      LOG(INFO) <<machine_id<< "Should I inc txns?";
       if(done_txn->status() == TxnProto::COMMITTED && !done_txn->lock_only()) {
+        LOG(INFO) <<machine_id<< "Should I inc txns? yes!";
         txns++;
       }
 
