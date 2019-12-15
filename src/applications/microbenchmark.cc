@@ -448,7 +448,7 @@ TxnProto* Microbenchmark::NewTxn(int64 txn_id, int txn_type,
 }
 
 int Microbenchmark::Execute(TxnProto* txn, StorageManager* storage) const {  
-  LOG(INFO) << "Execute txn id: " << txn->txn_id() << ", access set: " << txn->read_set_size();
+  LOG(INFO) << "Execute txn id: " << txn->txn_id()<<"-"<<txn->origin_replica()<<"-"<<txn->lock_only()<< ", access set: " << txn->read_write_set_size();
 
   // Remaster txn
   if (txn->remaster_txn() == true) {

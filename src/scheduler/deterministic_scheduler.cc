@@ -105,6 +105,7 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
     if (got_message == true) {
       if (message.type() == MessageProto::READ_RESULT) {
         // Remote read result.
+        LOG(INFO) << ":In scheduler: got read result:"<<message.destination_channel();
         CHECK(active_txns.count(message.destination_channel()) > 0);
         StorageManager* manager = active_txns[message.destination_channel()];
 
@@ -137,7 +138,9 @@ void DeterministicScheduler::RunWorkerThread(uint32 thread) {
       // No remote read result found, start on next txn if one is waiting.
       TxnProto* txn;
       bool got_it = txns_queue_->Pop(&txn);
+      LOG(INFO) << ":In scheduler:  starting on next txn: got it:"<<got_it;
       if (got_it == true) {
+        LOG(INFO) << ":In scheduler:  starting on next txn: id:"<<txn->txn_id();
         // Create manager.
         StorageManager* manager = new StorageManager(configuration_,
                                       connection_,

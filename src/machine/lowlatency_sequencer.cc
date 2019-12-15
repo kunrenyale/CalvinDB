@@ -508,19 +508,19 @@ LOG(INFO) << configuration_->local_node_id()<< ":In sequencer reader:  recevie T
             }
           }
           if (local_replica != 0) {
-            batch_number = configuration_->GetGUID();
-            mr_batch_message.set_batch_number(batch_number);
+            uint64 mr_batch_number = configuration_->GetGUID();
+            mr_batch_message.set_batch_number(mr_batch_number);
             mr_batch_message.set_destination_channel("sequencer_");
             mr_batch_message.set_type(MessageProto::TXN_BATCH);
             mr_batch_message.set_source_node(configuration_->local_node_id());
             // mr_batch_message.set_destination_node(configuration_->local_node_id());
             mr_batch_message.add_misc_bool(false);
-            LOG(INFO) << configuration_->local_node_id()<<":--- In sequencer reader: sending mr batch: "<<batch_number<<" size: "<<mr_batch_message.data_size();
+            LOG(INFO) << configuration_->local_node_id()<<":--- In sequencer reader: sending mr batch: "<<mr_batch_number<<" size: "<<mr_batch_message.data_size();
   
             // connection_->Send(mr_batch_message);
 
             for (uint32 i = 0; i < configuration_->replicas_size(); i++) {
-              uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(batch_number), i);
+              uint64 machine_id = configuration_->LookupMachineID(configuration_->HashBatchID(mr_batch_number), i);
               mr_batch_message.set_destination_node(machine_id);
               connection_->Send(mr_batch_message);
             }
@@ -598,8 +598,9 @@ LOG(INFO) << configuration_->local_node_id()<< ":In sequencer reader:  recevie T
 
         // Send this epoch's requests to all schedulers.
         for (map<uint64, MessageProto>::iterator it = batches.begin(); it != batches.end(); ++it) {
-          LOG(INFO) << configuration_->local_node_id()<<":--- In sequencer reader: batch size:"<<it->second.data_size();
-          it->second.set_batch_number(batch_number);
+          LOG(INFO) << configuration_->local_node_id()<<":--- In sequencer reader: batch size:"<<it->second.data_size()<<" id:"<<batch_number;
+          LOG(INFO) << configuration_->local_node_id()<<":--- In sequencer reader: 2 batch size:"<<it->second.data_size()<<" id:"<<message.batch_number();
+          it->second.set_batch_number(message.batch_number());
           connection_->Send(it->second);
           it->second.clear_data();
         }
